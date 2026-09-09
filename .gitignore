@@ -1,0 +1,36 @@
+# Source, trained release models, derived result tables and validation
+# evidence are tracked; large intermediate artifacts stay local.
+
+# Python / macOS junk
+__pycache__/
+*.py[cod]
+.DS_Store
+
+# Local virtual environment
+.venv/
+
+# Large or transient model-training artifacts
+/models/checkpoints/
+/models/evaluations/
+/models/hpo*/
+/models/lightning_logs/
+/models/tensorboard/
+
+# Retraining rebuilds these next to the tracked metadata.json. _source.txt records
+# an absolute local path, so it must never be committed.
+/models/*_data/data.npz
+/models/*_data/_source.txt
+
+# Raw verification bundles; the compact derived CSVs remain tracked
+/results/verification/closed_loop_runs*.pkl
+/results/verification/sensitivity_sweeps.pkl
+/results/verification/shadow/
+
+# Regenerable validation work products
+/results/execution_audit/_m2_work/
+/results/execution_audit/**/*.pt
+
+# Local raw-data / run scratch (anchored so a bare name can't sweep a nested dir).
+/runs/
+/logs/
+/data/

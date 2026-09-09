@@ -1,0 +1,7 @@
+system,repair_duration_floor_binds,repair_draws,processing_floor_binds,processing_draws,ttf_floor_binds,ttf_draws,repair_log0_guard,ttf_log0_guard,zero_mass_routing_fallback,deadlock_detections_recoveries,overflow_total_events
+GroundSim,0,932,14,1785848,0,1022,0,0,0,12,12
+GroundSim-DEC,2,928,9,1793182,0,1018,0,0,0,12,12
+DeepSim,0,936,0,1745029,0,1026,0,0,0,6,6
+RefSim-M,0,1013,180,1854809,0,1102,0,0,0,0,0
+RefSim-V,0,1006,1,1893183,0,1095,0,0,0,0,0
+RefSim-W,0,984,158,1858982,0,1074,0,0,0,9,9

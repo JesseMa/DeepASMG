@@ -1,0 +1,136 @@
+{
+  "feature_names": [
+    "modell",
+    "feature_a",
+    "feature_b"
+  ],
+  "encoding_maps": {
+    "modell": {
+      "<NONE>": 0,
+      "A": 1,
+      "B": 2,
+      "C": 3
+    },
+    "feature_a": {
+      "<NONE>": 0,
+      "a.1": 1,
+      "a.2": 2
+    },
+    "feature_b": {
+      "<NONE>": 0,
+      "b.1": 1,
+      "b.2": 2,
+      "b.3": 3,
+      "b.4": 4
+    }
+  },
+  "feature_dim": 17,
+  "n_time_features": 8,
+  "prev_order_dim": 9,
+  "time_periods": [
+    "shift",
+    "day",
+    "week",
+    "month"
+  ],
+  "time_periods_seconds": [
+    28800.0,
+    86400.0,
+    604800.0,
+    2628000.0
+  ],
+  "ewma_alpha": 0.3,
+  "feature_layout": [
+    {
+      "name": "sin_shift",
+      "offset": 0,
+      "size": 1
+    },
+    {
+      "name": "cos_shift",
+      "offset": 1,
+      "size": 1
+    },
+    {
+      "name": "sin_day",
+      "offset": 2,
+      "size": 1
+    },
+    {
+      "name": "cos_day",
+      "offset": 3,
+      "size": 1
+    },
+    {
+      "name": "sin_week",
+      "offset": 4,
+      "size": 1
+    },
+    {
+      "name": "cos_week",
+      "offset": 5,
+      "size": 1
+    },
+    {
+      "name": "sin_month",
+      "offset": 6,
+      "size": 1
+    },
+    {
+      "name": "cos_month",
+      "offset": 7,
+      "size": 1
+    },
+    {
+      "name": "prev_modell",
+      "offset": 8,
+      "size": 3
+    },
+    {
+      "name": "prev_feature_a",
+      "offset": 11,
+      "size": 2
+    },
+    {
+      "name": "prev_feature_b",
+      "offset": 13,
+      "size": 4
+    }
+  ],
+  "head_layout": [
+    {
+      "feature_name": "modell",
+      "offset": 0,
+      "size": 3
+    },
+    {
+      "feature_name": "feature_a",
+      "offset": 3,
+      "size": 2
+    },
+    {
+      "feature_name": "feature_b",
+      "offset": 5,
+      "size": 4
+    }
+  ],
+  "conditioning_dim": 3,
+  "n_total": 478530,
+  "vocab_fit_scope": "full_dataset",
+  "vocab_fit_train_ratio": 0.7,
+  "vocab_fit_n_train": 334971,
+  "oov_stats": {
+    "modell": {
+      "count": 0,
+      "ratio": 0.0
+    },
+    "feature_a": {
+      "count": 0,
+      "ratio": 0.0
+    },
+    "feature_b": {
+      "count": 0,
+      "ratio": 0.0
+    }
+  }
+}

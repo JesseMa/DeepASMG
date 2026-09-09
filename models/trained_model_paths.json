@@ -1,0 +1,12 @@
+{
+  "pt_model_path": "models/process_time_model.pt",
+  "pt_metadata_path": "models/process_time_data/metadata.json",
+  "tr_model_path": "models/transition_model.pt",
+  "tr_metadata_path": "models/transition_data/metadata.json",
+  "sv_model_path": "models/survival_weibull_model.pt",
+  "sv_metadata_path": "models/survival_data/metadata.json",
+  "rt_model_path": "models/repair_time_model.pt",
+  "rt_metadata_path": "models/repair_time_data/metadata.json",
+  "pr_model_path": "models/product_model.pt",
+  "pr_metadata_path": "models/product_data/metadata.json"
+}

@@ -1,0 +1,145 @@
+{
+  "schema_version": 1,
+  "description": "Frozen production training configuration for the DeepASMG release models",
+  "release_model_set": "DeepASMG v1.0.0",
+  "path_base": "repository_root",
+  "environment": {
+    "python": "3.14.5",
+    "requirements_file": "requirements.txt"
+  },
+  "training_data": {
+    "generator": "GroundSim",
+    "process": "4-stage-crossover-rework",
+    "duration_days": 365,
+    "warmup_days": 1,
+    "seed": 101,
+    "initial_orders": 10,
+    "evaluation_anchor_unix_utc": 1775001600,
+    "event_log": {
+      "excluded_release_path": "data/training/data_4-stage-crossover-rework_2026-08-28-06-40-04/run1_events_2026-08-28-06-40-04.csv",
+      "sha256": "13481e838a9cf074d72ce0d0998d1161e8f72248820d779543fd78a4e7b3da54"
+    },
+    "order_log": {
+      "excluded_release_path": "data/training/data_4-stage-crossover-rework_2026-08-28-06-40-04/run1_orders_2026-08-28-06-40-04.csv",
+      "sha256": "3a62f41ed014c024fdcdbe0fda9fd40d838221e2785eecdcf5884a6fa24aa3f8"
+    },
+    "run_metadata": {
+      "copied_from": "run_metadata.json written by scripts/generate_training_data.py into the excluded training-data directory",
+      "seed": 101,
+      "days": 365,
+      "warmup_days": 1,
+      "start_timestamp": 1743379200,
+      "sim_start_anchor": 1775001600
+    }
+  },
+  "split": {
+    "method": "chronological",
+    "train_fraction": 0.7,
+    "validation_fraction": 0.15,
+    "test_fraction": 0.15,
+    "refsim_train_fraction": 0.7
+  },
+  "training": {
+    "max_epochs": 100,
+    "early_stopping_patience": 15,
+    "optimizer": "Adam",
+    "weight_decay": 0.0001,
+    "scheduler": {
+      "name": "ReduceLROnPlateau",
+      "factor": 0.5
+    },
+    "export_format": "TorchScript",
+    "hyperparameters": {
+      "process_time": {
+        "hidden_dims": [
+          1024,
+          512
+        ],
+        "learning_rate": 0.0007663220475444138,
+        "dropout_rate": 0.000406967799759779,
+        "batch_size": 512
+      },
+      "product": {
+        "hidden_dims": [
+          1024,
+          512,
+          256,
+          128
+        ],
+        "learning_rate": 0.0006485269384423483,
+        "dropout_rate": 0.14228024469582387,
+        "batch_size": 1024
+      },
+      "transition": {
+        "hidden_dims": [
+          512,
+          256,
+          128,
+          64
+        ],
+        "learning_rate": 9.580338067662231e-05,
+        "dropout_rate": 0.18322493223818206,
+        "batch_size": 512,
+        "label_smoothing": 0.0
+      },
+      "survival": {
+        "hidden_dims": [
+          256,
+          256,
+          256
+        ],
+        "learning_rate": 0.00040810681340709546,
+        "dropout_rate": 0.23302786747050325,
+        "batch_size": 16
+      },
+      "repair_time": {
+        "hidden_dims": [
+          64,
+          32
+        ],
+        "learning_rate": 0.01994498281585769,
+        "dropout_rate": 0.007552809116995254,
+        "batch_size": 4
+      }
+    },
+    "seed": {
+      "value": 42,
+      "scope": "all five surrogates",
+      "mechanism": "pl.seed_everything(42, workers=True) + Trainer(deterministic=True) in each train()"
+    }
+  },
+  "hyperparameter_selection": {
+    "repair_time": {
+      "method": "Optuna search for the 12-feature repair surrogate",
+      "completed_trials": 50,
+      "selected_trial": 48,
+      "selected_objective_value": 8.336127281188965,
+      "objective": "validation NLL"
+    },
+    "other_surrogates": {
+      "retained_complete_study_records": false
+    }
+  },
+  "released_artifacts": {
+    "process_time_model.pt": "057190016ca42ce0e79ceed2089cb8f28cf83e28328f3920d525e32f7d0942ec",
+    "product_model.pt": "60eb171875f1e069a425c46427349cb527256b8560880ceec6135f14fd16a09e",
+    "transition_model.pt": "deef3fd6b869c173a278e1c41e5372aaccd37d7dbab76591f545badee3ec0e6e",
+    "survival_weibull_model.pt": "4de16b479bce36118f4edd4c53200384671d43628ec70c023f34e4d7a64d5e30",
+    "repair_time_model.pt": "cb0fba5e70eb10c811d1272193c027ba0cec9b993fcf929a743e5db9aaa10373"
+  },
+  "limitations": {
+    "hyperparameter_search_record": "The final selected settings are frozen here; complete search histories are not available for every surrogate."
+  },
+  "random_number_generator": {
+    "design": "five independent module streams via numpy SeedSequence.spawn(5)",
+    "streams": [
+      "process_time",
+      "transition",
+      "survival",
+      "repair",
+      "product"
+    ],
+    "implementation": "src/experiments/sim_runner.py::SimFactorySet._spawn_module_rngs",
+    "note": "All derivation and evaluation runs of this release use this generator design."
+  }
+}

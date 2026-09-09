@@ -1,0 +1,67 @@
+{
+  "encoding_maps": {
+    "station": {
+      "M1.1": 0,
+      "M1.2": 1,
+      "M2.1": 2,
+      "M2.2": 3,
+      "M3.1": 4,
+      "M3.2": 5,
+      "M4.1": 6,
+      "M4.2": 7,
+      "M5": 8
+    },
+    "feature_dim": 9
+  },
+  "feature_dim": 13,
+  "target_semantics": "raw_operating_time_seconds",
+  "features_normalized_in_prepare": false,
+  "feature_layout": [
+    {
+      "name": "station",
+      "offset": 0,
+      "size": 9,
+      "type": "one_hot"
+    },
+    {
+      "name": "prev_ttf",
+      "offset": 9,
+      "size": 1,
+      "type": "continuous"
+    },
+    {
+      "name": "prev_n_jobs",
+      "offset": 10,
+      "size": 1,
+      "type": "continuous"
+    },
+    {
+      "name": "mean_ttf",
+      "offset": 11,
+      "size": 1,
+      "type": "continuous"
+    },
+    {
+      "name": "prev_repair_time",
+      "offset": 12,
+      "size": 1,
+      "type": "continuous"
+    }
+  ],
+  "n_total": 1102,
+  "n_events": 1093,
+  "n_censored": 9,
+  "censoring_rate": 0.008166969147005444,
+  "vocab_fit_scope": "train_only",
+  "vocab_fit_train_ratio": 0.7,
+  "vocab_fit_n_train": 771,
+  "oov_stats": {
+    "station": {
+      "count": 0,
+      "ratio": 0.0
+    }
+  },
+  "duration_scale": 160991.21875,
+  "n_jobs_scale": 1833.8095703125,
+  "repair_time_scale": 1898.321044921875
+}

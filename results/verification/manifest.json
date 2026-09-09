@@ -1,0 +1,203 @@
+{
+  "schema_version": 2,
+  "description": "Derived verification tables supporting the DeepASMG article",
+  "evaluation": {
+    "closed_loop": {
+      "source_bundle": "closed_loop_runs.pkl",
+      "bundle_read": true,
+      "duration_days": 31,
+      "warmup_days": 1,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009
+      ],
+      "systems": [
+        "DeepSim",
+        "GroundSim",
+        "GroundSim-DEC",
+        "RefSim-M",
+        "RefSim-V",
+        "RefSim-W"
+      ],
+      "runs_per_system": {
+        "DeepSim": 10,
+        "GroundSim": 10,
+        "GroundSim-DEC": 10,
+        "RefSim-M": 10,
+        "RefSim-V": 10,
+        "RefSim-W": 10
+      },
+      "field_sources": {
+        "duration_days": "bundle.days, validated against runs_by_sim[*].meta.duration_days",
+        "warmup_days": "bundle.warmup, validated against runs_by_sim[*].meta.warmup_days",
+        "seeds": "bundle.seeds, validated against runs_by_sim[*].seed"
+      }
+    },
+    "shadow": {
+      "source_bundle": "shadow",
+      "bundle_read": true,
+      "duration_days": null,
+      "warmup_days": null,
+      "seeds": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004,
+        1005,
+        1006,
+        1007,
+        1008,
+        1009
+      ],
+      "systems": [
+        "DeepSim",
+        "GroundSim",
+        "RefSim-M",
+        "RefSim-V",
+        "RefSim-W"
+      ],
+      "components": [
+        "arrival",
+        "processing",
+        "repair",
+        "survival",
+        "transition"
+      ],
+      "field_sources": {
+        "duration_days": null,
+        "warmup_days": null,
+        "seeds": "derived from _seed_<seed> directory names"
+      },
+      "metadata_note": "The shadow CSV format records seed and simulated timestamps but does not serialize the requested evaluation and warm-up durations; those fields therefore remain null."
+    }
+  },
+  "files": {
+    "component_substitutions.csv": 370,
+    "hazard_params.csv": 9,
+    "hazard_true_grid.csv": 1800,
+    "kpi_absolute.csv": 960,
+    "kpi_bh.csv": 80,
+    "kpi_panel.csv": 80,
+    "observation_counts.csv": 80,
+    "processing_rescored/processing_setup_values.csv": 21,
+    "processing_rescored/scores_continuous_processing.csv": 50,
+    "routing_compare.csv": 376,
+    "scores_categorical.csv": 130,
+    "scores_continuous.csv": 150,
+    "sweep_draw31.csv": 50,
+    "sweep_draw365.csv": 50,
+    "sweep_horizon.csv": 60,
+    "system_distances.csv": 50,
+    "w1_wilcoxon.csv": 1
+  },
+  "processing_score_semantics": {
+    "canonical": {
+      "path": "processing_rescored/scores_continuous_processing.csv",
+      "semantics": "Total processing duration. The logged net realization is shifted by the configured station setup time; the GroundSim predictive mean is shifted by the same amount. This is the paper T7 source."
+    },
+    "legacy": {
+      "path": "scores_continuous.csv",
+      "selector": "component=processing",
+      "semantics": "Legacy scoring against the shadow log's net realization, with setup removed. Retained for auditability and not used as paper T7. Other components in this file are unaffected by the processing convention."
+    }
+  },
+  "paper_tables": {
+    "T7": {
+      "desc": "Continuous proper scores for processing under canonical total-duration semantics — CRPS/NLL",
+      "sources": [
+        "processing_rescored/scores_continuous_processing.csv"
+      ],
+      "supporting_sources": [
+        "processing_rescored/processing_setup_values.csv"
+      ],
+      "legacy_source": {
+        "path": "scores_continuous.csv (component=processing)",
+        "semantics": "Legacy net-duration scoring retained for auditability; it is not the canonical T7 source."
+      }
+    },
+    "T8": {
+      "desc": "KPI panel (16 KPIs × systems): mean(r_i), sd(r_i), ratio-of-means, p, q",
+      "sources": [
+        "kpi_panel.csv",
+        "kpi_bh.csv"
+      ]
+    },
+    "T9": {
+      "desc": "Per-seed throughput-time distances: W1 and KS per seed per system",
+      "sources": [
+        "system_distances.csv"
+      ]
+    },
+    "T12": {
+      "desc": "Routing probability comparison — L1/KL per realized (point, variant) conditional, support-matched across systems",
+      "sources": [
+        "routing_compare.csv"
+      ]
+    },
+    "T13": {
+      "desc": "System-level throughput time — W1/KS + Wilcoxon",
+      "sources": [
+        "system_distances.csv",
+        "w1_wilcoxon.csv"
+      ]
+    },
+    "T14": {
+      "desc": "System-level KPI panel — relative delta + paired Wilcoxon/BH",
+      "sources": [
+        "kpi_panel.csv",
+        "kpi_bh.csv"
+      ]
+    }
+  },
+  "paper_outputs": {
+    "component_scores": [
+      "processing_rescored/scores_continuous_processing.csv",
+      "scores_continuous.csv",
+      "scores_categorical.csv"
+    ],
+    "routing_comparison": [
+      "routing_compare.csv"
+    ],
+    "system_comparison": [
+      "system_distances.csv",
+      "w1_wilcoxon.csv",
+      "kpi_panel.csv",
+      "kpi_bh.csv"
+    ],
+    "data_sensitivity": [
+      "sweep_horizon.csv",
+      "sweep_draw31.csv",
+      "sweep_draw365.csv"
+    ],
+    "hazard_diagnostics": [
+      "hazard_true_grid.csv",
+      "hazard_params.csv"
+    ]
+  },
+  "last_production_run": {
+    "produced_csvs": {
+      "hazard_params.csv": 9,
+      "hazard_true_grid.csv": 1800,
+      "kpi_absolute.csv": 960,
+      "kpi_bh.csv": 80,
+      "kpi_panel.csv": 80,
+      "routing_compare.csv": 376,
+      "scores_categorical.csv": 130,
+      "scores_continuous.csv": 150,
+      "sweep_draw31.csv": 50,
+      "sweep_draw365.csv": 50,
+      "sweep_horizon.csv": 60,
+      "system_distances.csv": 50,
+      "w1_wilcoxon.csv": 1
+    }
+  }
+}

@@ -1,0 +1,75 @@
+{
+  "encoding_maps": {
+    "station": {
+      "M1.1": 0,
+      "M1.2": 1,
+      "M2.1": 2,
+      "M2.2": 3,
+      "M3.1": 4,
+      "M3.2": 5,
+      "M4.1": 6,
+      "M4.2": 7,
+      "M5": 8
+    },
+    "feature_dim": 12
+  },
+  "feature_dim": 12,
+  "features_normalized_in_prepare": false,
+  "feature_layout": [
+    {
+      "name": "station",
+      "offset": 0,
+      "size": 9,
+      "type": "one_hot"
+    },
+    {
+      "name": "operating_time",
+      "offset": 9,
+      "size": 1,
+      "type": "continuous"
+    },
+    {
+      "name": "utilization",
+      "offset": 10,
+      "size": 1,
+      "type": "continuous"
+    },
+    {
+      "name": "wear_ratio",
+      "offset": 11,
+      "size": 1,
+      "type": "continuous"
+    }
+  ],
+  "median_ttf_per_station": {
+    "M1.2": 150833.0,
+    "M1.1": 95860.0,
+    "M2.2": 257012.0,
+    "M3.1": 179303.0,
+    "M4.1": 171799.0,
+    "M3.2": 150921.0,
+    "M4.2": 202173.0,
+    "M5": 247268.0,
+    "M2.1": 250201.0
+  },
+  "n_total": 1093,
+  "y_mean": 1859.4044189453125,
+  "y_std": 2271.876220703125,
+  "y_min": 1.0,
+  "y_max": 30228.0,
+  "vocab_fit_scope": "train_only",
+  "vocab_fit_train_ratio": 0.7,
+  "vocab_fit_n_train": 765,
+  "oov_stats": {
+    "station": {
+      "count": 0,
+      "ratio": 0.0
+    }
+  },
+  "operating_time_mean": 160915.21875,
+  "operating_time_std": 63433.91015625,
+  "utilization_mean": 0.6537157893180847,
+  "utilization_std": 0.11488504707813263,
+  "wear_ratio_mean": 0.937445342540741,
+  "wear_ratio_std": 0.2332945615053177
+}

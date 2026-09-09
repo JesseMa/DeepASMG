@@ -1,0 +1,11 @@
+safeguard,runtime_function,category,counter_status
+routing-admissibility mask application,RefTransition._apply_mask_and_draw / foundation_dynamics.masked_categorical_draw; DeepTransition masked_fill+softmax,routine,"RefSim: mask_calls (persisted in run meta); DeepSim: native masked_fill, not separately counted"
+inadmissible probability-mass removal,masked_categorical_draw (removed_mass),routine,RefSim: mask_effective / mask_max_removed (persisted)
+renormalization after masking,masked_categorical_draw (weights/kept_mass),routine,RefSim: mask_effective = renormalization count (persisted)
+admissible-set sampling,rng.choice over renormalized admissible weights,routine,inherent contract operation; no separate counter
+zero-mass fallback (uniform over admissible),RefTransition (all admissible mass = 0 edge case),corrective,RefSim: mask_fallback (persisted) = 0 across all seeds/systems
+invalid target selected after masking,post-mask selected-target admissibility check,corrective,masked-rerun instrumentation = 0; not in main-run meta
+"duration clamp max(1.0, .)",GroundRepair/DeepRepair.predict_repair_time; processing draws,corrective,"NOT_PERSISTED (inline max, no counter)"
+"stress/parameter floor max(0.1, stress)",GroundRepair.predict_repair_time,corrective,NOT_PERSISTED
+deadlock detection and recovery,"DeadlockManager (_deadlock_count, _overflow_total_events)",corrective,counter EXISTS in DeadlockManager and engine run summary; NOT persisted to closed_loop_runs.pkl
+NaN/inf/negative probability sanitation,"positive-support heads (softplus/exp), masked_fill(-inf)+softmax",corrective,structurally prevented; no sanitation event counter

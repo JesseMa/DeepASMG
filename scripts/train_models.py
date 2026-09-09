@@ -1,0 +1,228 @@
+"""Trains all five DeepSim models and extracts RefSim parameters from the same
+training data.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import pickle
+import sys
+from pathlib import Path
+from typing import Any, Dict
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO))
+
+
+from src.config.simulation_config import (  # noqa: E402
+    HPO_TEST_SIZE, MAX_EPOCHS, PATIENCE, TRAIN_RATIO,
+)
+from src.fitting.deep_training.foundation_training import (  # noqa: E402
+    validate_deployment_eligibility,
+)
+from src.fitting.deep_training.train_process_time import train as train_pt  # noqa: E402
+from src.fitting.deep_training.train_transition import train as train_tr  # noqa: E402
+from src.fitting.deep_training.train_survival import train as train_sv  # noqa: E402
+from src.fitting.deep_training.train_repair_time import train as train_rt  # noqa: E402
+from src.fitting.deep_training.train_product import train as train_pr  # noqa: E402
+from src.fitting.ref_data_preparation.ref_analyzer import (  # noqa: E402
+    RefSimAnalyzer,
+)
+
+# Fallback hyperparameters: used only when <hpo_dir>/<model>_best_params.json
+# is missing (HPO skipped); otherwise _get_params() loads the HPO bests.
+
+DEFAULTS = {
+    "process_time": dict(
+        hidden_dims=(1024, 512), learning_rate=0.0007663220475444138,
+        dropout_rate=0.000406967799759779, batch_size=512,
+    ),
+    "transition": dict(
+        hidden_dims=(512, 256, 128, 64), learning_rate=9.580338067662231e-05,
+        dropout_rate=0.18322493223818206, batch_size=512,
+    ),
+    "survival": dict(
+        hidden_dims=(256, 256, 256), learning_rate=0.00040810681340709546,
+        dropout_rate=0.23302786747050325, batch_size=16,
+    ),
+    "repair_time": dict(
+        hidden_dims=(64, 32), learning_rate=0.01994498281585769,
+        dropout_rate=0.007552809116995254, batch_size=4,
+    ),
+    "product": dict(
+        hidden_dims=(1024, 512, 256, 128),
+        learning_rate=0.0006485269384423483,
+        dropout_rate=0.14228024469582387, batch_size=1024,
+    ),
+}
+
+# Display name and train() entry point per model, in training order.
+TRAINERS = (
+    ("process_time", "Process Time", train_pt),
+    ("transition",   "Transition",   train_tr),
+    ("survival",     "Survival",     train_sv),
+    ("repair_time",  "Repair Time",  train_rt),
+    ("product",      "Product",      train_pr),
+)
+
+
+def _get_params(model_name: str, hpo_dir: Path) -> Dict[str, Any]:
+    """Load HPO best params, fall back to DEFAULTS."""
+    try:
+        from scripts.optimize_hyperparameters import load_best_params
+        params = load_best_params(model_name, hpo_dir=hpo_dir)
+        print(f"  {model_name:<16} <- HPO best params")
+        return params
+    except (FileNotFoundError, ImportError):
+        print(f"  {model_name:<16} <- DEFAULT params")
+        return DEFAULTS[model_name]
+
+
+def train_all(
+    data_dir: Path,
+    model_dir: Path,
+    hpo_dir: Path,
+    max_epochs: int = MAX_EPOCHS,
+    patience: int = PATIENCE,
+    test_size: float = HPO_TEST_SIZE,
+) -> Dict[str, Dict[str, Any]]:
+    """Train all 5 DeepSim models and save results."""
+    model_dir.mkdir(parents=True, exist_ok=True)
+
+    print("Loading hyperparameters...")
+    params = {name: _get_params(name, hpo_dir) for name in DEFAULTS}
+
+    results = {}
+
+    for i, (name, label, train_fn) in enumerate(TRAINERS, 1):
+        print(f"\n[{i}/{len(TRAINERS)}] Training {label}...")
+        results[name] = train_fn(
+            data_dir=data_dir, model_dir=model_dir,
+            max_epochs=max_epochs, test_size=test_size,
+            patience=patience,
+            **params[name],
+        )
+        print(f"  val_loss={results[name]['best_val_loss']:.6f}  "
+              f"epochs={results[name]['epochs_trained']}")
+        validate_deployment_eligibility(name, model_dir)
+
+    model_paths = {
+        "pt_model_path":     results["process_time"]["model_path"],
+        "pt_metadata_path":  results["process_time"]["metadata_path"],
+        "pt_ckpt_path":      results["process_time"]["best_ckpt_path"],
+        "tr_model_path":     results["transition"]["model_path"],
+        "tr_metadata_path":  results["transition"]["metadata_path"],
+        "tr_ckpt_path":      results["transition"]["best_ckpt_path"],
+        "sv_model_path":     results["survival"]["model_path"],
+        "sv_metadata_path":  results["survival"]["metadata_path"],
+        "sv_ckpt_path":      results["survival"]["best_ckpt_path"],
+        "rt_model_path":     results["repair_time"]["model_path"],
+        "rt_metadata_path":  results["repair_time"]["metadata_path"],
+        "rt_ckpt_path":      results["repair_time"]["best_ckpt_path"],
+        "pr_model_path":     results["product"]["model_path"],
+        "pr_metadata_path":  results["product"]["metadata_path"],
+        "pr_ckpt_path":      results["product"]["best_ckpt_path"],
+    }
+
+    paths_file = model_dir / "trained_model_paths.json"
+    with open(paths_file, "w") as f:
+        json.dump(model_paths, f, indent=2)
+    print(f"\nModel paths saved to: {paths_file}")
+
+    print("\nExtracting RefSim parameters (chronological 70% train cut per run)...")
+    stat_analyzer = RefSimAnalyzer(data_dir=data_dir, train_ratio=TRAIN_RATIO)
+    stats_data = stat_analyzer.extract_all()
+    for cm in stats_data.get("train_cut_metadata", []):
+        print(
+            f"  {cm['run_key']}: kept {cm['n_train_events']:,}/{cm['n_total_events']:,} events"
+            f" (cut at t={cm['train_cut_timestamp']})"
+        )
+
+    stats_file = model_dir / "statistic_params.pkl"
+    with open(stats_file, "wb") as f:
+        pickle.dump(stats_data, f)
+    print(f"RefSim params saved to: {stats_file}")
+
+    print("\n" + "=" * 70)
+    print("TRAINING SUMMARY")
+    print("=" * 70)
+    print(f"{'Model':<18} {'Val Loss':>12} {'Epochs':>8}  Model File")
+    print("-" * 70)
+    for key, label, _ in TRAINERS:
+        r = results[key]
+        print(f"{label:<18} {r['best_val_loss']:>12.6f} {r['epochs_trained']:>8}  "
+              f"{Path(r['model_path']).name}")
+    print("=" * 70)
+
+    return results
+
+
+def find_newest_data_dir(parent: Path) -> Path:
+    """Newest generated data directory under `parent` (single selection rule,
+    shared with scripts.build_sensitivity_tree)."""
+    dirs = sorted(parent.rglob("data_4-stage-crossover-rework_*"))
+    if not dirs:
+        raise FileNotFoundError(f"no generated data directory under {parent}")
+    return dirs[-1]
+
+
+def _find_data_dir(data_dir_arg: str | None) -> Path:
+    if data_dir_arg:
+        p = Path(data_dir_arg)
+        if p.is_dir():
+            return p
+        raise FileNotFoundError(f"Data directory not found: {p}")
+
+    parent_path = Path("data/training")
+    if parent_path.exists():
+        try:
+            found = find_newest_data_dir(parent_path)
+        except FileNotFoundError:
+            pass
+        else:
+            print(f"Auto-detected data: {found}")
+            return found
+
+    raise FileNotFoundError(
+        "No training data found. Run generate_training_data.py first, "
+        "or specify --data-dir explicitly."
+    )
+
+
+def main():
+    parser = argparse.ArgumentParser(
+        description="Train all 5 DeepSim models + RefSim parameters.",
+    )
+    parser.add_argument("--data-dir", type=str, default=None,
+                        help="Path to training data directory with CSVs")
+    parser.add_argument("--model-dir", type=str, default="models",
+                        help="Output directory for models (default: models)")
+    parser.add_argument("--hpo-dir", type=str, default="models/hpo",
+                        help="Directory with HPO best params (default: models/hpo)")
+    parser.add_argument("--max-epochs", type=int, default=MAX_EPOCHS,
+                        help=f"Maximum training epochs (default: {MAX_EPOCHS})")
+    parser.add_argument("--patience", type=int, default=PATIENCE,
+                        help=f"Early stopping patience (default: {PATIENCE})")
+    args = parser.parse_args()
+
+    data_dir = _find_data_dir(args.data_dir)
+
+    print(f"Data:      {data_dir}")
+    print(f"Models:    {args.model_dir}")
+    print(f"HPO:       {args.hpo_dir}")
+    print(f"Epochs:    {args.max_epochs}  |  Patience: {args.patience}")
+    print()
+
+    train_all(
+        data_dir=data_dir,
+        model_dir=Path(args.model_dir),
+        hpo_dir=Path(args.hpo_dir),
+        max_epochs=args.max_epochs,
+        patience=args.patience,
+    )
+    print("\nDone.")
+
+
+if __name__ == "__main__":
+    main()

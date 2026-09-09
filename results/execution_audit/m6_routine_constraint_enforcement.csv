@@ -1,0 +1,7 @@
+system,routing_mask_calls,routing_renormalizations,routing_renorm_rate,nn_param_clip_processing,nn_param_clip_processing_calls,nn_param_clip_survival,nn_param_clip_survival_calls,repair_stress_floor_binds,repair_stress_calls
+GroundSim,0,0,NOT_APPLICABLE,0,0,0,0,0,932
+GroundSim-DEC,0,0,NOT_APPLICABLE,0,0,0,0,0,928
+DeepSim,4307435,4307435,1.0,73476,1745029,4,1026,0,0
+RefSim-M,4578237,0,0.0,0,0,0,0,0,0
+RefSim-V,4685780,0,0.0,0,0,0,0,0,0
+RefSim-W,4588502,0,0.0,0,0,0,0,0,0

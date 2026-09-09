@@ -1,0 +1,17 @@
+# Runtime dependencies, pinned to the versions the released models and result
+# tables were produced with (Python 3.14). Only packages imported by src/ and
+# scripts/ are listed; pip resolves the transitive closure.
+
+# Core: data, numerics, progress
+numpy==2.4.4
+pandas==3.0.2
+scipy==1.17.1
+tqdm==4.67.3
+
+# Deep-learning surrogates (training + inference)
+torch==2.11.0
+pytorch-lightning==2.6.1
+tensorboard==2.20.0          # via pytorch_lightning TensorBoardLogger (training)
+
+# Hyperparameter optimization (optimize_hyperparameters.py)
+optuna==4.8.0
