@@ -85,6 +85,13 @@ class DeepTransition(TransitionStrategy):
         self._end_token = self._metadata.get("end_token", END_TOKEN)
         self._none_token = self._metadata.get("none_token", NONE_TOKEN)
         self._offsets = compile_offsets(self._feature_layout)
+        if "visit" not in self._offsets:
+            raise ValueError(
+                "Fail fast: this transition model predates the visit-index "
+                "feature (integer time contract / repeat-visit routing). Its "
+                "input layout has no 'visit' block, so it cannot represent a "
+                "repeat-visit rule. Retrain with the current preparation."
+            )
 
         if "n_hist_slots" not in self._metadata:
             raise ValueError(
