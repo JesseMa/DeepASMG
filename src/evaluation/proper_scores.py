@@ -8,6 +8,8 @@ import numpy as np
 from scipy.special import gamma as gamma_fn, gammainc
 from scipy.stats import norm, weibull_min
 
+_MIN_PROB = 1e-300
+
 
 
 def crps_normal(mu: float, sigma: float, y: float) -> float:
@@ -81,6 +83,56 @@ def nll_weibull(shape: float, scale: float, y: float) -> float:
         raise ValueError(f"shape/scale must be > 0 (got {shape}, {scale}).")
     logpdf = weibull_min.logpdf(max(1e-12, float(y)), shape, scale=scale)
     return float(-logpdf)
+
+# --- Lattice scores -------------------------------------------------------
+#
+# Under the integer time contract every strategy returns ceil(X), so the law a
+# system actually deploys is the lattice law P(Y = k) = F(k) - F(k-1). These
+# functions score that law directly: the interval NLL is its log-likelihood and
+# the lattice CRPS is the CRPS definition evaluated on the step CDF
+# G(x) = F(floor(x)). Scoring a continuous density against whole-second
+# observations instead would reward a forecast shifted by half a bin.
+
+
+def interval_nll(cdf, k: float, *, lo: float = 0.0) -> float:
+    """-log P(Y = k) for Y = ceil(X) with CDF F, i.e. -log(F(k) - F(k-1))."""
+    upper = float(cdf(k))
+    lower = float(cdf(max(k - 1.0, lo)))
+    return float(-np.log(max(upper - lower, _MIN_PROB)))
+
+
+def survival_nll(cdf, k: float) -> float:
+    """-log S(k) for a right-censored whole-second observation."""
+    return float(-np.log(max(1.0 - float(cdf(k)), _MIN_PROB)))
+
+
+def lattice_crps(cdf, k: float, *, lo: int, hi: int) -> float:
+    """CRPS of the lattice law on the integer grid [lo, hi].
+
+    sum_j (F(j) - 1{j >= k})^2 over the support where F is neither 0 nor 1;
+    outside that range the summand vanishes, so the bounds only need to cover
+    the probability mass (see _support_bounds).
+    """
+    j = np.arange(lo, hi + 1, dtype=float)
+    F = np.asarray(cdf(j), dtype=float)
+    return float(np.sum((F - (j >= k)) ** 2))
+
+
+def _support_bounds(cdf, k: float, *, step: float, eps: float = 1e-9) -> tuple[int, int]:
+    """Integer range outside which the lattice CRPS summand is below eps.
+
+    Walks outward from the observation in multiples of `step` until F is within
+    eps of 0 below and of 1 above, so the sum is exact to that tolerance
+    regardless of how wide the distribution is.
+    """
+    lo = max(int(np.floor(k)) - 1, 0)
+    while lo > 0 and float(cdf(lo)) > eps:
+        lo = max(int(lo - step), 0)
+    hi = int(np.ceil(k)) + 1
+    while float(cdf(hi)) < 1.0 - eps:
+        hi = int(hi + step)
+    return lo, hi
+
 
 def compute_ece(
     confidences: Sequence[float],

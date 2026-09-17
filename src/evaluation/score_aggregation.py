@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
 import numpy as np
+from scipy.stats import norm
 
 from src.evaluation import proper_scores as ps
 from src.evaluation import bathtub_hazard as bathtub
@@ -28,26 +29,56 @@ def _parse(x) -> Optional[dict]:
         return None
 
 
-def continuous_scores(family: str, p: dict, y: float, censored: bool
-                      ) -> Tuple[Optional[float], float]:
-    """(CRPS|None if censored, NLL). NLL uses the survival term under censoring."""
+def _family_cdf(family: str, p: dict):
+    """CDF of the latent duration law; ceil() of it is what the system deploys."""
     if family == "normal":
-        return ps.crps_normal(p["mu"], p["sigma"], y), ps.nll_normal(p["mu"], p["sigma"], y)
+        mu, sigma = p["mu"], p["sigma"]
+        return lambda x: norm.cdf(x, mu, sigma)
     if family == "exponential":
         b = p["scale"]
-        nll = (y / b) if censored else ps.nll_exponential(b, y)  # −log S = y/β
-        crps = None if censored else ps.crps_exponential(b, y)
-        return crps, float(nll)
+        return lambda x: 1.0 - np.exp(-np.maximum(np.asarray(x, float), 0.0) / b)
     if family == "weibull":
         k, lam = p["shape"], p["scale"]
-        nll = ((max(y, 0.0) / lam) ** k) if censored else ps.nll_weibull(k, lam, y)  # −log S
-        crps = None if censored else ps.crps_weibull(k, lam, y)
-        return crps, float(nll)
+        return lambda x: 1.0 - np.exp(-(np.maximum(np.asarray(x, float), 0.0) / lam) ** k)
     if family == "bathtub":
-        nll = bathtub.bathtub_nll(y, p["scale"], censored, _BATHTUB)
-        crps = None if censored else bathtub.bathtub_crps(y, p["scale"], _BATHTUB)
-        return crps, float(nll)
+        scale = p["scale"]
+        surv = np.vectorize(
+            lambda x: bathtub.bathtub_survival(float(x), scale, _BATHTUB), otypes=[float]
+        )
+        return lambda x: 1.0 - surv(x)
     raise ValueError(f"Unknown family: {family}")
+
+
+def _crps_step(family: str, p: dict) -> float:
+    """Grid stride for the lattice CRPS support walk, one order below the scale."""
+    if family == "normal":
+        return max(float(p["sigma"]), 1.0)
+    if family == "exponential":
+        return max(float(p["scale"]) / 20.0, 1.0)
+    return max(float(p["scale"]) / 20.0, 1.0)
+
+
+def continuous_scores(family: str, p: dict, y: float, censored: bool
+                      ) -> Tuple[Optional[float], float]:
+    """(CRPS|None if censored, NLL) for a whole-second realization y.
+
+    Every duration a strategy returns is ceil() of its latent draw (integer
+    time contract), so the deployed predictive law is the lattice law
+    P(Y = k) = F(k) - F(k-1). Both scores are taken on that law: the NLL is its
+    log-likelihood, the CRPS is the CRPS definition applied to the step CDF.
+    Under censoring the NLL keeps the survival term and CRPS is not scored.
+    """
+    if censored and family == "normal":
+        raise ValueError(
+            "Fail fast: censoring is not defined for the normal family "
+            "(processing and repair durations always complete)."
+        )
+    cdf = _family_cdf(family, p)
+    if censored:
+        return None, ps.survival_nll(cdf, y)
+    nll = ps.interval_nll(cdf, y)
+    lo, hi = ps._support_bounds(cdf, y, step=_crps_step(family, p))
+    return ps.lattice_crps(cdf, y, lo=lo, hi=hi), nll
 
 
 def _mean_se(vals: List[float]) -> Tuple[float, float, int]:
