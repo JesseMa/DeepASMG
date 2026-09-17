@@ -75,7 +75,7 @@ class GroundTransition(TransitionStrategy):
 
         seq_rule = self._resolve_sequential_rule(station_id, order)
         if seq_rule is not None:
-            return self._apply_sequential(station_id, order, seq_rule)
+            return self._apply_sequential(station_id, key, seq_rule)
 
         distribution = self._distributions.get(station_id, {}).get(key)
         if distribution is None:
@@ -122,12 +122,11 @@ class GroundTransition(TransitionStrategy):
     def _apply_sequential(
         self,
         station_id: str,
-        order: "Order",
+        key: str,
         rule: Dict[str, Any],
     ) -> Optional[str]:
-        """Determine the target deterministically via the counter and increment it."""
-        # Count under the same key as used in transitions
-        key = order.resolve_transition_key(self._stations[station_id].transitions)
+        """Target from the per-key counter, incremented. `key` is the caller's
+        already-resolved transition key, counted under the same name."""
         counters = self._seq_counters[station_id]
         count = counters.get(key, 0)
 

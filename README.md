@@ -96,12 +96,17 @@ The release models are ready for inference in `models/`; retraining is not
 required to inspect or rerun the closed-loop verification.
 
 ```bash
-python -m scripts.run_closed_loop
-python -m scripts.run_shadow_evaluation
-python -m scripts.produce_results
-python -m scripts.run_substitutions
-python -m scripts.run_safeguard_audit
+python -m scripts.run_closed_loop        # 6 systems x 10 seeds -> closed_loop_runs.pkl
+python -m scripts.run_shadow_evaluation  # per-decision scoring bundle
+python -m scripts.run_substitutions      # two-way component substitutions
+python -m scripts.run_safeguard_audit    # instrumented rerun + safeguard counters
+python -m scripts.produce_results        # all result tables, after every producer
+python -m scripts.write_checksums        # refresh checksums.sha256
 ```
+
+`produce_results` runs last on purpose: it reads what the four producers above
+write. `write_checksums` regenerates the manifest from declared patterns rather
+than by hand.
 
 `run_substitutions` runs the two-way component substitutions reported in the article,
 together with the module-selection configuration (the learned core with the
@@ -124,15 +129,40 @@ five systems report on that one scale, so no reconciliation step is involved.
 The result manifest records this distinction and reports run metadata only when
 it is present in, or can be derived from, the corresponding raw bundle.
 
-## Retrain from synthetic data
+## Regenerate everything from scratch
 
-Training data are generated entirely by GroundSim:
+Training data are generated entirely by GroundSim. The full chain, in the one
+order that satisfies every dependency:
 
 ```bash
+# 1. derivation logs
 python -m scripts.generate_training_data
 TRAINING_DATA_DIR="$(find data/training -maxdepth 1 -type d -name 'data_*' | sort | tail -n 1)"
+
+# 2. hyperparameters (writes models/hpo/*_best_params.json)
+python -m scripts.optimize_hyperparameters --data-dir "$TRAINING_DATA_DIR"
+
+# 3. models + RefSim parameters + training manifest
 python -m scripts.train_models --data-dir "$TRAINING_DATA_DIR"
+
+# 4. experiments (any order among these four)
+python -m scripts.run_closed_loop
+python -m scripts.run_shadow_evaluation
+python -m scripts.run_substitutions
+python -m scripts.run_safeguard_audit
+
+# 5. tables, then the checksum manifest
+python -m scripts.produce_results
+python -m scripts.write_checksums
+
+# 6. optional: data-regime sweeps (hours; separate tree)
+python -m scripts.build_sensitivity_tree --root /path/to/sensitivity_tree
+python -m scripts.run_sensitivity_sweeps --sensitivity-root /path/to/sensitivity_tree
 ```
+
+Step 2 is not optional: `train_models` reads the search result and fails if it
+is absent, so that the production models and the sensitivity tree cannot end up
+on different hyperparameters.
 
 `train_models` contains the frozen production hyperparameters; the same settings
 and their provenance are recorded in `models/production_training_manifest.json`.
