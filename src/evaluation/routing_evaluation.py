@@ -45,11 +45,19 @@ def decision_points(process_config) -> List[str]:
             if len(admissible_targets(process_config, s.id)) > 1]
 
 
-def config_true_vector(process_config, station_id: str, features: Dict[str, str]) -> Dict[str, float]:
-    """True routing vector from the config (resolved variant key, normalized)."""
+def config_true_vector(
+    process_config, station_id: str, features: Dict[str, str], *, visit: int = 1,
+) -> Dict[str, float]:
+    """True routing vector from the config, normalized.
+
+    Resolved the same way the generator resolves it, visit index included, so
+    a station with a repeat-visit row is compared against what it actually
+    does rather than against its first-visit distribution.
+    """
     sc = {s.id: s for s in process_config.stations}[station_id]
-    order = Order(id="probe", features=features, timestamp_creation=0.0)
-    key = order.resolve_transition_key(sc.transitions)
+    order = Order(id="probe", features=features, timestamp_creation=0.0,
+                  visits={station_id: visit})
+    key = order.resolve_transition_key(sc.transitions, station_id=station_id)
     tm = sc.transitions[key]
     total = sum(tm.values())
     return {t: v / total for t, v in tm.items()}

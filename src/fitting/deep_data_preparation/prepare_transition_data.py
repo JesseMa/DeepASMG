@@ -33,6 +33,19 @@ from src.fitting.deep_data_preparation.split_helpers import (
 MAX_HIST_SLOTS = 10
 
 
+# Arrivals at the same station by the same order, capped so the vocabulary
+# stays finite; VISIT_CAP means "this many or more". Derived from the log, not
+# from the generator: it is the count of prior rows with the same order_id and
+# station. A station whose transition table carries a visit-indexed row routes
+# differently on a repeat visit, and this is what lets a surrogate see it.
+VISIT_CAP = 4
+
+
+def visit_token(n: int) -> str:
+    """Categorical token for the n-th arrival (1-based), capped at VISIT_CAP."""
+    return str(min(max(n, 1), VISIT_CAP))
+
+
 @dataclass
 class TransitionSample:
     modell: str
@@ -40,6 +53,9 @@ class TransitionSample:
     feature_b: str
 
     from_station: str
+
+    # Arrival index of this order at from_station (see visit_token).
+    visit: str
 
     # K-slot history per from_station; slot 0 = most recent, K-1 = oldest.
     hist_modells: Tuple[str, ...]
@@ -55,6 +71,7 @@ class TransitionEncodingMaps:
     feature_a: Dict[str, int] = field(default_factory=dict)
     feature_b: Dict[str, int] = field(default_factory=dict)
     from_station: Dict[str, int] = field(default_factory=dict)
+    visit: Dict[str, int] = field(default_factory=dict)
     # Slot-target vocabulary: NONE_TOKEN + the targets seen in the train slice.
     # Separate from to_station, which has no NONE and is fit on the full dataset.
     slot_target: Dict[str, int] = field(default_factory=dict)
@@ -71,6 +88,7 @@ class TransitionEncodingMaps:
             + len(self.feature_a)
             + len(self.feature_b)
             + len(self.from_station)
+            + len(self.visit)
             + self.n_hist_slots * per_slot
         )
 
@@ -173,9 +191,11 @@ def build_transition_samples(
         )
     )
 
+    visit_counts: Dict[Tuple[str, str], int] = defaultdict(int)
     samples = []
     for oid, features, from_station, to_station in transitions:
         buf = slot_buffers[from_station]
+        visit_counts[(oid, from_station)] += 1
 
         hist_modells = tuple(m for m, _ in buf)
         hist_targets = tuple(t for _, t in buf)
@@ -186,6 +206,7 @@ def build_transition_samples(
             feature_a=features.get("feature_a", NONE_TOKEN),
             feature_b=features.get("feature_b", NONE_TOKEN),
             from_station=from_station,
+            visit=visit_token(visit_counts[(oid, from_station)]),
             hist_modells=hist_modells,
             hist_targets=hist_targets,
             to_station=to_station,
@@ -219,6 +240,7 @@ def build_encoding_maps(
     fa_vals = sorted({s.feature_a for s in train_samples})
     fb_vals = sorted({s.feature_b for s in train_samples})
     from_vals = sorted({s.from_station for s in train_samples})
+    visit_vals = [visit_token(i) for i in range(1, VISIT_CAP + 1)]
 
     slot_target_train_vals = {t for s in train_samples for t in s.hist_targets}
     slot_target_train_vals.discard(NONE_TOKEN)
@@ -231,6 +253,7 @@ def build_encoding_maps(
         feature_a={v: i for i, v in enumerate(fa_vals)},
         feature_b={v: i for i, v in enumerate(fb_vals)},
         from_station={v: i for i, v in enumerate(from_vals)},
+        visit={v: i for i, v in enumerate(visit_vals)},
         slot_target={v: i for i, v in enumerate(slot_target_vals)},
         to_station={v: i for i, v in enumerate(to_vals)},
         n_hist_slots=n_hist_slots,
@@ -260,7 +283,8 @@ def encode_samples(
     off_fa = off_modell + n_mod
     off_fb = off_fa + len(maps.feature_a)
     off_from = off_fb + len(maps.feature_b)
-    off_hist_start = off_from + len(maps.from_station)
+    off_visit = off_from + len(maps.from_station)
+    off_hist_start = off_visit + len(maps.visit)
 
     def _slot_offsets(k: int) -> Tuple[int, int]:
         base = off_hist_start + k * (n_mod + n_slot_tgt)
@@ -271,6 +295,7 @@ def encode_samples(
         set_onehot(X[i], off_fa, maps.feature_a, s.feature_a)
         set_onehot(X[i], off_fb, maps.feature_b, s.feature_b)
         set_onehot(X[i], off_from, maps.from_station, s.from_station)
+        set_onehot(X[i], off_visit, maps.visit, s.visit)
         for k in range(K):
             off_m, off_t = _slot_offsets(k)
             set_onehot(X[i], off_m, maps.modell, s.hist_modells[k])
@@ -296,6 +321,7 @@ def save(
         ("feature_a", maps.feature_a),
         ("feature_b", maps.feature_b),
         ("from_station", maps.from_station),
+        ("visit", maps.visit),
     ]
     for k in range(maps.n_hist_slots):
         groups.append((f"hist_modell_{k}", maps.modell))

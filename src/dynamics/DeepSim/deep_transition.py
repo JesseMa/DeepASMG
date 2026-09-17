@@ -15,6 +15,8 @@ from typing import Any, Deque, Dict, Optional, Set, Tuple, TYPE_CHECKING
 
 import numpy as np
 
+_VISIT_CAP = 4
+
 from src.dynamics.foundation_dynamics import (
     TransitionStrategy, set_onehot, NONE_TOKEN, END_TOKEN, load_deep_model,
     compile_offsets, infer_single, weighted_draw,
@@ -23,6 +25,11 @@ from src.dynamics.foundation_dynamics import (
 if TYPE_CHECKING:
     from src.config.schema import StationConfig
     from src.simulation.order import Order
+
+
+def _visit_token(n: int) -> str:
+    """Arrival index token, mirroring prepare_transition_data.visit_token."""
+    return str(min(max(int(n), 1), _VISIT_CAP))
 
 
 class DeepTransition(TransitionStrategy):
@@ -216,6 +223,8 @@ class DeepTransition(TransitionStrategy):
                    features.get("feature_b", none))
         set_onehot(x, self._offsets["from_station"], maps["from_station"],
                    station_id)
+        set_onehot(x, self._offsets["visit"], maps["visit"],
+                   _visit_token(order.visits.get(station_id, 1)))
 
         buf = self._slot_buffers.get(station_id)
         if buf is None:
