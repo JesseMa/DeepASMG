@@ -5,7 +5,9 @@ training data.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
+import platform
 import pickle
 import sys
 from pathlib import Path
@@ -16,7 +18,7 @@ sys.path.insert(0, str(REPO))
 
 
 from src.config.simulation_config import (  # noqa: E402
-    HPO_TEST_SIZE, MAX_EPOCHS, PATIENCE, TRAIN_RATIO,
+    HPO_TEST_SIZE, MAX_EPOCHS, PATIENCE, TRAIN_RATIO, TRAIN_SEED,
 )
 from src.fitting.deep_training.foundation_training import (  # noqa: E402
     validate_deployment_eligibility,
@@ -41,6 +43,97 @@ TRAINERS = (
     ("repair_time",  "Repair Time",  train_rt),
     ("product",      "Product",      train_pr),
 )
+
+
+# Prose fields of the training manifest: the only part a machine cannot derive.
+MANIFEST_PROSE = {
+    "schema_version": 2,
+    "description": "Training configuration of the DeepASMG release model set, "
+                   "emitted by scripts/train_models.py at training time.",
+    "release_model_set": "DeepASMG v1.0.0",
+    "path_base": "repository_root",
+}
+
+
+def _sha256(path: Path) -> str:
+    h = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _write_manifest(
+    model_dir: Path, data_dir: Path, params: Dict[str, Any],
+    results: Dict[str, Dict[str, Any]], max_epochs: int, patience: int,
+    test_size: float,
+) -> Path:
+    """Emit production_training_manifest.json from what actually ran.
+
+    Everything here is read off the run itself — the data directory's
+    run_metadata, the hyperparameters that were loaded, the training constants
+    and the resulting artifacts — so the manifest cannot drift from the models
+    it describes.
+    """
+    run_meta_path = data_dir / "run_metadata.json"
+    run_meta = json.loads(run_meta_path.read_text()) if run_meta_path.exists() else {}
+
+    logs = {}
+    for label, pattern in (("event_log", "*_events_*.csv"), ("order_log", "*_orders_*.csv")):
+        found = sorted(data_dir.glob(pattern))
+        if found:
+            logs[label] = {
+                "excluded_release_path": str(found[0].relative_to(REPO))
+                if found[0].is_relative_to(REPO) else str(found[0]),
+                "sha256": _sha256(found[0]),
+            }
+
+    artifacts = {}
+    for name, _, _ in TRAINERS:
+        model_path = Path(results[name]["model_path"])
+        if model_path.exists():
+            artifacts[name] = {
+                "model": str(model_path.relative_to(REPO))
+                if model_path.is_relative_to(REPO) else str(model_path),
+                "sha256": _sha256(model_path),
+                "best_val_loss": float(results[name]["best_val_loss"]),
+                "epochs_trained": int(results[name]["epochs_trained"]),
+            }
+
+    manifest = {
+        **MANIFEST_PROSE,
+        "environment": {
+            "python": platform.python_version(),
+            "requirements_file": "requirements.txt",
+        },
+        "training_data": {
+            "generator": "GroundSim",
+            "directory": data_dir.name,
+            **{k: v for k, v in run_meta.items()},
+            **logs,
+        },
+        "split": {
+            "method": "chronological",
+            "train_fraction": TRAIN_RATIO,
+            "validation_fraction": test_size,
+            "test_fraction": test_size,
+            "refsim_train_fraction": TRAIN_RATIO,
+        },
+        "training": {
+            "max_epochs": max_epochs,
+            "early_stopping_patience": patience,
+            "optimizer": "Adam",
+            "scheduler": {"name": "ReduceLROnPlateau", "factor": 0.5},
+            "export_format": "TorchScript",
+            "seed": TRAIN_SEED,
+            "hyperparameters": {k: dict(v) for k, v in params.items()},
+        },
+        "artifacts": artifacts,
+    }
+
+    out = model_dir / "production_training_manifest.json"
+    out.write_text(json.dumps(manifest, indent=2, sort_keys=False) + "\n")
+    return out
 
 
 def _get_params(model_name: str, hpo_dir: Path) -> Dict[str, Any]:
@@ -113,6 +206,11 @@ def train_all(
     with open(paths_file, "w") as f:
         json.dump(model_paths, f, indent=2)
     print(f"\nModel paths saved to: {paths_file}")
+
+    manifest_file = _write_manifest(
+        model_dir, data_dir, params, results, max_epochs, patience, test_size,
+    )
+    print(f"Training manifest saved to: {manifest_file}")
 
     print("\nExtracting RefSim parameters (chronological 70% train cut per run)...")
     stat_analyzer = RefSimAnalyzer(data_dir=data_dir, train_ratio=TRAIN_RATIO)
