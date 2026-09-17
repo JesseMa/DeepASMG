@@ -29,8 +29,6 @@ class GroundTransition(TransitionStrategy):
     # would otherwise give a geometric tail with rare, very high visit counts.
     # The cap lives in the strategy, not in the config probabilities, so the
     # per-visit probabilities keep their domain meaning.
-    M5_STATION_ID = "M5"
-    M5_MAX_VISITS = 3
 
     def __init__(self, rng: np.random.Generator) -> None:
         self._rng = rng
@@ -41,14 +39,12 @@ class GroundTransition(TransitionStrategy):
         # {station_id: {resolved_key: order_count_so_far}}
         self._seq_counters: Dict[str, Dict[str, int]] = {}
         # {order_id: M5 visits so far}
-        self._m5_visits: Dict[str, int] = {}
 
     def initialize(self, stations: Dict[str, "StationConfig"]) -> None:
         self._stations = stations
         self._distributions = {}
         self._seq_configs = {}
         self._seq_counters = {}
-        self._m5_visits = {}
 
         for station_id, config in stations.items():
             by_key: Dict[str, tuple[List[str], np.ndarray]] = {}
@@ -74,16 +70,8 @@ class GroundTransition(TransitionStrategy):
         available_targets: Optional[Set[str]] = None,
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[str]:
-        # M5 visit cap: force End after M5_MAX_VISITS visits (checked before the draw).
-        if station_id == self.M5_STATION_ID:
-            n_visits = self._m5_visits.get(order.id, 0) + 1
-            self._m5_visits[order.id] = n_visits
-            if n_visits >= self.M5_MAX_VISITS:
-                self._m5_visits.pop(order.id, None)
-                return None
-
         config = self._stations[station_id]
-        key = order.resolve_transition_key(config.transitions)
+        key = order.resolve_transition_key(config.transitions, station_id=station_id)
 
         seq_rule = self._resolve_sequential_rule(station_id, order)
         if seq_rule is not None:
@@ -97,10 +85,7 @@ class GroundTransition(TransitionStrategy):
 
         targets, weights = distribution
         result = weighted_draw(targets, weights, self._rng)
-        if result == END_TOKEN:
-            self._m5_visits.pop(order.id, None)
-            return None
-        return result
+        return None if result == END_TOKEN else result
 
     def distribution_params(
         self,
@@ -111,11 +96,12 @@ class GroundTransition(TransitionStrategy):
     ) -> Dict[str, object]:
         """True categorical routing distribution (config, post-mask).
 
-        The deterministic overrides (sequential_routing, M5 visit cap) are not
-        categorical and are not represented here.
+        Visit-indexed rows resolve like any other, so a repeat-visit rule is
+        represented here. Sequential routing stays deterministic and is not;
+        its long-run marginal equals the tabulated distribution.
         """
         config = self._stations[station_id]
-        key = order.resolve_transition_key(config.transitions)
+        key = order.resolve_transition_key(config.transitions, station_id=station_id)
         dist = self._distributions.get(station_id, {}).get(key)
         if dist is None:
             return {"family": "categorical", "probs": {}}

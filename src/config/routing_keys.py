@@ -1,8 +1,13 @@
 """Routing-key resolution.
 
 Order features resolve against transitions/process_times dicts in fixed
-specificity order: "{model}_{fa}_{fb}", "{model}_{fa}", "{model}_{fb}",
-"{model}", then "*" if wildcards are enabled.
+specificity order: "visit_{n}" when a visit index is supplied, then
+"{model}_{fa}_{fb}", "{model}_{fa}", "{model}_{fb}", "{model}", and finally
+"*" if wildcards are enabled.
+
+A station that routes differently on a repeat visit declares that as a
+"visit_{n}" entry in its transition table, so the rule stays a lookup like
+every other and remains expressible as a categorical distribution.
 """
 
 from __future__ import annotations
@@ -36,17 +41,21 @@ def product_type_key(features: Dict[str, str]) -> str:
     return features["modell"]
 
 
-def build_candidate_keys(features: Dict[str, str], *, wildcard: bool) -> List[str]:
+def build_candidate_keys(
+    features: Dict[str, str], *, wildcard: bool, visit: int | None = None,
+) -> List[str]:
     """Build the candidate key list from most specific to most general."""
     if "modell" not in features:
         raise KeyError(
             f"Feature 'modell' missing in features={features}. "
             f"Every order must have a 'modell' feature."
         )
+    candidates: List[str] = []
+    if visit is not None:
+        candidates.append(f"visit_{visit}")
     model = features["modell"]
     fa = features.get("feature_a", "")
     fb = features.get("feature_b", "")
-    candidates: List[str] = []
     if fa and fb:
         candidates.append(f"{model}_{fa}_{fb}")
     if fa:
@@ -65,11 +74,12 @@ def resolve_key(
     *,
     wildcard: bool,
     default: Any = _MISSING,
+    visit: int | None = None,
 ) -> Any:
     """First candidate key present in `lookup`. Raises KeyError on no match
     unless `default` is given.
     """
-    for key in build_candidate_keys(features, wildcard=wildcard):
+    for key in build_candidate_keys(features, wildcard=wildcard, visit=visit):
         if key in lookup:
             return key
     if default is _MISSING:

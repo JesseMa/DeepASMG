@@ -138,6 +138,7 @@ class SimulationEngine:
             )
 
     def _accept_order(self, station: Station, order: Order) -> None:
+        order.visits[station.id] = order.visits.get(station.id, 0) + 1
         process_time = self._get_process_time(station, order)
         station.start_processing(order)
 
