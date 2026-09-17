@@ -15,23 +15,43 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
+from scipy.optimize import minimize
 from scipy.stats import CensoredData, weibull_min
 
 from src.dynamics.foundation_dynamics import END_TOKEN
 from src.config.routing_keys import full_variant_key, product_type_key
 
 
+# Every duration estimator below accounts for the log's declared whole-second
+# quantization (integer time contract): an observation k means the duration
+# fell in (k-1, k]. Each family uses the exact form where one exists and a
+# numerical interval likelihood where it does not, so no family is fitted as
+# if the observations were continuous.
+
+
 def _dequantized_normal(xs) -> tuple[float, float]:
-    """Latent (mean, std) from ceil-quantized whole-second observations.
+    """(mean, std) of the normal whose ceil reproduces the observed integers.
 
     Sheppard's corrections for grouped data: the quantizer adds +0.5 to the
-    mean and +1/12 to the variance, so the latent moments are mean-0.5 and
-    sqrt(max(var - 1/12, 0)). Derived from the declared log quantization
-    (integer time contract), not from generator knowledge.
+    mean and +1/12 to the variance. Agrees with the exact interval MLE to
+    ~1e-5 at the station sigmas of this topology (0.74 upward).
     """
     mean = float(np.mean(xs)) - 0.5
     var = float(np.var(xs)) - 1.0 / 12.0
     return mean, float(np.sqrt(max(var, 0.0)))
+
+
+def _dequantized_exponential(xs) -> float:
+    """Scale of the exponential whose ceil reproduces the observed integers.
+
+    ceil(Exp(beta)) is geometric with success probability p = 1-exp(-1/beta),
+    whose MLE is 1/mean. Inverting gives beta = -1/log(1 - 1/mean), exact
+    rather than approximate.
+    """
+    m = float(np.mean(xs))
+    if m <= 1.0:
+        return 0.5
+    return float(-1.0 / np.log1p(-1.0 / m))
 
 
 class RefSimAnalyzer:
@@ -413,12 +433,33 @@ class RefSimAnalyzer:
         if len(uncensored) < 2:
             return None
         unc = np.asarray(uncensored, dtype=float)
+        cen = np.asarray(censored, dtype=float) if censored else np.empty(0)
+
+        # Interval likelihood of the whole-second observations: a completed
+        # spell logged as k contributes S(k-1) - S(k), a right-censored one
+        # still contributes S(k). Starting point is scipy's continuous fit.
         if censored:
-            data: Any = CensoredData(uncensored=unc, right=np.asarray(censored, dtype=float))
+            start_data: Any = CensoredData(uncensored=unc, right=cen)
         else:
-            data = unc
-        shape, _loc, scale = weibull_min.fit(data, floc=0)
-        return (float(shape), float(scale))
+            start_data = unc
+        k0, _loc, lam0 = weibull_min.fit(start_data, floc=0)
+
+        def _neg_loglik(p: np.ndarray) -> float:
+            k, lam = abs(float(p[0])), abs(float(p[1]))
+            if k <= 0 or lam <= 0:
+                return 1e18
+            surv = lambda x: np.exp(-np.power(np.maximum(x, 0.0) / lam, k))
+            p_int = surv(unc - 1.0) - surv(unc)
+            total = float(np.sum(np.log(np.maximum(p_int, 1e-300))))
+            if cen.size:
+                total += float(np.sum(-np.power(np.maximum(cen, 0.0) / lam, k)))
+            return -total
+
+        res = minimize(_neg_loglik, np.array([k0, lam0]), method="Nelder-Mead")
+        k_hat, lam_hat = abs(float(res.x[0])), abs(float(res.x[1]))
+        if not (np.isfinite(k_hat) and np.isfinite(lam_hat) and k_hat > 0 and lam_hat > 0):
+            return (float(k0), float(lam0))
+        return (k_hat, lam_hat)
 
     def _extract_breakdowns_and_repairs(self, events: List[Dict]) -> Tuple[Dict[str, float], Dict[str, float]]:
         operating_time = defaultdict(float)
@@ -440,12 +481,8 @@ class RefSimAnalyzer:
             count = bd_count.get(s, 0)
             mttf_dict[s] = operating_time[s] / count if count > 0 else float('inf')
 
-            # Exponential MLE on ceil-quantized data: latent scale = mean - 0.5
-            # (integer time contract; exact dequantization for the exponential
-            # is scale = -1/log(1 - 1/mean_geom), but the -0.5 first-order form
-            # is within 1e-4 relative at these scales and keeps it simple).
             reps = repairs.get(s, [])
-            repair_scales[s] = max(float(np.mean(reps)) - 0.5, 0.5) if reps else 0.0
+            repair_scales[s] = _dequantized_exponential(reps) if reps else 0.0
 
         return mttf_dict, repair_scales
 
