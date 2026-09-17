@@ -356,7 +356,6 @@ def _collect_safeguards(cfg: SimulationConfig, engine: "SimulationEngine") -> di
     dm = getattr(engine, "_deadlock", None)
     out["deadlock"] = {
         "deadlock_count": int(getattr(dm, "deadlock_count", 0)),
-        "overflow_total_events": int(getattr(dm, "overflow_total_events", 0)),
     }
     return out
 

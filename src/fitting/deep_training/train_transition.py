@@ -10,13 +10,13 @@ import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
+from src.config.simulation_config import TRAIN_SEED
 from src.fitting.deep_training.foundation_training import (
     three_way_split, make_loaders, train_lightning_model, cached_prepare,
     BaseTrainingModule, save_eval_artifact,
 )
 
 
-TRAIN_SEED: int = 42
 
 
 class TransitionLightningModule(BaseTrainingModule, pl.LightningModule):

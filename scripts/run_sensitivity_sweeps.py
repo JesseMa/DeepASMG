@@ -35,7 +35,13 @@ REFERENCE_FACTORIES = {
 def _run_config(
     name: str, data_dir: Path, model_dir: Path, ref_variants, seeds,
     shared: dict, *, with_dec: bool = False,
-) -> dict:
+) -> tuple[dict, "SimFactorySet"]:
+    """Run one sweep configuration; returns (runs, factory set).
+
+    The factory set is returned so callers that need more replications on the
+    same fit do not rebuild the analyzer, and it is deliberately NOT part of
+    the runs dict so it can never reach the pickle.
+    """
     print(f"\n[{name}] refit RefSim (extended analyzer) on {data_dir.name} …")
     stats = RefSimAnalyzer(data_dir=data_dir, train_ratio=TRAIN_RATIO).extract_all()
     fs = SimFactorySet(model_paths=load_model_paths(model_dir), stats_data=stats)
@@ -57,7 +63,7 @@ def _run_config(
                                         return_kpis=True, return_ct=True)
         out["provenance"][sysname] = "recomputed (RefSim refit)"
         print(f"  {sysname:10} recomputed ({time.time()-t0:.0f}s)")
-    return out
+    return out, fs
 
 
 def _hybrid_factory(fs: SimFactorySet, *, stat_survival: bool):
@@ -127,7 +133,7 @@ def _sweep_horizon(args: argparse.Namespace, seeds, shared: dict, result: dict) 
         if data_dir is None or not (model_dir / "trained_model_paths.json").exists():
             print(f"[skip horizon {hd.name}] data/model missing")
             continue
-        result["horizon"][hd.name] = _run_config(
+        result["horizon"][hd.name], _ = _run_config(
             f"horizon/{hd.name}", data_dir, model_dir, ["refm"], seeds, shared)
         _dump(args.output_file, result)
 
@@ -144,7 +150,7 @@ def _sweep_draw365(args: argparse.Namespace, seeds, shared: dict, result: dict) 
         if data_dir is not None and (model_dir / "trained_model_paths.json").exists():
             draws.append((sd.name, data_dir, model_dir))
     for name, data_dir, model_dir in draws[:N_DRAW365_CONFIGS]:
-        result["draw365"][name] = _run_config(
+        result["draw365"][name], _ = _run_config(
             f"draw365/{name}", data_dir, model_dir, ["refm", "refv", "refw"],
             seeds, shared, with_dec=True)
         _dump(args.output_file, result)
@@ -162,11 +168,9 @@ def _sweep_draw31(args: argparse.Namespace, seeds, shared: dict, result: dict) -
         data_dir = _first_data_dir(sub)
         if data_dir is None or not (model_dir / "trained_model_paths.json").exists():
             continue
-        cfg_runs = _run_config(
+        cfg_runs, fs31 = _run_config(
             f"draw31/{sub.name}", data_dir, model_dir, ["refm"],
             seeds, shared, with_dec=True)
-        stats31 = RefSimAnalyzer(data_dir=data_dir, train_ratio=TRAIN_RATIO).extract_all()
-        fs31 = SimFactorySet(model_paths=load_model_paths(model_dir), stats_data=stats31)
         for key, sv in (("DeepSim-StatRepair", False), ("DeepSim-StatRepair-StatSurvival", True)):
             t0 = time.time()
             cfg_runs[key] = run_replications(

@@ -15,12 +15,12 @@ import sys
 from pathlib import Path
 
 import pandas as pd
-from scipy.stats import ks_2samp, wasserstein_distance
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
 
+from src.evaluation import system_evaluation as system  # noqa: E402
 from src.experiments.ablation_runner import CONFIGS, run_ablation_grid  # noqa: E402
 from src.config.simulation_config import N_RUNS, get_seeds  # noqa: E402
 
@@ -75,10 +75,11 @@ def main() -> None:
         labels = _label(configuration)
         if not labels:
             continue
-        for run in runs:
-            reference = target[run["seed"]]
-            w1 = float(wasserstein_distance(reference, run["ct"]))
-            ks_d = float(ks_2samp(reference, run["ct"]).statistic)
+        paired = system.per_seed_distances(
+            [{"seed": r["seed"], "ct": target[r["seed"]]} for r in runs], runs,
+        )
+        for run, dist in zip(runs, paired, strict=True):
+            w1, ks_d = dist["w1"], dist["ks_d"]
             for direction, component in labels:
                 rows.append({
                     "direction": direction,

@@ -96,6 +96,12 @@ def filter_and_join(
         if event.order_id == "BREAKDOWN":
             skipped_system += 1
             continue
+        if event.station_type == "overflow":
+            # Deadlock displacement rows carry a real order_id but a zero
+            # duration, which violates the integer contract's >= 1 s invariant
+            # and would become a zero-target training sample.
+            skipped_system += 1
+            continue
 
         features = orders.get(event.order_id)
         if features is None:

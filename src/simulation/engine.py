@@ -117,7 +117,6 @@ class SimulationEngine:
         if self._deadlock.deadlock_count > 0:
             print(
                 f"  Deadlocks resolved: {self._deadlock.deadlock_count}, "
-                f"Total overflow events: {self._deadlock.overflow_total_events}, "
                 f"Remaining in overflow: {self._deadlock.overflow_size}"
             )
 

@@ -26,6 +26,14 @@ class Event:
 
 
 class EventQueue:
+    """Min-heap of events, ordered by (time, _seq).
+
+    Integer time contract: every scheduled time is a whole second, so events
+    that fall in the same tick are genuinely simultaneous and their order is
+    decided by _seq — insertion order, i.e. FIFO — not by sub-second precision
+    the model does not have.
+    """
+
     def __init__(self) -> None:
         self._heap: list[Event] = []
         self._seq: int = 0
@@ -38,6 +46,11 @@ class EventQueue:
         order_id: Optional[str] = None,
         data: Any = None,
     ) -> None:
+        if float(time) != int(time):
+            raise ValueError(
+                f"Fail fast: event time must be whole seconds (integer time "
+                f"contract), got {time} for {event_type} at {station_id}."
+            )
         event = Event(
             time=time,
             _seq=self._seq,

@@ -160,17 +160,6 @@ Retraining replaces the release models in `models/`; use a separate
 
 ## Additional commands
 
-`scripts.validate_preconditions` is a fail-fast checklist run before a bundled
-verification run. It refits `models/statistic_params.pkl` with the extended
-analyzer and verifies that the station-marginal keys stay bit-identical so the
-RefSim-M input is unchanged. It aborts before writing the new pickle if any
-check fails. The default is check-only; `--write` rewrites
-`models/statistic_params.pkl` (a checksummed artifact).
-
-```bash
-python -m scripts.validate_preconditions --data-dir "$TRAINING_DATA_DIR"
-```
-
 `scripts.build_sensitivity_tree` rebuilds the sensitivity-configuration tree —
 one training-data draw and one trained model set per derivation horizon and per
 derivation seed — that the data-regime analysis needs. This is a long-running

@@ -32,6 +32,7 @@ WARMUP_DAYS      = 1      # Eval warmup before recording
 N_RUNS           = 10     # CRN replications per simulator
 SEED_BASE        = 1000
 SEED_OFFSET_FLOOR = 10_000  # Offset for the decorrelated floor configurations
+TRAIN_SEED = 42            # torch/lightning seed for every model training run
 INITIAL_ORDERS   = 10
 MAX_EPOCHS       = 100
 PATIENCE         = 15     # Early-stopping patience

@@ -8,6 +8,12 @@ Abstract base classes for the five simulation mechanisms.
     ProductStrategy      (pr) → attributes of the next released order
 
 The two-letter keys index the trained-model registry and the ablation runner.
+
+Integer time contract: every duration a strategy returns (process time, repair
+duration, time to failure) is whole seconds, rounded exactly once here at the
+module boundary. The kernel never rounds again, so the logged duration is the
+executed one and a surrogate fitted on the log can reproduce it without a
+second discretization.
 """
 
 from abc import ABC, abstractmethod

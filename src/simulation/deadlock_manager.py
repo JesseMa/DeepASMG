@@ -27,7 +27,6 @@ class DeadlockManager:
     def reset(self) -> None:
         self._overflow_orders.clear()
         self._deadlock_count: int = 0
-        self._overflow_total_events: int = 0
         self._resolutions_this_step: int = 0
 
     def reset_step_counter(self) -> None:
@@ -41,10 +40,6 @@ class DeadlockManager:
     @property
     def overflow_size(self) -> int:
         return sum(len(q) for q in self._overflow_orders.values())
-
-    @property
-    def overflow_total_events(self) -> int:
-        return self._overflow_total_events
 
     def detect_cycle(
         self,
@@ -110,7 +105,6 @@ class DeadlockManager:
         order, original_target = source_station.pop_departure()
         self._overflow_orders[original_target].append(order)
         self._deadlock_count += 1
-        self._overflow_total_events += 1
         self._resolutions_this_step += 1
 
         recorder.record_process_step(

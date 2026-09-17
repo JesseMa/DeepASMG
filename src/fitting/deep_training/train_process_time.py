@@ -11,12 +11,12 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 
+from src.config.simulation_config import TRAIN_SEED
 from src.fitting.deep_training.foundation_training import (
     three_way_split, make_loaders, train_lightning_model, cached_prepare,
     GaussianNLLModule, save_eval_artifact,
 )
 
-TRAIN_SEED: int = 42
 
 
 class ProcessTimeLightningModule(GaussianNLLModule, pl.LightningModule):

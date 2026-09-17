@@ -158,7 +158,6 @@ def aggregate(runs_by_sim, audit_dir=AUDIT_DIR):
             "ttf_log0_guard": s(sysn, "survival.ttf_logu_guard"),
             "zero_mass_routing_fallback": s(sysn, "ref_mask_fallback"),
             "deadlock_detections_recoveries": s(sysn, "deadlock.deadlock_count"),
-            "overflow_total_events": s(sysn, "deadlock.overflow_total_events"),
         })
     if not corr_rows:
         raise SystemExit("No systems in the instrumented rerun: corrective-safeguard "
@@ -218,7 +217,6 @@ def main():
             "ttf_log0_guard": sum(r["ttf_log0_guard"] for r in corr_rows),
             "zero_mass_routing_fallback": sum(r["zero_mass_routing_fallback"] for r in corr_rows),
             "deadlock_detections_recoveries": sum(r["deadlock_detections_recoveries"] for r in corr_rows),
-            "overflow_total_events": sum(r["overflow_total_events"] for r in corr_rows),
         },
     }
     (args.output_dir / "m6_safeguard_audit.json").write_text(

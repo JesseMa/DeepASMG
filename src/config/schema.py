@@ -18,6 +18,19 @@ class StationConfig:
     ttf_scale_seconds: float = 0.0
     sequential_routing: Dict[str, Dict[str, Any]] = field(default_factory=dict)
 
+    def __post_init__(self) -> None:
+        # Integer time contract: durations the kernel schedules on directly must
+        # be whole seconds, otherwise the engine clock would round them a second
+        # time. setup_time enters through a strategy that ceils its total, so it
+        # is exempt.
+        for name in ("transit_time",):
+            value = getattr(self, name)
+            if float(value) != int(value):
+                raise ValueError(
+                    f"Fail fast: {self.id}.{name} must be whole seconds "
+                    f"(integer time contract), got {value}."
+                )
+
 
 @dataclass
 class ProcessConfig:
