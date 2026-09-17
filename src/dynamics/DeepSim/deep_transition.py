@@ -17,7 +17,7 @@ import numpy as np
 
 from src.dynamics.foundation_dynamics import (
     TransitionStrategy, set_onehot, NONE_TOKEN, END_TOKEN, load_deep_model,
-    compile_offsets, infer_single,
+    compile_offsets, infer_single, weighted_draw,
 )
 
 if TYPE_CHECKING:
@@ -161,7 +161,7 @@ class DeepTransition(TransitionStrategy):
                 self._sg_mask_effective = getattr(self, "_sg_mask_effective", 0) + 1
 
         probs = self._compute_probs(station_id, order, available_targets)
-        chosen_idx = self._rng.choice(self._num_classes, p=probs)
+        chosen_idx = weighted_draw(self._num_classes, probs, self._rng)
         chosen_station = self._class_names[chosen_idx]
 
         modell = order.features.get("modell", self._none_token)

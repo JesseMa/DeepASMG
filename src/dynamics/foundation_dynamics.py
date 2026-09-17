@@ -109,6 +109,21 @@ def normalize_distribution(
     return values, weights / total
 
 
+def weighted_draw(values, weights, rng: "np.random.Generator"):
+    """Draw one entry of `values` with probability `weights`, one RNG draw.
+
+    Identical to ``rng.choice(values, p=weights)`` for a single draw — same
+    result and same generator state — but without numpy's per-call validation
+    and permutation machinery. `values` may be a sequence or an integer n, in
+    which case the index itself is returned.
+    """
+    cdf = np.asarray(weights, dtype=float).cumsum()
+    idx = int(cdf.searchsorted(rng.random() * cdf[-1], side="right"))
+    if isinstance(values, (int, np.integer)):
+        return min(idx, int(values) - 1)
+    return values[min(idx, len(values) - 1)]
+
+
 def masked_categorical_draw(
     rng: np.random.Generator,
     targets: List[str],
@@ -141,7 +156,8 @@ def masked_categorical_draw(
 
     kept_targets = [t for t, ok in zip(targets, admissible, strict=True) if ok]
     kept_weights = weights[admissible] / kept_mass
-    return str(rng.choice(kept_targets, p=kept_weights)), removed_mass, False, kept_mass, admissible
+    return (str(weighted_draw(kept_targets, kept_weights, rng)), removed_mass,
+            False, kept_mass, admissible)
 
 
 def masked_categorical_probs(

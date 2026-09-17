@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 
 import numpy as np
 
-from src.dynamics.foundation_dynamics import ProductStrategy
+from src.dynamics.foundation_dynamics import ProductStrategy, weighted_draw
 
 
 
@@ -54,7 +54,7 @@ class RefProduct(ProductStrategy):
     def sample_features(self, current_time: float = 0.0) -> Dict[str, str]:  # noqa: ARG002
         features: Dict[str, str] = {}
         for feature_name, (values, probs) in self._distributions.items():
-            features[feature_name] = self._rng.choice(values, p=probs)
+            features[feature_name] = weighted_draw(values, probs, self._rng)
         return features
 
     _HEAD_NAME = {"modell": "type", "feature_a": "feature_a", "feature_b": "feature_b"}

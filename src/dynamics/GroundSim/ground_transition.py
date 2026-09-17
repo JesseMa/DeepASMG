@@ -8,6 +8,7 @@ import numpy as np
 
 from src.dynamics.foundation_dynamics import (
     TransitionStrategy, normalize_distribution, masked_categorical_probs, END_TOKEN,
+    weighted_draw,
 )
 from src.config.routing_keys import resolve_key
 
@@ -95,7 +96,7 @@ class GroundTransition(TransitionStrategy):
             )
 
         targets, weights = distribution
-        result = self._rng.choice(targets, p=weights)
+        result = weighted_draw(targets, weights, self._rng)
         if result == END_TOKEN:
             self._m5_visits.pop(order.id, None)
             return None

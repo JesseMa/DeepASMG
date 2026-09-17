@@ -9,7 +9,7 @@ import numpy as np
 
 from src.dynamics.foundation_dynamics import (
     TransitionStrategy, normalize_distribution, masked_categorical_draw,
-    masked_categorical_probs, END_TOKEN,
+    masked_categorical_probs, END_TOKEN, weighted_draw,
 )
 from src.config.routing_keys import full_variant_key, product_type_key
 
@@ -98,7 +98,7 @@ class RefTransition(TransitionStrategy):
 
         if not self._apply_mask or available_targets is None:
             self.unmasked_calls += 1
-            result = str(self._rng.choice(targets, p=weights))
+            result = str(weighted_draw(targets, weights, self._rng))
             return None if result == END_TOKEN else result
 
         result = self._draw_masked(station_id, targets, weights, available_targets)
@@ -338,7 +338,7 @@ class RefTransitionVariant(TransitionStrategy):
         targets, weights = dist
 
         if not self._apply_mask or available_targets is None:
-            result = str(self._rng.choice(targets, p=weights))
+            result = str(weighted_draw(targets, weights, self._rng))
             return None if result == END_TOKEN else result
 
         self.mask_calls += 1

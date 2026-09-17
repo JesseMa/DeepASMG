@@ -17,6 +17,7 @@ import numpy as np
 from src.dynamics.foundation_dynamics import (
     ProductStrategy, NONE_TOKEN, TWO_PI, load_deep_model,
     infer_single,
+    weighted_draw,
 )
 
 
@@ -177,7 +178,7 @@ class DeepProduct(ProductStrategy):
 
     def _sample_head_idx(self, logits_flat, offset: int, size: int) -> int:
         probs = self._head_probs(logits_flat, offset, size)
-        return int(self._rng.choice(len(probs), p=probs))
+        return int(weighted_draw(len(probs), probs, self._rng))
 
     def _head_values(self, feat_name: str) -> list:
         enc = self._encoding_maps[feat_name]

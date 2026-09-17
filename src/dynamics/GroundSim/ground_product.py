@@ -16,6 +16,7 @@ from src.dynamics.foundation_dynamics import (
     ProductStrategy,
     TWO_PI,
     normalize_distribution,
+    weighted_draw,
 )
 
 # Unconditional: (values, probs)
@@ -274,7 +275,7 @@ class GroundProduct(ProductStrategy):
 
         probs = self._apply_lazy_walk(feat_name, values, probs,
                                       self._last_features.get(feat_name))
-        return self._rng.choice(values, p=probs)
+        return weighted_draw(values, probs, self._rng)
 
     def _sample_conditional(
         self,
@@ -314,7 +315,7 @@ class GroundProduct(ProductStrategy):
             else None
         )
         probs = self._apply_lazy_walk(feat_name, values, probs, prev_value)
-        return self._rng.choice(values, p=probs)
+        return weighted_draw(values, probs, self._rng)
 
     def _apply_lazy_walk(
         self,
