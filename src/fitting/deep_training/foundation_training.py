@@ -506,15 +506,31 @@ class BaseTrainingModule:
 
 
 class GaussianNLLModule(BaseTrainingModule):
-    """Heteroscedastic regression: output (mean, log_var), Gaussian NLL loss."""
+    """Heteroscedastic regression: output (mean, log_var), interval NLL.
+
+    Targets are whole seconds (integer time contract): an observation k means
+    the latent duration lay in (k-1, k]. The loss is the interval likelihood
+    -log(Phi((k-mu)/sigma) - Phi((k-1-mu)/sigma)), evaluated in log space via
+    log_ndtr, so the module learns the LATENT continuous density; sampling
+    N(mu, sigma) and ceiling once at inference then reproduces the observed
+    integer distribution without the +0.5 s double-discretization bias.
+    """
 
     def _nll_loss(self, pred, y):
-        import torch.nn as nn
         import torch
         mean = pred[:, 0]
         log_var = pred[:, 1].clamp(-6.0, 6.0)
-        var = torch.exp(log_var)
-        return nn.functional.gaussian_nll_loss(mean, y, var)
+        sigma = torch.exp(0.5 * log_var)
+        zu = (y - mean) / sigma          # upper edge k
+        zl = (y - 1.0 - mean) / sigma    # lower edge k-1
+        log_fu = torch.special.log_ndtr(zu)
+        log_fl = torch.special.log_ndtr(zl)
+        # log(F(k) - F(k-1)) = log_fu + log1p(-exp(log_fl - log_fu)); the
+        # difference is < 0 by construction, clamped against underflow.
+        log_p = log_fu + torch.log1p(
+            -torch.exp((log_fl - log_fu).clamp(max=-1e-12))
+        )
+        return -log_p.clamp(min=-30.0).mean()
 
     def _compute_loss(self, batch, stage: str):
         import torch
@@ -532,15 +548,15 @@ class GaussianNLLModule(BaseTrainingModule):
 
 class ExponentialNLLModule(BaseTrainingModule):
     """
-    Conditional exponential regression: output (log_scale,), Exp-NLL loss.
+    Conditional exponential regression: output (log_scale,), interval NLL.
 
-    y ~ Exp(scale = exp(log_scale(x))), matching GroundRepair's Exp draw:
-    mean = std = scale, so there is no second distribution parameter.
+    Targets are whole seconds (integer time contract): observation k means the
+    latent Exp(scale) duration lay in (k-1, k], so
+    P(ceil(X) = k) = e^{-(k-1)/s} - e^{-k/s} and
+    NLL = (k-1)/s - log(1 - e^{-1/s})  with s = exp(log_scale).
     log_scale is deliberately left unclamped.
 
-    NLL = log(scale) + y / scale = log_scale + y * exp(-log_scale)
-
-    Inference (inversion sampling): y = -log(u) * scale, u ~ Uniform(0, 1).
+    Inference (inversion sampling + one ceil): y = ceil(-log(u) * scale).
     """
 
     def _compute_loss(self, batch, stage: str):
@@ -549,7 +565,9 @@ class ExponentialNLLModule(BaseTrainingModule):
         x, y = batch
         pred = self(x)
         log_scale = pred[:, 0]
-        loss = torch.mean(log_scale + y * torch.exp(-log_scale))
+        inv_s = torch.exp(-log_scale)
+        # -log(1 - e^{-1/s}) via expm1 for stability at large s
+        loss = torch.mean((y - 1.0) * inv_s - torch.log(-torch.expm1(-inv_s)))
         self.log(f"{stage}_loss", loss, prog_bar=True)
         if stage in ("val", "test"):
             # mean(Exp(scale)) = scale = exp(log_scale)

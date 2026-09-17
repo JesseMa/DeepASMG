@@ -43,8 +43,11 @@ class TransitionLightningModule(BaseTrainingModule, pl.LightningModule):
     def _compute_loss(self, batch, stage: str):
         x, y = batch
         logits = self(x)
+        # Smoothing regularizes TRAINING only; val/test (and thus early
+        # stopping, checkpointing and the Optuna objective) score plain CE.
+        smoothing = self.hparams.label_smoothing if stage == "train" else 0.0
         loss = nn.functional.cross_entropy(
-            logits, y, label_smoothing=self.hparams.label_smoothing,
+            logits, y, label_smoothing=smoothing,
         )
         acc = (logits.argmax(-1) == y).float().mean()
         self.log(f"{stage}_loss", loss, prog_bar=True)

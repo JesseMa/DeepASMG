@@ -21,6 +21,19 @@ from src.dynamics.foundation_dynamics import END_TOKEN
 from src.config.routing_keys import full_variant_key, product_type_key
 
 
+def _dequantized_normal(xs) -> tuple[float, float]:
+    """Latent (mean, std) from ceil-quantized whole-second observations.
+
+    Sheppard's corrections for grouped data: the quantizer adds +0.5 to the
+    mean and +1/12 to the variance, so the latent moments are mean-0.5 and
+    sqrt(max(var - 1/12, 0)). Derived from the declared log quantization
+    (integer time contract), not from generator knowledge.
+    """
+    mean = float(np.mean(xs)) - 0.5
+    var = float(np.var(xs)) - 1.0 / 12.0
+    return mean, float(np.sqrt(max(var, 0.0)))
+
+
 class RefSimAnalyzer:
     def __init__(self, data_dir: Path, train_ratio: float = 0.70) -> None:
         if not 0.0 < train_ratio <= 1.0:
@@ -181,7 +194,7 @@ class RefSimAnalyzer:
         if n_orphan:
             print(f"  [stat] Skipped {n_orphan} orphan event(s) "
                   "(order_id not in orders.csv, likely warmup boundary).")
-        return {s: (float(np.mean(v)), float(np.std(v))) for s, v in times.items()}
+        return {s: _dequantized_normal(v) for s, v in times.items()}
 
     def _extract_transitions(self, events: List[Dict], orders_features: Dict, orders_completions: Dict) -> Dict[str, Dict[str, float]]:
         """P(target|station) per station, marginalized over model/feature."""
@@ -258,7 +271,7 @@ class RefSimAnalyzer:
             for key, xs in by_key.items():
                 n_cells += 1
                 if len(xs) >= self._MIN_CELL_OBS:
-                    kept[key] = (float(np.mean(xs)), float(np.std(xs)))
+                    kept[key] = _dequantized_normal(xs)
                     n_kept += 1
                 else:
                     n_dropped += 1
@@ -427,9 +440,12 @@ class RefSimAnalyzer:
             count = bd_count.get(s, 0)
             mttf_dict[s] = operating_time[s] / count if count > 0 else float('inf')
 
-            # Exponential MLE: scale = sample mean of repair times.
+            # Exponential MLE on ceil-quantized data: latent scale = mean - 0.5
+            # (integer time contract; exact dequantization for the exponential
+            # is scale = -1/log(1 - 1/mean_geom), but the -0.5 first-order form
+            # is within 1e-4 relative at these scales and keeps it simple).
             reps = repairs.get(s, [])
-            repair_scales[s] = float(np.mean(reps)) if reps else 0.0
+            repair_scales[s] = max(float(np.mean(reps)) - 0.5, 0.5) if reps else 0.0
 
         return mttf_dict, repair_scales
 

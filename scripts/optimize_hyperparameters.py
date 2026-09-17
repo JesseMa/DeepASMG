@@ -46,8 +46,7 @@ def _make_objective(train_module: str, suggest_fn, *, train_kwargs: Dict[str, An
         if train_kwargs_override:
             effective_kwargs.update(train_kwargs_override)
 
-        # Forward only extra params the respective train() signature accepts
-        # (e.g. label_smoothing only for transition).
+        # Forward only extra params the respective train() signature accepts.
         extra = {k: v for k, v in params.items() if k not in
                  ("hidden_dims", "learning_rate", "dropout_rate", "batch_size")}
         results = train(
@@ -88,7 +87,6 @@ def _suggest_transition(trial) -> dict:
                                "(1024, 512, 256, 128)"]),
         learning_rate   = trial.suggest_float("learning_rate", 1e-5, 5e-3, log=True),
         dropout_rate    = trial.suggest_float("dropout_rate", 0.10, 0.50),
-        label_smoothing = trial.suggest_float("label_smoothing", 0.0, 0.20),
         batch_size      = trial.suggest_categorical("batch_size", [256, 512, 1024, 2048]),
     )
 
@@ -129,8 +127,15 @@ def _suggest_product(trial) -> dict:
 
 # Per-model study version (default "v1"); bump on search-space drift so Optuna
 # does not reuse an incompatible sampler prior.
+# Study identity is bound to the training-data generation: bumping the
+# version here starts a FRESH Optuna study, so load_if_exists can never let a
+# trial scored on pre-integer-contract data win against new trials.
 STUDY_VERSIONS: Dict[str, str] = {
-    "transition": "v2_history10",
+    "process_time": "v2_int",
+    "transition": "v3_int_history10",
+    "survival": "v2_int",
+    "repair_time": "v2_int",
+    "product": "v2_int",
 }
 
 # Same chronological split as production training so the train-only vocabulary

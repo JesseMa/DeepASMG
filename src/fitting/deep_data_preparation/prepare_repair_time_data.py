@@ -70,12 +70,18 @@ def extract_repair_samples(
 
     timed_samples: List[Tuple[float, RepairTimeSample]] = []
     skipped_zero_rt = 0
+    skipped_truncated = 0
     skipped_no_ops = 0
 
     for station, station_events in events_by_station.items():
         cycle_start_wall: float = 0.0
         cycle_operating: float = 0.0
         in_cycle: bool = False
+        # First observed cycle per station is left-truncated at the warmup
+        # cutoff: its operating_time/utilization features are understated, so
+        # the first repair sample per station is dropped (mirrors
+        # prepare_survival_data).
+        first_cycle_truncated: bool = True
 
         for event in station_events:
             is_downtime = (
@@ -93,6 +99,14 @@ def extract_repair_samples(
 
                 if cycle_operating <= 0:
                     skipped_no_ops += 1
+                    cycle_start_wall = event.timestamp_event_start + event.repair_time
+                    cycle_operating = 0.0
+                    in_cycle = True
+                    continue
+
+                if first_cycle_truncated:
+                    first_cycle_truncated = False
+                    skipped_truncated += 1
                     cycle_start_wall = event.timestamp_event_start + event.repair_time
                     cycle_operating = 0.0
                     in_cycle = True
@@ -135,6 +149,7 @@ def extract_repair_samples(
     print(f"  Downtime samples: {len(samples):,}")
     print(f"  Skipped (repair_time <= 0): {skipped_zero_rt:,}")
     print(f"  Skipped (no operating_time): {skipped_no_ops:,}")
+    print(f"    Dropped (left-truncated first cycle): {skipped_truncated:,}")
 
     return samples
 

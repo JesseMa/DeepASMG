@@ -80,12 +80,18 @@ def extract_survival_samples(
     total_cycles = 0
     total_events = 0
     total_censored = 0
+    total_truncated = 0
 
     for station, station_events in events_by_station.items():
         cycle_start_wall: float = 0.0
         cycle_operating: float = 0.0
         cycle_jobs: int = 0
         in_cycle: bool = False
+        # The first observed cycle per station began BEFORE the warmup cutoff:
+        # its operating time is left-truncated, so it must not become a sample
+        # (emitting it as event=True biases lifetimes short). It still seeds
+        # the history features once it closes.
+        first_cycle_truncated: bool = True
 
         hist_prev_ttf: float = 0.0
         hist_prev_n_jobs: float = 0.0
@@ -101,23 +107,27 @@ def extract_survival_samples(
 
             if is_downtime:
                 if in_cycle and cycle_jobs > 0 and cycle_operating > 0:
-                    wall_time = event.timestamp_event_start - cycle_start_wall
-                    timed_samples.append((
-                        float(event.timestamp_event_start),
-                        SurvivalSample(
-                            station=station,
-                            operating_time=cycle_operating,
-                            event=True,
-                            n_jobs=cycle_jobs,
-                            wall_clock_time=max(0.0, wall_time),
-                            prev_ttf=hist_prev_ttf,
-                            prev_n_jobs=hist_prev_n_jobs,
-                            mean_ttf=hist_mean_ttf,
-                            prev_repair_time=hist_prev_repair,
-                        ),
-                    ))
-                    total_events += 1
-                    total_cycles += 1
+                    if first_cycle_truncated:
+                        total_truncated += 1
+                    else:
+                        wall_time = event.timestamp_event_start - cycle_start_wall
+                        timed_samples.append((
+                            float(event.timestamp_event_start),
+                            SurvivalSample(
+                                station=station,
+                                operating_time=cycle_operating,
+                                event=True,
+                                n_jobs=cycle_jobs,
+                                wall_clock_time=max(0.0, wall_time),
+                                prev_ttf=hist_prev_ttf,
+                                prev_n_jobs=hist_prev_n_jobs,
+                                mean_ttf=hist_mean_ttf,
+                                prev_repair_time=hist_prev_repair,
+                            ),
+                        ))
+                        total_events += 1
+                        total_cycles += 1
+                    first_cycle_truncated = False
 
                     hist_mean_ttf = (hist_mean_ttf * hist_n_cycles + cycle_operating) / (hist_n_cycles + 1)
                     hist_n_cycles += 1
@@ -140,7 +150,8 @@ def extract_survival_samples(
             cycle_jobs += 1
 
         # Censor the cycle still open at sim end
-        if in_cycle and cycle_jobs > 0 and cycle_operating > 0:
+        if (in_cycle and cycle_jobs > 0 and cycle_operating > 0
+                and not first_cycle_truncated):
             last_event = station_events[-1]
             end_time = last_event.timestamp_event_start + last_event.time_processing
             wall_time = end_time - cycle_start_wall
@@ -168,6 +179,7 @@ def extract_survival_samples(
     print(f"  Cycles total: {total_cycles:,}")
     print(f"    Events (downtime): {total_events:,}")
     print(f"    Censored (sim end): {total_censored:,}")
+    print(f"    Dropped (left-truncated first cycle): {total_truncated:,}")
     print(f"  → Survival samples: {len(samples):,}")
 
     return samples
