@@ -38,18 +38,8 @@ TABLE_MANIFEST = {
             "total-duration semantics — CRPS/NLL"
         ),
         "sources": [
-            "processing_rescored/scores_continuous_processing.csv",
+            "scores_continuous.csv (component=processing)",
         ],
-        "supporting_sources": [
-            "processing_rescored/processing_setup_values.csv",
-        ],
-        "legacy_source": {
-            "path": "scores_continuous.csv (component=processing)",
-            "semantics": (
-                "Legacy net-duration scoring retained for auditability; "
-                "it is not the canonical T7 source."
-            ),
-        },
     },
     "T8": {"desc": "KPI panel (16 KPIs × systems): mean(r_i), sd(r_i), ratio-of-means, p, q",
            "sources": ["kpi_panel.csv", "kpi_bh.csv"]},
@@ -65,7 +55,6 @@ TABLE_MANIFEST = {
 
 PAPER_OUTPUTS = {
     "component_scores": [
-        "processing_rescored/scores_continuous_processing.csv",
         "scores_continuous.csv",
         "scores_categorical.csv",
     ],
@@ -84,25 +73,6 @@ PAPER_OUTPUTS = {
     "hazard_diagnostics": ["hazard_true_grid.csv", "hazard_params.csv"],
 }
 
-PROCESSING_SCORE_SEMANTICS = {
-    "canonical": {
-        "path": "processing_rescored/scores_continuous_processing.csv",
-        "semantics": (
-            "Total processing duration. The logged net realization is shifted by "
-            "the configured station setup time; the GroundSim predictive mean is "
-            "shifted by the same amount. This is the paper T7 source."
-        ),
-    },
-    "legacy": {
-        "path": "scores_continuous.csv",
-        "selector": "component=processing",
-        "semantics": (
-            "Legacy scoring against the shadow log's net realization, with setup "
-            "removed. Retained for auditability and not used as paper T7. Other "
-            "components in this file are unaffected by the processing convention."
-        ),
-    },
-}
 
 
 def _write(df_rows, path: Path) -> int:
@@ -632,7 +602,6 @@ def _write_manifest(
             "shadow": _shadow_metadata(shadow_dir),
         },
         "files": files,
-        "processing_score_semantics": PROCESSING_SCORE_SEMANTICS,
         "paper_tables": TABLE_MANIFEST,
         "paper_outputs": PAPER_OUTPUTS,
         "last_production_run": {

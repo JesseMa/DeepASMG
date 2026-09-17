@@ -61,10 +61,6 @@ per-system, per-seed macro-KPI values behind the relative deviations in
 
 ## Reading notes
 
-- `scores_continuous.csv` reports processing under the legacy net-duration
-  convention; the canonical setup-inclusive processing scores of the article
-  are in `processing_rescored/scores_continuous_processing.csv` (see
-  `manifest.json`, key `processing_score_semantics`).
 - In `component_substitutions.csv` the three `component=all` configurations
   appear under both substitution directions with identical values by
   construction; they are one measurement each, not two.

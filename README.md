@@ -98,7 +98,6 @@ required to inspect or rerun the closed-loop verification.
 ```bash
 python -m scripts.run_closed_loop
 python -m scripts.run_shadow_evaluation
-python -m scripts.rescore_processing
 python -m scripts.produce_results
 python -m scripts.run_substitutions
 python -m scripts.run_safeguard_audit
@@ -119,11 +118,9 @@ each use ten fixed seeds and a 31-day evaluation horizon plus the documented
 warm-up where applicable. Raw bundles are ignored; the compact derived CSVs are
 written to `results/verification/`.
 
-For the processing component, the canonical paper T7 values are in
-`results/verification/processing_rescored/scores_continuous_processing.csv`.
-They use total processing duration, including station setup time. The processing
-rows in `results/verification/scores_continuous.csv` use the earlier net-duration
-shadow convention; they are retained for auditability but are not the T7 source.
+Processing is scored on total duration, station setup time included, in
+`results/verification/scores_continuous.csv` like every other component. All
+five systems report on that one scale, so no reconciliation step is involved.
 The result manifest records this distinction and reports run metadata only when
 it is present in, or can be derived from, the corresponding raw bundle.
 

@@ -102,17 +102,16 @@ class _ShadowStations:
 
 
 class _ShadowPT(_ShadowStations):
-    def __init__(self, ground, systems, setup, log):
-        self._g, self._sys, self._setup, self._log = ground, systems, setup, log
+    def __init__(self, ground, systems, log):
+        self._g, self._sys, self._log = ground, systems, log
 
     def predict(self, station_id, order, current_time=0.0):
         ctx = self._log.next_ctx("processing")
         realized = float(self._g.predict(station_id, order, current_time))
-        net = realized - float(self._setup.get(station_id, 0.0))
         for name, strat in self._sys.items():
             p = strat.distribution_params(station_id, order, current_time)
             self._log.record(name, "processing", ctx, station_id, current_time,
-                             "", p["family"], p, net, 0)
+                             "", p["family"], p, realized, 0)
             if _is_deep(name):
                 strat._prev_on_machine[station_id] = dict(order.features)
         return realized
@@ -269,7 +268,6 @@ def run_shadow_pilot(
     """
     fs = SimFactorySet(duration_days=days, warmup_days=warmup_days)
     pc = fs.process_config
-    setup = {s.id: s.setup_time for s in pc.stations}
     cfgs = _build_systems(fs, seed)
     log = ShadowLog(seed)
 
@@ -282,7 +280,7 @@ def run_shadow_pilot(
     g = cfgs["GroundSim"]
     sv_wrap = _ShadowSV(g.survival_strategy, systems_sv, log)
     steer = SimulationConfig(
-        process_time_strategy=_ShadowPT(g.process_time_strategy, systems_pt, setup, log),
+        process_time_strategy=_ShadowPT(g.process_time_strategy, systems_pt, log),
         transition_strategy=_ShadowTR(g.transition_strategy, systems_tr, log),
         survival_strategy=sv_wrap,
         repair_strategy=_ShadowRT(g.repair_strategy, systems_rt, log, survival_wrapper=sv_wrap),

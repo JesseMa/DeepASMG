@@ -207,6 +207,36 @@ def aggregate_continuous(
     return rows, seed_map
 
 
+def pit_uniformity(df, *, seed: int = 0) -> dict:
+    """KS test of the randomized PIT against uniform, for a continuous component.
+
+    With whole-second realizations the plain PIT u = F(y) takes a handful of
+    values and its KS statistic converges to max_k P(Y = k), a property of the
+    quantization rather than of the model — it rejects a correct forecast with
+    certainty and is blind to sigma. Drawing u uniformly inside the observed
+    interval [F(k-1), F(k)] restores exact uniformity under a correct model.
+    """
+    from scipy.stats import kstest
+
+    rng = np.random.default_rng(seed)
+    us: List[float] = []
+    for _, r in df.iterrows():
+        p = _parse(r["params"])
+        if p is None or bool(int(r.get("censored", 0))):
+            continue
+        try:
+            k = float(r["realized"])
+        except (ValueError, TypeError):
+            continue
+        cdf = _family_cdf(p["family"], p)
+        lo, hi = float(cdf(max(k - 1.0, 0.0))), float(cdf(k))
+        us.append(lo + rng.random() * max(hi - lo, 0.0))
+    if len(us) < 2:
+        return {"n": len(us), "ks_d": float("nan"), "ks_p": float("nan")}
+    res = kstest(us, "uniform")
+    return {"n": len(us), "ks_d": float(res.statistic), "ks_p": float(res.pvalue)}
+
+
 def _row_brier(probs: Dict[str, float], realized: str) -> float:
     """Multiclass Brier for one row: Σ_k (p_k − 1{k=realized})² (+1 if realized ∉ support)."""
     s = sum(v * v for k, v in probs.items() if k != realized)

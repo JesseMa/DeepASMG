@@ -66,14 +66,15 @@ class GroundProcessTime(ProcessTimeStrategy):
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,
     ) -> Dict[str, object]:
-        """Normal params N(mean·f, std·f) of the process time BEFORE setup.
+        """Normal params of the TOTAL process time, setup included.
 
-        predict() adds setup_time[station], floors the draw at 0.1 and returns
-        ceil() of the total (integer time contract), so these params are the
-        latent net-scale density while DeepSim and RefSim parameterize the total
-        scale; scripts/rescore_processing.py reconciles the two.
+        predict() returns ceil() of this draw (integer time contract), so these
+        parameters label the lattice law the station deploys — the same scale
+        DeepSim and RefSim report, which is what makes them comparable without
+        a reconciliation step.
         """
         process_times = self._station_process_times[station_id]
         mean, std = process_times[order.resolve_process_key(process_times)]
         factor = _night_shift_factor(current_time)
+        mean = mean + self._setup_times.get(station_id, 0.0) / factor
         return {"family": "normal", "mu": float(mean * factor), "sigma": float(std * factor)}
