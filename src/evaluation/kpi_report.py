@@ -16,8 +16,10 @@ def analyze(
     sim_duration: Optional[float] = None,
     num_machines: Optional[int] = None,
     rework_station_id: Optional[str] = None,
+    *,
+    report: bool = False,
 ) -> Dict[str, float]:
-    """KPI panel for one run; also prints a formatted report.
+    """KPI panel for one run; prints a formatted report when report=True.
 
     ``rework_station_id`` names the optional stage (e.g. M5, a class-specific
     task or audit rather than classic rework). ``rework_rate`` is then the
@@ -93,14 +95,15 @@ def analyze(
     bd_rate = (n_breakdowns / n_productive * 100) if n_productive > 0 else 0.0
     n_buffer_events = sum(1 for r in _iter_records(process_log) if r["station_type"] == "buffer")
 
-    _print_report(
-        label=label, n_valid=n_valid, ct=ct, bw=bw, st=st, pt=pt, iw=iw, bt=bt,
-        fe_cycle=fe_cycle, fe_system=fe_system,
-        rework_rate=rework_rate, multi_rework_rate=multi_rework_rate,
-        rework_station_id=rework_station_id,
-        n_breakdowns=n_breakdowns, bd_rate=bd_rate, avg_breakdown_repair=avg_breakdown_repair,
-        tech_availability=tech_availability, n_buffer_events=n_buffer_events,
-    )
+    if report:
+        _print_report(
+            label=label, n_valid=n_valid, ct=ct, bw=bw, st=st, pt=pt, iw=iw, bt=bt,
+            fe_cycle=fe_cycle, fe_system=fe_system,
+            rework_rate=rework_rate, multi_rework_rate=multi_rework_rate,
+            rework_station_id=rework_station_id,
+            n_breakdowns=n_breakdowns, bd_rate=bd_rate, avg_breakdown_repair=avg_breakdown_repair,
+            tech_availability=tech_availability, n_buffer_events=n_buffer_events,
+        )
 
     return {
         "n_valid": n_valid,

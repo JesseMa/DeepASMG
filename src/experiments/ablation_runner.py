@@ -266,24 +266,6 @@ def run_ablation_grid(seeds: list[int]) -> dict[str, list[dict]]:
                 )
 
             ct = extract_cycle_times(process_log, order_log)
-            transition = cfg.transition_strategy
-            if isinstance(transition, RefTransition):
-                routing_mask_rows = transition.mask_audit_rows()
-                routing_mask_summary = transition.mask_audit_summary()
-            else:
-                routing_mask_rows = []
-                routing_mask_summary = {
-                    "mask_active": None,
-                    "stationary_predict_count": 0,
-                    "mask_call_count": 0,
-                    "unmasked_call_count": 0,
-                    "mask_effective_count": 0,
-                    "renormalization_count": 0,
-                    "zero_mass_fallback_count": 0,
-                    "invalid_selected_target_count_after_masking": 0,
-                    "maximum_probability_mass_removed": 0.0,
-                    "all_stationary_calls_masked": None,
-                }
             records.append({
                 "config": name,
                 "seed": seed,
@@ -293,8 +275,6 @@ def run_ablation_grid(seeds: list[int]) -> dict[str, list[dict]]:
                 "completed": True,
                 "aborted": False,
                 "runtime_seconds": time.perf_counter() - started,
-                "routing_mask_rows": routing_mask_rows,
-                "routing_mask_summary": routing_mask_summary,
             })
         results[name] = records
     return results

@@ -23,8 +23,8 @@ _logger = logging.getLogger(__name__)
 class RefTransition(TransitionStrategy):
     """Marginal router: P(target | station); order.features are ignored.
 
-    With apply_admissibility_mask=False (the default) the fitted distribution is
-    drawn unmasked even when available_targets is supplied.
+    The fitted table may put mass on targets the topology does not admit from
+    this station, so the draw is restricted to available_targets.
     """
 
     def __init__(
@@ -32,7 +32,7 @@ class RefTransition(TransitionStrategy):
         transition_probs: Dict[str, Dict[str, float]],
         rng: np.random.Generator,
         *,
-        apply_admissibility_mask: bool = False,
+        apply_admissibility_mask: bool = True,
     ) -> None:
         if not transition_probs:
             raise ValueError("Fail fast: transition_probs must not be empty.")
@@ -49,18 +49,12 @@ class RefTransition(TransitionStrategy):
         self.mask_fallback: int = 0    # edge-case events (uniform fallback)
         self.mask_max_removed: float = 0.0  # maximum inadmissible probability
                                        # mass removed in a single draw
-        self.predict_calls: int = 0
-        self.unmasked_calls: int = 0
-        self._mask_decision_points: Dict[str, Dict[str, object]] = {}
 
     def initialize(self, stations: Dict[str, "StationConfig"]) -> None:
         self.mask_calls = 0
         self.mask_effective = 0
         self.mask_fallback = 0
         self.mask_max_removed = 0.0
-        self.predict_calls = 0
-        self.unmasked_calls = 0
-        self._mask_decision_points = {}
         missing = [
             sid for sid, sc in stations.items()
             if sc.transitions and sid not in self._distributions
@@ -86,7 +80,6 @@ class RefTransition(TransitionStrategy):
         available_targets: Optional[Set[str]] = None,
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[str]:
-        self.predict_calls += 1
         distribution = self._distributions.get(station_id)
         if distribution is None:
             raise ValueError(
@@ -97,7 +90,6 @@ class RefTransition(TransitionStrategy):
         targets, weights = distribution
 
         if not self._apply_mask or available_targets is None:
-            self.unmasked_calls += 1
             result = str(weighted_draw(targets, weights, self._rng))
             return None if result == END_TOKEN else result
 
@@ -126,27 +118,8 @@ class RefTransition(TransitionStrategy):
     ) -> str:
         """One RNG draw per call, as in the unmasked path, so RNG consumption matches."""
         self.mask_calls += 1
-        pre_nonzero = int(np.count_nonzero(weights > 0.0))
         result, removed_mass, used_fallback, kept_mass, admissible = masked_categorical_draw(
             self._rng, targets, weights, available_targets, label=station_id,
-        )
-        post_nonzero = (
-            len(available_targets)
-            if used_fallback
-            else int(np.count_nonzero((weights > 0.0) & admissible))
-        )
-        selected_is_admissible = result in available_targets
-        renormalized = removed_mass > 0.0 and not used_fallback
-        self._record_mask_decision(
-            station_id=station_id,
-            admissible_target_count=len(available_targets),
-            pre_mask_nonzero_target_count=pre_nonzero,
-            post_mask_nonzero_target_count=post_nonzero,
-            probability_mass_removed=removed_mass,
-            renormalized=renormalized,
-            used_fallback=used_fallback,
-            selected_is_admissible=selected_is_admissible,
-            kept_mass=kept_mass,
         )
         if removed_mass > 0.0:
             self.mask_effective += 1
@@ -160,97 +133,6 @@ class RefTransition(TransitionStrategy):
                 station_id, sorted(available_targets),
             )
         return result
-
-    def _record_mask_decision(
-        self,
-        *,
-        station_id: str,
-        admissible_target_count: int,
-        pre_mask_nonzero_target_count: int,
-        post_mask_nonzero_target_count: int,
-        probability_mass_removed: float,
-        renormalized: bool,
-        used_fallback: bool,
-        selected_is_admissible: bool,
-        kept_mass: float,
-    ) -> None:
-        row = self._mask_decision_points.setdefault(
-            station_id,
-            {
-                "decision_point_identifier": station_id,
-                "stationary_decision_count": 0,
-                "admissible_target_count_min": admissible_target_count,
-                "admissible_target_count_max": admissible_target_count,
-                "pre_mask_nonzero_target_count_min": pre_mask_nonzero_target_count,
-                "pre_mask_nonzero_target_count_max": pre_mask_nonzero_target_count,
-                "post_mask_nonzero_target_count_min": post_mask_nonzero_target_count,
-                "post_mask_nonzero_target_count_max": post_mask_nonzero_target_count,
-                "probability_mass_removed_sum": 0.0,
-                "probability_mass_removed_max": 0.0,
-                "kept_probability_mass_min": kept_mass,
-                "renormalization_count": 0,
-                "zero_mass_fallback_count": 0,
-                "selected_target_admissible_count": 0,
-                "invalid_selected_target_count_after_masking": 0,
-            },
-        )
-        row["stationary_decision_count"] = int(row["stationary_decision_count"]) + 1
-        for prefix, value in (
-            ("admissible_target_count", admissible_target_count),
-            ("pre_mask_nonzero_target_count", pre_mask_nonzero_target_count),
-            ("post_mask_nonzero_target_count", post_mask_nonzero_target_count),
-        ):
-            row[f"{prefix}_min"] = min(int(row[f"{prefix}_min"]), value)
-            row[f"{prefix}_max"] = max(int(row[f"{prefix}_max"]), value)
-        row["probability_mass_removed_sum"] = (
-            float(row["probability_mass_removed_sum"]) + probability_mass_removed
-        )
-        row["probability_mass_removed_max"] = max(
-            float(row["probability_mass_removed_max"]), probability_mass_removed,
-        )
-        row["kept_probability_mass_min"] = min(
-            float(row["kept_probability_mass_min"]), kept_mass,
-        )
-        row["renormalization_count"] = int(row["renormalization_count"]) + int(renormalized)
-        row["zero_mass_fallback_count"] = int(row["zero_mass_fallback_count"]) + int(used_fallback)
-        row["selected_target_admissible_count"] = (
-            int(row["selected_target_admissible_count"]) + int(selected_is_admissible)
-        )
-        row["invalid_selected_target_count_after_masking"] = (
-            int(row["invalid_selected_target_count_after_masking"])
-            + int(not selected_is_admissible)
-        )
-
-    def mask_audit_rows(self) -> list[Dict[str, object]]:
-        """Return deterministic per-decision-point aggregates for this run."""
-        return [dict(self._mask_decision_points[key]) for key in sorted(self._mask_decision_points)]
-
-    def mask_audit_summary(self) -> Dict[str, object]:
-        """Run-level mask counters; recorded per run by the ablation runner."""
-        invalid = sum(
-            int(row["invalid_selected_target_count_after_masking"])
-            for row in self._mask_decision_points.values()
-        )
-        renormalizations = sum(
-            int(row["renormalization_count"])
-            for row in self._mask_decision_points.values()
-        )
-        return {
-            "mask_active": self._apply_mask,
-            "stationary_predict_count": self.predict_calls,
-            "mask_call_count": self.mask_calls,
-            "unmasked_call_count": self.unmasked_calls,
-            "mask_effective_count": self.mask_effective,
-            "renormalization_count": renormalizations,
-            "zero_mass_fallback_count": self.mask_fallback,
-            "invalid_selected_target_count_after_masking": invalid,
-            "maximum_probability_mass_removed": self.mask_max_removed,
-            "all_stationary_calls_masked": (
-                self._apply_mask
-                and self.predict_calls == self.mask_calls
-                and self.unmasked_calls == 0
-            ),
-        }
 
 
 class RefTransitionVariant(TransitionStrategy):

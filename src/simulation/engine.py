@@ -47,7 +47,6 @@ class SimulationEngine:
         self._is_done: bool = False
 
         self._cascade_queue: deque[Station] = deque()
-        self._cascade_in_queue: Set[str] = set()
         self._is_cascading: bool = False
 
         self._routing_targets: Dict[str, Set[str]] = self._build_routing_targets()
@@ -65,7 +64,6 @@ class SimulationEngine:
 
         self._deadlock.reset()
         self._cascade_queue.clear()
-        self._cascade_in_queue.clear()
         self._is_cascading = False
 
         self._stations.clear()
@@ -246,20 +244,19 @@ class SimulationEngine:
 
 
     def _on_slot_freed(self, station: Station) -> None:
-        """Trigger the freed-slot cascade iteratively with deduplication (avoids recursion)."""
-        if station.id not in self._cascade_in_queue:
-            self._cascade_queue.append(station)
-            self._cascade_in_queue.add(station.id)
+        """Run the freed-slot cascade iteratively rather than recursively.
 
+        A station freed while the cascade is already running is appended and
+        picked up by the running loop, so the call depth stays at one.
+        """
+        self._cascade_queue.append(station)
         if self._is_cascading:
             return
 
         self._is_cascading = True
         try:
             while self._cascade_queue:
-                curr = self._cascade_queue.popleft()
-                self._cascade_in_queue.discard(curr.id)
-                self._process_freed_slot(curr)
+                self._process_freed_slot(self._cascade_queue.popleft())
         finally:
             self._is_cascading = False
 
