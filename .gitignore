@@ -12,7 +12,8 @@ __pycache__/
 # Large or transient model-training artifacts
 /models/checkpoints/
 /models/evaluations/
-/models/hpo*/
+/models/hpo*/*
+!/models/hpo/*_best_params.json
 /models/lightning_logs/
 /models/tensorboard/
 

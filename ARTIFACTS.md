@@ -25,7 +25,7 @@ workspace and are not part of this release:
 - Raw verification bundles: `results/verification/closed_loop_runs*.pkl`,
   `results/verification/shadow/`, `results/verification/sensitivity_sweeps.pkl`.
 - Model-training intermediates: `models/checkpoints/`, `models/evaluations/`,
-  `models/hpo*/`, `models/tensorboard/`, and the
+  `models/hpo*/` except the `*_best_params.json` files, `models/tensorboard/`, and the
   per-component `models/*_data/data.npz` training caches.
 - Regenerable audit work products (`results/execution_audit/_m2_work/`).
 - Paper figure sources, input tables, and rendered artwork; the manuscript

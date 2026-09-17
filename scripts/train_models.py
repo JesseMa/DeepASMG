@@ -33,30 +33,6 @@ from src.fitting.ref_data_preparation.ref_analyzer import (  # noqa: E402
 # Fallback hyperparameters: used only when <hpo_dir>/<model>_best_params.json
 # is missing (HPO skipped); otherwise _get_params() loads the HPO bests.
 
-DEFAULTS = {
-    "process_time": dict(
-        hidden_dims=(1024, 512), learning_rate=0.0007663220475444138,
-        dropout_rate=0.000406967799759779, batch_size=512,
-    ),
-    "transition": dict(
-        hidden_dims=(512, 256, 128, 64), learning_rate=9.580338067662231e-05,
-        dropout_rate=0.18322493223818206, batch_size=512,
-    ),
-    "survival": dict(
-        hidden_dims=(256, 256, 256), learning_rate=0.00040810681340709546,
-        dropout_rate=0.23302786747050325, batch_size=16,
-    ),
-    "repair_time": dict(
-        hidden_dims=(64, 32), learning_rate=0.01994498281585769,
-        dropout_rate=0.007552809116995254, batch_size=4,
-    ),
-    "product": dict(
-        hidden_dims=(1024, 512, 256, 128),
-        learning_rate=0.0006485269384423483,
-        dropout_rate=0.14228024469582387, batch_size=1024,
-    ),
-}
-
 # Display name and train() entry point per model, in training order.
 TRAINERS = (
     ("process_time", "Process Time", train_pt),
@@ -68,15 +44,23 @@ TRAINERS = (
 
 
 def _get_params(model_name: str, hpo_dir: Path) -> Dict[str, Any]:
-    """Load HPO best params, fall back to DEFAULTS."""
+    """Load the HPO best params; their absence is an error, not a fallback.
+
+    A silent default would let the sensitivity tree train on one set of
+    hyperparameters while the production models use another, confounding data
+    volume with hyperparameter mismatch.
+    """
+    from scripts.optimize_hyperparameters import load_best_params
     try:
-        from scripts.optimize_hyperparameters import load_best_params
         params = load_best_params(model_name, hpo_dir=hpo_dir)
-        print(f"  {model_name:<16} <- HPO best params")
-        return params
-    except (FileNotFoundError, ImportError):
-        print(f"  {model_name:<16} <- DEFAULT params")
-        return DEFAULTS[model_name]
+    except FileNotFoundError as exc:
+        raise SystemExit(
+            f"Fail fast: no HPO best params for '{model_name}' in {hpo_dir}. "
+            f"Run scripts.optimize_hyperparameters first, or point --hpo-dir "
+            f"at a completed study."
+        ) from exc
+    print(f"  {model_name:<16} <- HPO best params")
+    return params
 
 
 def train_all(
@@ -91,7 +75,7 @@ def train_all(
     model_dir.mkdir(parents=True, exist_ok=True)
 
     print("Loading hyperparameters...")
-    params = {name: _get_params(name, hpo_dir) for name in DEFAULTS}
+    params = {name: _get_params(name, hpo_dir) for name, _, _ in TRAINERS}
 
     results = {}
 

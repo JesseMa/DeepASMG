@@ -1,8 +1,9 @@
 """Build the sensitivity-configuration tree that run_sensitivity_sweeps consumes.
 
 One training-data draw and one trained model set per derivation horizon and per
-derivation seed, several GB, not part of the release. Each model set gets its own
-empty --hpo-dir, so every run uses the frozen production hyperparameters.
+derivation seed, several GB, not part of the release. Every model set trains
+with the PRODUCTION hyperparameters (--hpo-dir, default models/hpo), so the
+data-regime comparison varies data volume alone.
 """
 
 from __future__ import annotations
@@ -35,7 +36,7 @@ def _find_data_dir(parent: Path) -> Path:
 
 def _build_config(
     label: str, seed: int, days: int, data_parent: Path, model_dir: Path,
-    log_dir: Path, skip_existing: bool,
+    log_dir: Path, skip_existing: bool, hpo_dir: Path,
 ) -> None:
     if skip_existing and (model_dir / "trained_model_paths.json").exists():
         print(f"[{label}] exists — skipped")
@@ -56,7 +57,7 @@ def _build_config(
         [sys.executable, "-m", "scripts.train_models",
          "--data-dir", str(data_dir),
          "--model-dir", str(model_dir),
-         "--hpo-dir", str(model_dir / "hpo")],
+         "--hpo-dir", str(hpo_dir)],
         log_dir / f"{label}_train.log",
     )
     print(f"[{label}] done ({(time.time() - t0) / 60:.0f} min)", flush=True)
@@ -68,6 +69,9 @@ def main() -> None:
                     help="Target directory for the sensitivity tree")
     ap.add_argument("--log-dir", type=Path, default=None,
                     help="Directory for per-step logs (default: <root>/_logs)")
+    ap.add_argument("--hpo-dir", type=Path, default=REPO / "models" / "hpo",
+                    help="Hyperparameters for every configuration "
+                         "(default: the production models/hpo)")
     ap.add_argument("--skip-existing", action="store_true",
                     help="Skip configurations whose model registry already exists")
     ap.add_argument("--only", type=str, default=None,
@@ -98,7 +102,7 @@ def main() -> None:
     print(f"=== Sensitivity tree: {len(jobs)} configurations → {root} ===")
     for label, seed, days, data_parent, model_dir in jobs:
         _build_config(label, seed, days, data_parent, model_dir,
-                      log_dir, args.skip_existing)
+                      log_dir, args.skip_existing, args.hpo_dir)
     print("\nDONE. Next: python -m scripts.run_sensitivity_sweeps "
           f"--sensitivity-root {root} ...")
 

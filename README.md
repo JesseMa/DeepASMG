@@ -143,17 +143,20 @@ The five data-preparation modules under
 `src/fitting/deep_data_preparation/` also expose standalone CLIs for
 inspecting individual preparation steps; `train_models` runs them implicitly.
 
-To reproduce the released models, do **not** run
-`scripts.optimize_hyperparameters` beforehand. It writes its search result to
-`models/hpo/`, and `train_models` gives any result found there strict precedence
-over the frozen values, so the run would silently use newly searched
-hyperparameters instead. Run the optimizer only to explore a new search, and
-pass a different `--hpo-dir` to both scripts to keep the two apart:
+Hyperparameters come from one place: `train_models` reads the best parameters
+written by `scripts.optimize_hyperparameters` into `--hpo-dir` (default
+`models/hpo/`) and fails if they are absent. The released `*_best_params.json`
+files are part of the repository, so reproducing the released models needs no
+search. To explore a different search, point both scripts at the same separate
+directory:
 
 ```bash
 python -m scripts.optimize_hyperparameters --data-dir "$TRAINING_DATA_DIR" --hpo-dir models/hpo_explore
 python -m scripts.train_models --data-dir "$TRAINING_DATA_DIR" --hpo-dir models/hpo_explore
 ```
+
+The sensitivity tree uses the same production hyperparameters for every
+configuration, so the data-regime comparison varies data volume alone.
 
 Retraining replaces the release models in `models/`; use a separate
 `--model-dir` to retain the archived model files unchanged.
