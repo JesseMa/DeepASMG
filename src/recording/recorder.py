@@ -23,7 +23,7 @@ PROCESS_LOG_DTYPE = np.dtype([
 ])
 
 
-@dataclass
+@dataclass(slots=True)
 class ProcessRecord:
     """A single station pass."""
 

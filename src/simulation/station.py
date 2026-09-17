@@ -48,21 +48,8 @@ class Station:
         self.jobs_in_cycle: int = 0
 
     @property
-    def active_processing_count(self) -> int:
-        return len(self._processing_slots)
-
-    @property
-    def departure_count(self) -> int:
-        return len(self._departure_queue)
-
-    @property
     def occupied_slot_count(self) -> int:
-        return self.active_processing_count + self.departure_count
-
-    def has_capacity(self) -> bool:
-        if self.config.capacity == 0:
-            return True
-        return self.occupied_slot_count < self.config.capacity
+        return len(self._processing_slots) + len(self._departure_queue)
 
     @property
     def station_type(self) -> str:
@@ -71,14 +58,17 @@ class Station:
 
     @property
     def is_available(self) -> bool:
-        return self.has_capacity() and not self.is_down
+        if self.is_down:
+            return False
+        capacity = self.config.capacity   # 0 = unlimited
+        return capacity == 0 or self.occupied_slot_count < capacity
 
     def start_processing(self, order: "Order") -> None:
         if not self.is_available:
             raise RuntimeError(
                 f"Station {self.id} unavailable "
-                f"(processing={self.active_processing_count}, "
-                f"departure={self.departure_count}, "
+                f"(processing={len(self._processing_slots)}, "
+                f"departure={len(self._departure_queue)}, "
                 f"capacity={self.config.capacity}, "
                 f"down={self.is_down})"
             )
@@ -108,7 +98,7 @@ class Station:
 
     @property
     def has_departure(self) -> bool:
-        return len(self._departure_queue) > 0
+        return bool(self._departure_queue)
 
     def get_departure_target(self) -> Optional[str]:
         if not self.has_departure:
@@ -128,7 +118,7 @@ class Station:
 
     @property
     def has_waiting(self) -> bool:
-        return len(self._incoming_waitlist) > 0
+        return bool(self._incoming_waitlist)
 
     def get_utilization(self, current_time: float) -> float:
         """Utilization in the current cycle: op_time / wall_clock, in [0, 1]; 1.0 if wall_clock=0."""
