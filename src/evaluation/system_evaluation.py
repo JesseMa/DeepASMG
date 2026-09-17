@@ -74,10 +74,10 @@ def w1_diff_wilcoxon(
     diff = wa - wb
     if not np.any(diff):
         return {"a": a_name, "b": b_name, "n": int(len(diff)),
-                "statistic": float("nan"), "p_exact": 1.0}
+                "statistic": float("nan"), "p_value": 1.0}
     res = wilcoxon(diff, alternative="two-sided", zero_method="wilcox", method="auto")
     return {"a": a_name, "b": b_name, "n": int(len(diff)),
-            "statistic": float(res.statistic), "p_exact": float(res.pvalue)}
+            "statistic": float(res.statistic), "p_value": float(res.pvalue)}
 
 
 def _kpi_keys(runs: Sequence[dict], kpis: Optional[Sequence[str]]) -> List[str]:
@@ -134,15 +134,15 @@ def kpi_wilcoxon_bh(
         ms = np.array([r["kpis"][kpi] for r in sys], float)
         diff = ms - mg
         if not np.any(diff):
-            stats.append({"kpi": kpi, "statistic": float("nan"), "p_exact": 1.0})
+            stats.append({"kpi": kpi, "statistic": float("nan"), "p_value": 1.0})
         else:
             # "auto" lets scipy fall back to its deterministic permutation
             # treatment under ties and zeros; "exact" silently is not exact there.
             res = wilcoxon(ms, mg, alternative="two-sided",
                            zero_method="wilcox", method="auto")
             stats.append({"kpi": kpi, "statistic": float(res.statistic),
-                          "p_exact": float(res.pvalue)})
-    pvals = np.array([s["p_exact"] for s in stats])
+                          "p_value": float(res.pvalue)})
+    pvals = np.array([s["p_value"] for s in stats])
     rejected, q = fdr_correction(pvals, alpha=alpha)
     out: List[dict] = []
     for s, rej, qv in zip(stats, rejected, q, strict=True):

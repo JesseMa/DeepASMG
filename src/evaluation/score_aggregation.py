@@ -81,14 +81,55 @@ def continuous_scores(family: str, p: dict, y: float, censored: bool
     return ps.lattice_crps(cdf, y, lo=lo, hi=hi), nll
 
 
-def _mean_se(vals: List[float]) -> Tuple[float, float, int]:
-    a = np.asarray([v for v in vals if v is not None and np.isfinite(v)], dtype=float)
-    n = len(a)
-    if n == 0:
+def _seed_means(by_seed: Dict[int, List[float]]) -> Tuple[Dict[int, float], int]:
+    """Per-seed means and the total number of usable observations.
+
+    A seed with no usable value is absent from the mapping rather than NaN.
+    """
+    means: Dict[int, float] = {}
+    n_obs = 0
+    for seed, vals in by_seed.items():
+        a = np.asarray([v for v in vals if v is not None and np.isfinite(v)], dtype=float)
+        if a.size:
+            means[seed] = float(a.mean())
+            n_obs += int(a.size)
+    return means, n_obs
+
+
+def _mean_se(seed_means: Dict[int, float]) -> Tuple[float, float, int]:
+    """Mean over replications and its seed-clustered standard error.
+
+    The score rows within one replication are not independent: they come from
+    one trajectory. Averaging per seed first and taking the spread across the
+    k seeds is the resolution the design actually provides; treating the rows
+    as independent understates the standard error.
+    """
+    a = np.asarray(sorted(seed_means.values()), dtype=float)
+    k = len(a)
+    if k == 0:
         return float("nan"), float("nan"), 0
     m = float(a.mean())
-    se = float(a.std(ddof=1) / np.sqrt(n)) if n > 1 else 0.0
-    return m, se, n
+    se = float(a.std(ddof=1) / np.sqrt(k)) if k > 1 else 0.0
+    return m, se, k
+
+
+def _paired_mean_se(
+    seed_means: Dict[int, float], ref_means: Dict[int, float]
+) -> Tuple[float, float, int]:
+    """Mean paired difference against the reference and its standard error.
+
+    Under common random numbers the systems share a seed, so the per-seed
+    difference removes the between-seed variation the two share. This is the
+    comparison the design was built for, and it is much sharper than the
+    unpaired one.
+    """
+    shared = sorted(set(seed_means) & set(ref_means))
+    if not shared:
+        return float("nan"), float("nan"), 0
+    d = np.asarray([seed_means[s] - ref_means[s] for s in shared], dtype=float)
+    k = len(d)
+    se = float(d.std(ddof=1) / np.sqrt(k)) if k > 1 else 0.0
+    return float(d.mean()), se, k
 
 
 def _label(row, column: str) -> str:
@@ -104,9 +145,17 @@ def _label(row, column: str) -> str:
     return str(value)
 
 
-def aggregate_continuous(df, system: str, component: str) -> List[dict]:
-    """CRPS/NLL per (station[, head]) plus pooled, for one continuous component."""
-    by_group: Dict[tuple, dict] = defaultdict(lambda: {"crps": [], "nll": [], "n_cens": 0})
+def aggregate_continuous(
+    df, system: str, component: str, *, reference: Optional[dict] = None,
+) -> Tuple[List[dict], dict]:
+    """CRPS/NLL per (station[, head]) plus pooled, for one continuous component.
+
+    Returns the rows and a {group: {metric: {seed: mean}}} map. Passing the
+    reference system's map back in adds the CRN-paired difference columns.
+    """
+    by_group: Dict[tuple, dict] = defaultdict(
+        lambda: {"crps": defaultdict(list), "nll": defaultdict(list), "n_cens": 0}
+    )
     for _, r in df.iterrows():
         p = _parse(r["params"])
         if p is None:
@@ -118,33 +167,44 @@ def aggregate_continuous(df, system: str, component: str) -> List[dict]:
         cens = bool(int(r.get("censored", 0)))
         crps, nll = continuous_scores(p["family"], p, y, cens)
         key = (_label(r, "station"), _label(r, "head"))
+        seed = int(r["seed"])
         g = by_group[key]
-        g["nll"].append(nll)
+        g["nll"][seed].append(nll)
         if crps is None:
             g["n_cens"] += 1
         else:
-            g["crps"].append(crps)
-    rows: List[dict] = []
-    all_crps: List[float] = []
-    all_nll: List[float] = []
+            g["crps"][seed].append(crps)
+    pooled: dict = {"crps": defaultdict(list), "nll": defaultdict(list)}
     tot_cens = 0
-    for (station, head), g in sorted(by_group.items()):
-        cm, cse, cn = _mean_se(g["crps"])
-        nm, nse, nn = _mean_se(g["nll"])
-        rows.append({"system": system, "component": component, "station": station,
-                     "head": head, "crps_mean": cm, "crps_se": cse, "n_crps": cn,
-                     "nll_mean": nm, "nll_se": nse, "n_nll": nn,
-                     "n_censored_excl_crps": g["n_cens"]})
-        all_crps += g["crps"]
-        all_nll += g["nll"]
+    for g in by_group.values():
+        for metric in ("crps", "nll"):
+            for seed, vals in g[metric].items():
+                pooled[metric][seed].extend(vals)
         tot_cens += g["n_cens"]
-    cm, cse, cn = _mean_se(all_crps)
-    nm, nse, nn = _mean_se(all_nll)
-    rows.append({"system": system, "component": component, "station": "POOLED",
-                 "head": "", "crps_mean": cm, "crps_se": cse, "n_crps": cn,
-                 "nll_mean": nm, "nll_se": nse, "n_nll": nn,
-                 "n_censored_excl_crps": tot_cens})
-    return rows
+
+    groups = sorted(by_group.items()) + [(("POOLED", ""), {**pooled, "n_cens": tot_cens})]
+    seed_map: dict = {}
+    rows: List[dict] = []
+    for (station, head), g in groups:
+        row = {"system": system, "component": component,
+               "station": station, "head": head}
+        for metric in ("crps", "nll"):
+            means, n_obs = _seed_means(g[metric])
+            m, se, k = _mean_se(means)
+            row[f"{metric}_mean"] = m
+            row[f"{metric}_se"] = se
+            row[f"n_{metric}"] = n_obs
+            row[f"n_seeds_{metric}"] = k
+            seed_map[(station, head, metric)] = means
+            if reference is not None:
+                ref = reference.get((station, head, metric), {})
+                dm, dse, dk = _paired_mean_se(means, ref)
+                row[f"{metric}_paired_diff"] = dm
+                row[f"{metric}_paired_se"] = dse
+                row[f"n_seeds_paired_{metric}"] = dk
+        row["n_censored_excl_crps"] = g["n_cens"]
+        rows.append(row)
+    return rows, seed_map
 
 
 def _row_brier(probs: Dict[str, float], realized: str) -> float:
@@ -198,8 +258,14 @@ CONTINUOUS = ("processing", "survival", "repair")
 CATEGORICAL = ("transition", "arrival")
 
 
-def aggregate_all(shadow_dir: Path, systems, components) -> Dict[str, List[dict]]:
-    """Aggregate all existing <system>__<component>.csv files."""
+def aggregate_all(
+    shadow_dir: Path, systems, components, *, reference: str = "GroundSim",
+) -> Dict[str, List[dict]]:
+    """Aggregate all existing <system>__<component>.csv files.
+
+    The reference system is scored first so every other system can carry the
+    CRN-paired difference against it.
+    """
     import warnings
 
     import pandas as pd
@@ -209,14 +275,23 @@ def aggregate_all(shadow_dir: Path, systems, components) -> Dict[str, List[dict]
     with warnings.catch_warnings():
         # Fail loud: a non-converging quadrature would silently corrupt a score.
         warnings.simplefilter("error", IntegrationWarning)
-        for system in systems:
+        ordered = ([reference] + [s for s in systems if s != reference]
+                   if reference in systems else list(systems))
+        ref_maps: Dict[str, dict] = {}
+        for system in ordered:
             for comp in components:
                 path = shadow_dir / f"{system}__{comp}.csv"
                 if not path.exists():
                     continue
                 df = pd.read_csv(path, dtype={"context_id": str, "realized": str})
                 if comp in CONTINUOUS:
-                    cont += aggregate_continuous(df, system, comp)
+                    rows, seed_map = aggregate_continuous(
+                        df, system, comp,
+                        reference=None if system == reference else ref_maps.get(comp),
+                    )
+                    cont += rows
+                    if system == reference:
+                        ref_maps[comp] = seed_map
                 elif comp in CATEGORICAL:
                     cat += aggregate_categorical(df, system, comp)
     return {"continuous": cont, "categorical": cat}
