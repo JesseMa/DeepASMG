@@ -92,7 +92,7 @@ class GroundSurvival(SurvivalStrategy):
     def sample_time_to_failure(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[float]:
-        """TTF in operating seconds, floored at 1.0 s; None if the station cannot fail."""
+        """TTF in whole operating seconds (>= 1); None if the station cannot fail."""
         scale = self._ttf_scales.get(station_id)
         if scale is None or scale <= 0:
             return None
@@ -103,7 +103,7 @@ class GroundSurvival(SurvivalStrategy):
         self._sg_ttf_draws = getattr(self, "_sg_ttf_draws", 0) + 1
         if ttf < 1.0:
             self._sg_ttf_clamp = getattr(self, "_sg_ttf_clamp", 0) + 1
-        return max(1.0, float(ttf))
+        return float(np.ceil(ttf))  # integer time contract; ceil(x>0) >= 1
 
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002

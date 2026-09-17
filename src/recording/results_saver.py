@@ -68,20 +68,19 @@ class ResultsSaver:
             writer = csv.writer(f)
             writer.writerow(PROCESS_LOG_DTYPE.names)
             for row in process_log:
-                # The engine clock advances in integer 1-second ticks, so an event
-                # scheduled at t = a + b (a int, b float) only fires at ceil(a + b).
-                # Ceiling here keeps the logged duration equal to the executed one.
-                # The value order must match PROCESS_LOG_DTYPE, which also supplies
-                # the header above.
+                # Integer time contract: every duration is rounded exactly once,
+                # at the emitting module's boundary — logged ≡ executed, raw.
+                # The value order must match PROCESS_LOG_DTYPE, which also
+                # supplies the header above.
                 writer.writerow([
                     self._prefixed(str(row["order_id"])),
                     f"{row['timestamp_event_start']:.6f}",
                     row["station"],
                     row["station_type"],
-                    f"{np.ceil(row['time_processing']):.6f}",
+                    f"{row['time_processing']:.6f}",
                     row["is_breakdown"],
-                    f"{np.ceil(row['net_process_time']):.6f}",
-                    f"{np.ceil(row['repair_time']):.6f}",
+                    f"{row['net_process_time']:.6f}",
+                    f"{row['repair_time']:.6f}",
                 ])
 
         return filepath

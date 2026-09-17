@@ -59,16 +59,19 @@ class GroundProcessTime(ProcessTimeStrategy):
         if draw < 0.1:
             self._sg_proc_clamp = getattr(self, "_sg_proc_clamp", 0) + 1
         net = max(0.1, draw)
-        return net + self._setup_times.get(station_id, 0.0)
+        # Integer time contract: durations are whole seconds, rounded exactly
+        # once at the module boundary (the kernel clock ticks in 1-s steps).
+        return float(np.ceil(net + self._setup_times.get(station_id, 0.0)))
 
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,
     ) -> Dict[str, object]:
         """Normal params N(mean·f, std·f) of the process time BEFORE setup.
 
-        predict() adds setup_time[station] on top and floors the draw at 0.1, so
-        these params are on the net scale while the DeepSim and RefSim params are
-        on the total scale; scripts/rescore_processing.py reconciles the two.
+        predict() adds setup_time[station], floors the draw at 0.1 and returns
+        ceil() of the total (integer time contract), so these params are the
+        latent net-scale density while DeepSim and RefSim parameterize the total
+        scale; scripts/rescore_processing.py reconciles the two.
         """
         process_times = self._station_process_times[station_id]
         mean, std = process_times[order.resolve_process_key(process_times)]

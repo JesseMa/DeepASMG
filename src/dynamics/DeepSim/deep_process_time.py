@@ -89,7 +89,7 @@ class DeepProcessTime(ProcessTimeStrategy):
 
         self._prev_on_machine[station_id] = dict(order.features)
 
-        return max(0.1, float(sample))
+        return float(np.ceil(max(0.1, float(sample))))  # integer time contract
 
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,

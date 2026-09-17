@@ -49,7 +49,7 @@ class RefRepair(RepairStrategy):
 
         scale = self._repair_scales[station_id]
         self._sg_repair_draws = getattr(self, "_sg_repair_draws", 0) + 1
-        return float(self._rng.exponential(scale=scale))
+        return float(np.ceil(self._rng.exponential(scale=scale)))  # integer time contract
 
     def distribution_params(
         self,

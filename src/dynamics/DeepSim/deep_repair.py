@@ -104,7 +104,7 @@ class DeepRepair(RepairStrategy):
         self._sg_repair_draws = getattr(self, "_sg_repair_draws", 0) + 1
         if sample < 1.0:
             self._sg_repair_clamp = getattr(self, "_sg_repair_clamp", 0) + 1
-        return max(1.0, float(sample))
+        return float(np.ceil(float(sample)))  # integer time contract
 
     def distribution_params(
         self,

@@ -45,7 +45,7 @@ class RefSurvival(SurvivalStrategy):
         self._sg_ttf_draws = getattr(self, "_sg_ttf_draws", 0) + 1
         if ttf < 1.0:
             self._sg_ttf_clamp = getattr(self, "_sg_ttf_clamp", 0) + 1
-        return max(1.0, float(ttf))
+        return float(np.ceil(float(ttf)))  # integer time contract
 
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
@@ -95,7 +95,7 @@ class RefSurvivalWeibull(SurvivalStrategy):
         self._sg_ttf_draws = getattr(self, "_sg_ttf_draws", 0) + 1
         if ttf < 1.0:
             self._sg_ttf_clamp = getattr(self, "_sg_ttf_clamp", 0) + 1
-        return max(1.0, ttf)
+        return float(np.ceil(ttf))  # integer time contract
 
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002

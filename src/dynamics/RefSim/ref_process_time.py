@@ -62,7 +62,7 @@ class RefProcessTime(ProcessTimeStrategy):
         self._sg_proc_draws = getattr(self, "_sg_proc_draws", 0) + 1
         if draw < 0.1:
             self._sg_proc_clamp = getattr(self, "_sg_proc_clamp", 0) + 1
-        return max(0.1, float(draw))
+        return float(np.ceil(max(0.1, float(draw))))  # integer time contract
 
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,  # noqa: ARG002
@@ -123,7 +123,7 @@ class RefProcessTimeVariant(ProcessTimeStrategy):
         self._sg_proc_draws = getattr(self, "_sg_proc_draws", 0) + 1
         if draw < 0.1:
             self._sg_proc_clamp = getattr(self, "_sg_proc_clamp", 0) + 1
-        return max(0.1, float(draw))
+        return float(np.ceil(max(0.1, float(draw))))  # integer time contract
 
     def _resolve_cell(self, station_id: str, order: "Order"):
         """Resolved ((mean, std), hierarchy level); the single resolution path."""
