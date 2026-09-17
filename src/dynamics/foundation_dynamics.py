@@ -211,7 +211,7 @@ def load_deep_model(
 def infer_single(model: Any, x: np.ndarray) -> "torch.Tensor":
     """Run inference for a single feature vector; returns the 1D output tensor."""
     import torch
-    with torch.no_grad():
+    with torch.inference_mode():
         return model(torch.from_numpy(x).unsqueeze(0).float()).squeeze(0)
 
 

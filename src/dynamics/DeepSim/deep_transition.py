@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from collections import deque
 from pathlib import Path
-from typing import Deque, Dict, Optional, Set, Tuple, TYPE_CHECKING
+from typing import Any, Deque, Dict, Optional, Set, Tuple, TYPE_CHECKING
 
 import numpy as np
 
@@ -58,6 +58,8 @@ class DeepTransition(TransitionStrategy):
         self._none_token = NONE_TOKEN
         self._offsets: Dict[str, int] = {}
         self._n_hist_slots: int = 0
+
+        self._mask_cache: Dict[frozenset, Any] = {}
 
         # Slot 0 = most recent entry (appendleft), slot K-1 = oldest.
         self._slot_buffers: Dict[str, Deque[Tuple[str, str]]] = {}
@@ -120,16 +122,23 @@ class DeepTransition(TransitionStrategy):
             logits = logits / self._temperature
 
         if available_targets is not None:
-            mask = torch.tensor(
-                [name in available_targets for name in self._class_names],
-                dtype=torch.bool,
-            )
-            if not mask.any():
-                raise ValueError(
-                    f"Routing mask empty for station '{station_id}': "
-                    f"no class_names ∈ available_targets={available_targets}."
+            # The mask depends only on the target set, which the engine builds
+            # once per station, so it is cached rather than rebuilt per event.
+            key = frozenset(available_targets)
+            inverse = self._mask_cache.get(key)
+            if inverse is None:
+                mask = torch.tensor(
+                    [name in available_targets for name in self._class_names],
+                    dtype=torch.bool,
                 )
-            logits = logits.masked_fill(~mask, float("-inf"))
+                if not mask.any():
+                    raise ValueError(
+                        f"Routing mask empty for station '{station_id}': "
+                        f"no class_names ∈ available_targets={available_targets}."
+                    )
+                inverse = ~mask
+                self._mask_cache[key] = inverse
+            logits = logits.masked_fill(inverse, float("-inf"))
 
         probs = torch.softmax(logits, dim=0).numpy()
         return probs / probs.sum()
