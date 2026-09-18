@@ -15,8 +15,6 @@ class EventType(Enum):
 
 @dataclass(slots=True)
 class Event:
-    """A single event. Ordering lives in the heap tuple, not in this record."""
-
     time: int
     type: EventType
     station_id: Optional[str] = None
@@ -25,14 +23,6 @@ class Event:
 
 
 class EventQueue:
-    """Min-heap of events, ordered by (time, _seq).
-
-    Integer time contract: every scheduled time is a whole second, so events
-    that fall in the same tick are genuinely simultaneous and their order is
-    decided by _seq — insertion order, i.e. FIFO — not by sub-second precision
-    the model does not have.
-    """
-
     def __init__(self) -> None:
         self._heap: list[tuple] = []
         self._seq: int = 0

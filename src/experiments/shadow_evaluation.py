@@ -1,11 +1,3 @@
-"""N-system shadow-parameter driver.
-
-One GroundSim trajectory per seed advances the state; at every strategy call all
-systems are queried on the identical context for their deployed
-distribution_params, one logged row per (system, component). DeepSim process,
-transition and product state is teacher-forced to the Ground realization after
-every call.
-"""
 
 from __future__ import annotations
 
@@ -90,8 +82,6 @@ def _is_deep(name: str) -> bool:
 
 
 class _ShadowStations:
-    """Mixin: forward initialize(stations) to the ground and every system strategy."""
-
     def initialize(self, stations):
         self._g.initialize(stations)
         for s in self._sys.values():
@@ -139,13 +129,6 @@ class _ShadowTR(_ShadowStations):
 
 
 class _ShadowSV(_ShadowStations):
-    """Lifecycle matching: every sample_time_to_failure opens a cycle (at most
-    one open per station); notify_cycle_end (ttf = accumulated_op_time =
-    realized operating duration) closes it uncensored. At sim end, a cycle whose
-    breakdown already occurred (repair running past the horizon) is emitted as
-    an observed failure; only cycles without a breakdown are right-censored.
-    """
-
     def __init__(self, ground, systems, log):
         self._g, self._sys, self._log = ground, systems, log
         self._open: Dict[str, List[dict]] = defaultdict(list)  # station → open cycles (FIFO)
@@ -173,7 +156,6 @@ class _ShadowSV(_ShadowStations):
             self._emit(self._open[station_id].pop(0), float(ttf), 0)
 
     def notify_breakdown(self, station_id: str) -> None:
-        """Called at breakdown time (via the repair wrapper)."""
         self._breakdown_pending.add(station_id)
 
     def _emit(self, cyc, realized, censored):
@@ -188,9 +170,6 @@ class _ShadowSV(_ShadowStations):
                              cyc["t_sim"], "", fam, p, realized, censored)
 
     def finalize(self, final_accum: Dict[str, float]) -> None:
-        """Close cycles still open at sim end; only the oldest open cycle can
-        carry an observed breakdown, the rest are right-censored.
-        """
         for station, cycles in self._open.items():
             for index, cyc in enumerate(cycles):
                 observed = index == 0 and station in self._breakdown_pending
@@ -215,11 +194,6 @@ class _ShadowRT(_ShadowStations):
 
 
 class _ShadowPR:
-    """Arrival: GroundProduct steers; all systems are queried on the realized
-    context per attribute head for their categorical distribution. Deep
-    products are teacher-forced (observe_external = Ground history). One row
-    per head with its own context_id.
-    """
 
     HEAD_FEAT = {"type": "modell", "feature_a": "feature_a", "feature_b": "feature_b"}
 

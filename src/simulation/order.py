@@ -13,9 +13,6 @@ class Order:
     timestamp_creation: float
     timestamp_completion: Optional[float] = None
 
-    # Arrivals at each station so far, this one included. Part of the routing
-    # context: a station may route differently on a repeat visit, and the
-    # count is derivable from the log (prior rows with the same order_id).
     visits: Dict[str, int] = field(default_factory=dict)
 
     def resolve_transition_key(self, transitions: dict, *, station_id: str) -> str:

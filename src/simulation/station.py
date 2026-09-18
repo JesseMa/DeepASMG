@@ -1,10 +1,5 @@
-"""Station – unified runtime object for all station types.
-
-Capacity: occupied = len(processing_slots) + len(departure_queue) ≤ capacity.
-
-TTF-decrement paradigm: ttf_remaining counts operating seconds to the next
-failure (None = cannot fail); the cycle accumulators are reset at repair end,
-not at breakdown, so a cycle spans repair-end to repair-end.
+"""
+    Station – unified runtime object for all station types.
 """
 
 from __future__ import annotations
@@ -33,7 +28,6 @@ class Station:
 
         self._departure_queue: deque[_DepartureEntry] = deque()
 
-        # Incoming waitlist: upstream stations wanting to send here (FIFO)
         self._incoming_waitlist: deque[str] = deque()
         self._waitlist_set: Set[str] = set()
 
@@ -41,7 +35,6 @@ class Station:
 
         self.ttf_remaining: Optional[float] = None
 
-        # Cycle wear accumulators; feed the repair-duration model at breakdown.
         self.accumulated_op_time: float = 0.0
         self.cycle_start_wall_time: float = 0.0
         self.jobs_in_cycle: int = 0
@@ -52,14 +45,17 @@ class Station:
 
     @property
     def station_type(self) -> str:
-        """Recorded station kind: "machine" or "buffer"."""
         return "machine" if self.config.is_machine else "buffer"
+
+    @property
+    def is_full(self) -> bool:
+        return self.occupied_slot_count >= self.config.capacity
 
     @property
     def is_available(self) -> bool:
         if self.is_down:
             return False
-        return self.occupied_slot_count < self.config.capacity
+        return not self.is_full
 
     def start_processing(self, order: "Order") -> None:
         if not self.is_available:

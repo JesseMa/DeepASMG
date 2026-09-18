@@ -1,9 +1,5 @@
-"""FailureManager – TTF-decrement failure control.
-
-One TTF is sampled per cycle and then decremented deterministically by each
-job's processing time, so all stochasticity of the failure process lives in
-that single sample. Survival and repair are independent strategy slots with
-separable random streams.
+"""
+    FailureManager – TTF-decrement failure control.
 """
 
 from __future__ import annotations
@@ -29,7 +25,6 @@ class FailureManager:
         self._repair = repair_strategy
 
     def initialize(self, stations: Dict[str, "Station"]) -> None:
-        """Sample initial TTFs for all stations (after station reset)."""
         for station in stations.values():
             self._start_new_cycle(station, current_time=0.0)
 
@@ -41,13 +36,7 @@ class FailureManager:
         events: "EventQueue",
         allow_breakdown: bool = True,
     ) -> None:
-        """Decrement TTF and account wear after a completed job.
 
-        allow_breakdown=False is used for jobs that finish while the machine is
-        already under repair: their wear belongs to the closing cycle (the cycle
-        snapshot happens at repair end), but no second breakdown may be
-        scheduled.
-        """
         if station.ttf_remaining is None:
             return
 

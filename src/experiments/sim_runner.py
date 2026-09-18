@@ -1,22 +1,5 @@
 """
 Sim runner — canonical replication series for GroundSim/RefSim/DeepSim.
-
-Every system is a composition of five modules (pt process time, tr transition,
-sv survival, rt repair, pr released-order attributes), each of one kind:
-"ground" (generator), "deep" (learned surrogate) or "stat" (fitted statistics;
-"statv" is the variant-conditioned table, "statw" the Weibull failure law).
-The named systems and the substitution grid are all built through ``compose``.
-
-Invariants:
-  C1 — the statistics blob is read once per model_dir (lru_cache); DeepSim
-       TorchScript models load lazily per strategy instance and are re-read
-       for every replication.
-  C2 — strict CRN pairing: every run entry carries the seed it was called
-       with, which for decorrelated modules is the un-offset seed (see C3).
-  C3 — fresh streams per run: every composition spawns five independent
-       module generators from SeedSequence(seed); a decorrelated module takes
-       its stream from SeedSequence(seed + SEED_OFFSET_FLOOR) instead. Never a
-       shared self._rng.
 """
 
 from __future__ import annotations

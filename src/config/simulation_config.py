@@ -23,6 +23,12 @@ SECONDS_PER_DAY = 86400
 # Eval anchor. Training data is generated backwards from this point so that
 # training and evaluation join without a time gap.
 SIM_START_TIMESTAMP = 1775001600  # 2026-04-01 00:00:00 UTC (Wednesday)
+if SIM_START_TIMESTAMP % SECONDS_PER_DAY != 0:
+    raise ValueError(
+        "Fail fast: SIM_START_TIMESTAMP must be midnight UTC. Shift and daily-phase "
+        "features are built from simulation-relative time, which is only a calendar "
+        "clock when the anchor is midnight; the training log inherits the anchor."
+    )
 
 # Pipeline constants. Scripts import these instead of defining local literals.
 

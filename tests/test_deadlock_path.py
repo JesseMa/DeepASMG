@@ -155,3 +155,23 @@ def test_orders_are_conserved_across_a_full_displacement_cycle():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+def test_down_station_with_a_free_slot_is_not_a_cycle_member():
+    """M5-shaped case: a three-slot machine under repair, one slot free, whose
+    finished order is bound back to its full feeder. The feeder's wait ends
+    with the repair, so displacing its order would be a spurious resolution."""
+    feeder = Station(StationConfig(id="B5", capacity=1))
+    machine = Station(StationConfig(id="M5", capacity=3, is_machine=True))
+    feeder.add_to_departure(Order(id="O_in", features={}, timestamp_creation=0.0), "M5")
+    machine.add_to_departure(Order(id="O_back", features={}, timestamp_creation=0.0), "B5")
+    machine.is_down = True
+    stations = {"B5": feeder, "M5": machine}
+    assert not machine.is_available and not machine.is_full
+    assert DeadlockManager().detect_cycle(stations, "B5", "M5") is None
+    # Once the machine is genuinely full the same edge is a cycle.
+    for i in range(2):
+        machine.add_to_departure(Order(id=f"O{i}", features={}, timestamp_creation=0.0), "B5")
+    assert machine.is_full
+    assert DeadlockManager().detect_cycle(stations, "B5", "M5") is not None
+

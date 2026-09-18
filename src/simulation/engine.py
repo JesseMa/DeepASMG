@@ -1,10 +1,5 @@
-"""SimulationEngine – time-discrete simulation at one-second resolution.
-
-Departure discipline: strict FIFO — only the front order of a departure
-queue may leave; all others wait even if their target station is free.
-
-Pull model: the start station is filled initially and replenished whenever a
-slot is freed.
+"""
+    SimulationEngine – time-discrete simulation at one-second resolution.
 """
 
 from __future__ import annotations
@@ -89,7 +84,6 @@ class SimulationEngine:
         self._create_initial_orders()
 
     def step(self) -> None:
-        """Advance the simulation by one second."""
         if self._is_done:
             raise RuntimeError("Simulation has ended. Please call reset().")
 
@@ -162,9 +156,6 @@ class SimulationEngine:
             process_time=event.data["process_time"],
         )
 
-        # Must run BEFORE the freed-slot cascade: a machine whose TTF is
-        # exhausted by this job has to be marked down before any waitlisted
-        # order can be admitted.
         if config.mttr > 0:
             self._availability.check_after_job(
                 station,
@@ -202,10 +193,6 @@ class SimulationEngine:
         return float(config.transit_time)
 
     def _drain_departure_fifo(self, station: Station) -> int:
-        """Dispatch from the departure queue, FIFO: only the front order may leave.
-
-        Returns the number of slots freed, counting overflow displacements.
-        """
         freed_slots = 0
         while station.has_departure:
             order, target_id = station.peek_departure()
@@ -242,11 +229,6 @@ class SimulationEngine:
 
 
     def _on_slot_freed(self, station: Station) -> None:
-        """Run the freed-slot cascade iteratively rather than recursively.
-
-        A station freed while the cascade is already running is appended and
-        picked up by the running loop, so the call depth stays at one.
-        """
         self._cascade_queue.append(station)
         if self._is_cascading:
             return
@@ -262,9 +244,6 @@ class SimulationEngine:
         self._drain_departure_fifo(station)
 
         if station.config.is_start_station:
-            # One replacement per freed slot: a single cascade pass can free
-            # several start-station slots, so replenish until capacity is
-            # restored (bounded by capacity as a hard stop).
             for _ in range(station.config.capacity):
                 if not station.is_available:
                     break

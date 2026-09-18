@@ -1,8 +1,5 @@
-"""DeadlockManager - cycle detection and overflow buffer.
-
-Circular waits (A->B->C->A) arise when every station in a chain of departure
-targets is at capacity. They are broken by overflow displacement: an order is
-parked without occupying a slot until its target station becomes free.
+"""
+    DeadlockManager - cycle detection and overflow buffer.
 """
 
 from __future__ import annotations
@@ -17,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class DeadlockManager:
-    """Deadlock detection and overflow resolution."""
 
     def __init__(self) -> None:
         self._overflow_orders: Dict[str, deque["Order"]] = defaultdict(deque)
@@ -42,13 +38,13 @@ class DeadlockManager:
         source_id: str,
         target_id: str,
     ) -> Optional[List[str]]:
-        """Station IDs of the cycle closed by the edge source→target, else None.
 
-        Follows the chain of departure targets from target (target waits on X,
-        X waits on Y, ...); returning to source means a cycle.
-        """
         if source_id == target_id:
             return [source_id]
+
+        target = stations.get(target_id)
+        if target is None or not target.is_full:
+            return None  # a free or merely down target admits the order itself
 
         visited = [source_id, target_id]
         current_id = target_id
@@ -69,8 +65,8 @@ class DeadlockManager:
                 return visited
 
             next_station = stations[next_target]
-            if next_station.is_available:
-                return None  # chain resolves on its own
+            if not next_station.is_full:
+                return None  # a free or merely down station resolves on its own
 
             if next_target in visited:
                 return None  # sub-cycle not involving source – irrelevant
@@ -86,12 +82,7 @@ class DeadlockManager:
         recorder: "Recorder",
         current_time: float,
     ) -> bool:
-        """Move the front departure entry to overflow, freeing its slot.
 
-        The displaced order is delivered by drain_overflow() once its target
-        station becomes free. Returns False when the station has no departure
-        entry.
-        """
         if not source_station.has_departure:
             return False
 
@@ -115,10 +106,7 @@ class DeadlockManager:
         target_station: "Station",
         accept_order_fn: Callable[["Station", "Order"], None],
     ) -> None:
-        """Deliver waiting overflow orders to the now-free target station.
 
-        accept_order_fn occupies a slot and schedules PROCESS_COMPLETE.
-        """
         queue = self._overflow_orders.get(target_station.id)
         if not queue:
             return

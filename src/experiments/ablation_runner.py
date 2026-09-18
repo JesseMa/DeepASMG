@@ -1,13 +1,3 @@
-"""
-Substitution grid: configurations that mix GroundSim, DeepSim and RefSim
-modules slot by slot (pt process time, tr transition, sv survival, rt repair,
-pr released-order attributes), built through ``SimFactorySet.compose``.
-
-A floor configuration is all-GroundSim with some slots on decorrelated
-streams (seed + SEED_OFFSET_FLOOR): the CRN-paired slots reproduce the
-target's draws exactly, the decorrelated ones measure the stochastic
-variability a substituted module is compared against.
-"""
 
 from __future__ import annotations
 
@@ -16,12 +6,9 @@ from src.experiments.sim_runner import MODULES, SimFactorySet, run_replications
 G, D, S = "ground", "deep", "stat"
 _ALL = frozenset(MODULES)
 
-
 def _floor(*decorrelated: str) -> tuple:
     return ((G, G, G, G, G), frozenset(decorrelated))
 
-
-# name → (module kinds in MODULES order, decorrelated slots)
 CONFIGS: dict[str, tuple] = {
     "Target (GroundSim)":            ((G, G, G, G, G), frozenset()),
     "DeepSim (All NN)":              ((D, D, D, D, D), frozenset()),
