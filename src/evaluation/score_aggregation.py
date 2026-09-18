@@ -77,6 +77,10 @@ def continuous_scores(family: str, p: dict, y: float, censored: bool
     P(Y = k) = F(k) - F(k-1). Both scores are taken on that law: the NLL is its
     log-likelihood, the CRPS is the CRPS definition applied to the step CDF.
     Under censoring the NLL keeps the survival term and CRPS is not scored.
+
+    A survival realization is the operating time at which the failure was
+    observed: the boundary of the job that exhausted the time to failure,
+    which is what a log records and what the surrogates are fitted on.
     """
     if censored and family == "normal":
         raise ValueError(
