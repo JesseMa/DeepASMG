@@ -1,14 +1,4 @@
-"""Routing-key resolution.
-
-Order features resolve against transitions/process_times dicts in fixed
-specificity order: "visit_{n}" when a visit index is supplied, then
-"{model}_{fa}_{fb}", "{model}_{fa}", "{model}_{fb}", "{model}", and finally
-"*" if wildcards are enabled.
-
-A station that routes differently on a repeat visit declares that as a
-"visit_{n}" entry in its transition table, so the rule stays a lookup like
-every other and remains expressible as a categorical distribution.
-"""
+"""Routing-key resolution."""
 
 from __future__ import annotations
 
@@ -18,7 +8,6 @@ _MISSING = object()
 
 
 def full_variant_key(features: Dict[str, str]) -> str:
-    """Variant key "modell_feature_a_feature_b", missing parts become empty strings."""
     if "modell" not in features:
         raise KeyError(
             f"Feature 'modell' missing in features={features}. "
@@ -32,7 +21,6 @@ def full_variant_key(features: Dict[str, str]) -> str:
 
 
 def product_type_key(features: Dict[str, str]) -> str:
-    """Product type = modell (coarser fallback level between variant and station)."""
     if "modell" not in features:
         raise KeyError(
             f"Feature 'modell' missing in features={features}. "
@@ -44,7 +32,6 @@ def product_type_key(features: Dict[str, str]) -> str:
 def build_candidate_keys(
     features: Dict[str, str], *, wildcard: bool, visit: int | None = None,
 ) -> List[str]:
-    """Build the candidate key list from most specific to most general."""
     if "modell" not in features:
         raise KeyError(
             f"Feature 'modell' missing in features={features}. "
@@ -76,9 +63,6 @@ def resolve_key(
     default: Any = _MISSING,
     visit: int | None = None,
 ) -> Any:
-    """First candidate key present in `lookup`. Raises KeyError on no match
-    unless `default` is given.
-    """
     for key in build_candidate_keys(features, wildcard=wildcard, visit=visit):
         if key in lookup:
             return key
@@ -91,7 +75,6 @@ def resolve_key(
 
 
 def station_admissible_targets(station_config) -> set:
-    """Union of all transition targets and all sequential-routing targets."""
     targets: set = set()
     for transition_map in station_config.transitions.values():
         if transition_map:

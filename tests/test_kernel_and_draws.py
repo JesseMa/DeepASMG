@@ -1,7 +1,4 @@
-"""Departure discipline and the single-draw contract of the categorical draws.
-
-    python -m pytest tests/ -q
-"""
+"""Departure discipline and the single-draw contract of the categorical draws."""
 
 from __future__ import annotations
 

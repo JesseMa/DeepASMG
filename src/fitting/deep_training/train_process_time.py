@@ -1,6 +1,4 @@
-"""
-Process-time prediction training (heteroscedastic regression).
-"""
+"""Process-time prediction training (heteroscedastic regression)."""
 
 from __future__ import annotations
 
@@ -18,15 +16,7 @@ from src.fitting.deep_training.foundation_training import (
 )
 
 
-
 class ProcessTimeLightningModule(GaussianNLLModule, pl.LightningModule):
-    """
-    MLP for process-time prediction (heteroscedastic regression).
-
-    Input:  one-hot [product_features + prev_features + station]
-    Output: (mean, log_var) of the process time in seconds; the simulation
-            samples N(mean, exp(0.5 * log_var)).
-    """
 
     def __init__(
         self,
@@ -48,7 +38,6 @@ def prepare_data(
     data_dir: Path,
     output_dir: Path,
 ) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
-    """Prepare process-time training data (cached)."""
     from src.fitting.deep_data_preparation.prepare_process_time_data import (
         prepare_training_data,
     )
@@ -68,17 +57,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    """
-    Train the process-time model.
-
-    Args:
-        _prep_dir: shared directory for prepared data; enables caching across
-            HPO trials (CSVs are loaded only once).
-
-    Returns:
-        Dict with best_val_loss, test_metrics, epochs_trained, model_path,
-        metadata_path.
-    """
     # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
 

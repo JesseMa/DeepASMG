@@ -1,9 +1,4 @@
-"""A fallible station without its own training failures is simulated from the
-pool, never made immortal by accident. The topology decides whether a station
-can fail (mttr > 0); the data decide how often.
-
-    python -m pytest tests/ -q
-"""
+"""A fallible station without its own training failures is simulated from the pool, never made immortal by accident."""
 
 from __future__ import annotations
 
@@ -99,8 +94,6 @@ def test_ref_strategies_refuse_a_missing_station_without_a_pool():
 
 
 def test_buffers_listed_in_a_fitted_table_are_never_drawn():
-    """An older parameter file may list a buffer with an infinite MTTF; the
-    topology says it cannot fail, so it is never asked and never draws."""
     rng = np.random.default_rng(0)
     sv = RefSurvival({"M1": 8e4, "M2": 8e4, "B1": float("inf")}, rng, pooled_mttf=9e4)
     sv.initialize(STATIONS)

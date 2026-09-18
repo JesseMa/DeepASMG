@@ -1,8 +1,4 @@
-"""
-DeepSurvival — NN-based time-to-failure, Weibull in operating seconds.
-
-The trained encoding maps, not the config, determine which stations can fail.
-"""
+"""DeepSurvival — NN-based time-to-failure, Weibull in operating seconds."""
 
 from __future__ import annotations
 
@@ -27,7 +23,6 @@ _logger = logging.getLogger(__name__)
 
 
 class DeepSurvival(SurvivalStrategy):
-    """Weibull time-to-failure by inversion sampling, in operating seconds."""
 
     _can_fail: set = frozenset()
 
@@ -125,8 +120,6 @@ class DeepSurvival(SurvivalStrategy):
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[Dict[str, object]]:
-        """Deployed Weibull params in operating seconds (scale includes
-        duration_scale); no state update. None = failure-free station."""
         if self._survival_model is None:
             raise RuntimeError("DeepSurvival.distribution_params: model not loaded.")
         # Whether a station can fail is a property of the topology; whether we
@@ -154,7 +147,6 @@ class DeepSurvival(SurvivalStrategy):
         self._prev_repair_time[station_id] = repair_time
 
     def _encode_input(self, station_id: str) -> np.ndarray:
-        """Feature vector: [station_onehot, prev_ttf, prev_n_jobs, mean_ttf, prev_repair_time]."""
         x = np.zeros(self._surv_feature_dim, dtype=np.float32)
         n_stations = len(self._surv_station_map)
 

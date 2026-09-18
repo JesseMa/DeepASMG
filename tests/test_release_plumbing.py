@@ -1,9 +1,4 @@
-"""The seams between the scripts: what the log writer stores, where the
-runner expects a model set, what the trainer refuses without a search result,
-and what a shipped model must carry to be loadable.
-
-    python -m pytest tests/ -q
-"""
+"""The seams between the scripts: what the log writer stores, where the runner expects a model set, what the trainer refuses without a search result, and what a shipped model must carry to be loadable."""
 
 from __future__ import annotations
 
@@ -19,7 +14,6 @@ from src.recording.results_saver import ResultsSaver
 
 
 def test_saver_writes_durations_verbatim(tmp_path):
-    """logged ≡ executed: the writer must not round a second time."""
     saver = ResultsSaver(tmp_path, "exp", "proc")
     row = np.zeros(1, dtype=PROCESS_LOG_DTYPE)
     row["order_id"], row["station"], row["station_type"] = "R1_J000001", "M1", "machine"

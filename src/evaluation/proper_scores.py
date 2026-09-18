@@ -1,12 +1,4 @@
-"""Lattice NLL, lattice CRPS and ECE as pure functions, independent of the simulation.
-
-Under the integer time contract every strategy returns ceil(X), so the law a
-system actually deploys is the lattice law P(Y = k) = F(k) - F(k-1). The
-scores here take that law directly: the interval NLL is its log-likelihood and
-the lattice CRPS is the CRPS definition evaluated on the step CDF
-G(x) = F(floor(x)). Scoring a continuous density against whole-second
-observations instead would reward a forecast shifted by half a bin.
-"""
+"""Lattice NLL, lattice CRPS and ECE as pure functions, independent of the simulation."""
 
 from __future__ import annotations
 
@@ -18,15 +10,6 @@ _LOG_HALF = -0.6931471805599453
 
 
 def interval_nll(log_cdf, log_sf, k: float, *, lo: float = 0.0) -> float:
-    """-log P(Y = k) for Y = ceil(X), i.e. -log(F(k) - F(k-1)).
-
-    Formed in log space from whichever side does not cancel: the cdf in the
-    lower half of the law, the survival function in the upper half. Far in a
-    tail both F(k) and F(k-1) (or both S values) agree to every stored digit
-    and their plain difference is zero; log(e^a - e^b) = a + log1p(-e^(b-a))
-    keeps the digits. These are exactly the rows on which a surrogate is
-    wrong, and the score has to say by how much rather than saturate.
-    """
     if k <= lo:
         raise ValueError(f"Fail fast: a realized duration must exceed {lo}, got {k}.")
     left = max(k - 1.0, lo)
@@ -38,7 +21,6 @@ def interval_nll(log_cdf, log_sf, k: float, *, lo: float = 0.0) -> float:
 
 
 def survival_nll(log_sf, k: float) -> float:
-    """-log S(k) for a right-censored whole-second observation."""
     return float(-log_sf(k))
 
 
@@ -47,14 +29,6 @@ _CHUNK = 2**20
 
 
 def lattice_crps(cdf, k: float, *, lo: int, hi: int) -> float:
-    """CRPS of the lattice law on the integer grid [lo, hi].
-
-    sum_j (F(j) - 1{j >= k})^2 over the support where F is neither 0 nor 1;
-    outside that range the summand vanishes, so the bounds only need to cover
-    the probability mass (see _support_bounds). The grid is summed in chunks
-    of bounded memory; a law spanning more than _MAX_SUPPORT seconds is not a
-    forecast of anything this study measures and is refused.
-    """
     if hi - lo > _MAX_SUPPORT:
         raise ValueError(
             f"Fail fast: predictive law spans {hi - lo:,} s around k={k}; "
@@ -69,12 +43,6 @@ def lattice_crps(cdf, k: float, *, lo: int, hi: int) -> float:
 
 
 def _support_bounds(cdf, k: float, *, step: float, eps: float = 1e-9) -> tuple[int, int]:
-    """Integer range outside which the lattice CRPS summand is below eps.
-
-    Walks outward from the observation in multiples of `step` until F is within
-    eps of 0 below and of 1 above, so the sum is exact to that tolerance
-    regardless of how wide the distribution is.
-    """
     lo = max(int(np.floor(k)) - 1, 0)
     while lo > 0 and float(cdf(lo)) > eps:
         lo = max(int(lo - step), 0)
@@ -92,10 +60,6 @@ def compute_ece(
     lo: float = 0.0,
     hi: float = 1.0,
 ) -> Dict[str, float]:
-    """Confidence ECE with ``n_bins`` equal-width bins over [lo, hi].
-
-    ECE = Σ (|B|/N)·|acc(B) − conf(B)|; empty bins contribute 0.
-    """
     conf = np.asarray(confidences, dtype=float)
     acc = np.asarray(correct, dtype=float)
     n = len(conf)

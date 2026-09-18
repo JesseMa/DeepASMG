@@ -1,10 +1,4 @@
-"""
-DeepProduct — NN-based product generation.
-
-Time encoding must match prepare_product_data.py: absolute epoch timestamps,
-so the calendar phase of the deployment query lines up with the phase the
-generator modulated on.
-"""
+"""DeepProduct — NN-based product generation."""
 
 from __future__ import annotations
 
@@ -22,11 +16,6 @@ from src.dynamics.foundation_dynamics import (
 
 
 class DeepProduct(ProductStrategy):
-    """NN-based product generation.
-
-    start_timestamp (seconds) is added to current_time before the time
-    encoding; 0 encodes relative to simulation start.
-    """
 
     def __init__(
         self,
@@ -65,11 +54,9 @@ class DeepProduct(ProductStrategy):
         temporal_modulation: Optional[Dict[str, Any]] = None,
         markov_alphas: Optional[Dict[str, float]] = None,
     ) -> None:
-        """Reset at simulation start; all arguments are ignored (learned parameters only)."""
         self._prev_ewma = None
 
     def sample_features(self, current_time: float = 0.0) -> Dict[str, str]:
-        """Sample the next order's features, conditioned on current_time and the EWMA context."""
         self._ensure_loaded()
         absolute_time = self._start_timestamp + current_time
         features = self._sample_from_model(absolute_time)
@@ -78,8 +65,6 @@ class DeepProduct(ProductStrategy):
         return features
 
     def observe_external(self, features: Dict[str, str]) -> None:
-        """Teacher forcing: feed external features into the EWMA instead of the
-        model's own samples."""
         self._ensure_loaded()
         self._update_ewma(features)
 
@@ -130,12 +115,6 @@ class DeepProduct(ProductStrategy):
             ) from e
 
     def _sample_from_model(self, absolute_time: float) -> Dict[str, str]:
-        """Two-pass inference (model conditioning):
-            Pass 1: x = [base | zeros(cond_dim)] → 'modell' logits
-                    (condition-independent); sample 'modell'.
-            Pass 2: x = [base | one_hot(modell_idx)] → feature_a/feature_b from
-                    the conditional heads.
-        """
         x_base = self._encode_input(absolute_time)
         modell_head = self._head_layout[0]
         if modell_head["feature_name"] != "modell":
@@ -190,9 +169,6 @@ class DeepProduct(ProductStrategy):
         realized_features: Optional[Dict[str, str]] = None,
         prev_features: Optional[Dict[str, str]] = None,  # noqa: ARG002 — EWMA via observe_external
     ) -> Dict[str, Dict[str, float]]:
-        """Deployed categorical distribution per attribute head (two-pass softmax,
-        pass 2 conditioned on the realized 'modell'). No state update; the EWMA
-        (teacher forcing) is maintained externally via observe_external."""
         self._ensure_loaded()
         x_base = self._encode_input(self._start_timestamp + current_time)
         mh = self._head_layout[0]
@@ -218,12 +194,9 @@ class DeepProduct(ProductStrategy):
         return out
 
     def _idx_to_value(self, feat_name: str, idx: int) -> str:
-        """Head index to categorical value (NONE excluded)."""
         return self._head_values(feat_name)[idx]
 
     def _encode_input(self, absolute_time: float) -> np.ndarray:
-        """Input vector [sin/cos time encodings | prev_order EWMA]; ordering
-        matches feature_layout from metadata.json exactly."""
         x = np.zeros(self._feature_dim, dtype=np.float32)
 
         for period_s, entry_sin, entry_cos in zip(
@@ -256,7 +229,6 @@ class DeepProduct(ProductStrategy):
         return x
 
     def _update_ewma(self, features: Dict[str, str]) -> None:
-        """Update EWMA state. Invariant: Σ freq = 1."""
         if self._prev_ewma is None:
             self._prev_ewma = {
                 feat_name: np.full(nc, 1.0 / nc, dtype=np.float32)

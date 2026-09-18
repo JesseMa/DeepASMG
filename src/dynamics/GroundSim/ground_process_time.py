@@ -16,7 +16,6 @@ _NIGHT_FACTOR  = 1.15
 
 
 def _night_shift_factor(current_time: float) -> float:
-    """Night-shift (22:00-06:00) multiplier, else 1.0."""
     return _NIGHT_FACTOR if detect_shift(current_time) == 2 else 1.0
 
 
@@ -66,13 +65,6 @@ class GroundProcessTime(ProcessTimeStrategy):
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,
     ) -> Dict[str, object]:
-        """Normal params of the TOTAL process time, setup included.
-
-        predict() returns ceil() of this draw (integer time contract), so these
-        parameters label the lattice law the station deploys — the same scale
-        DeepSim and RefSim report, which is what makes them comparable without
-        a reconciliation step.
-        """
         process_times = self._station_process_times[station_id]
         mean, std = process_times[order.resolve_process_key(process_times)]
         factor = _night_shift_factor(current_time)

@@ -1,9 +1,4 @@
-"""
-Multi-head MLP training for product-feature prediction (DeepProduct).
-
-TorchScript export: the traced model emits a single flat logit vector;
-DeepProduct splits it via head_layout from metadata.json.
-"""
+"""Multi-head MLP training for product-feature prediction (DeepProduct)."""
 
 from __future__ import annotations
 
@@ -22,19 +17,7 @@ from src.fitting.deep_training.foundation_training import (
 )
 
 
-
 class MultiHeadProductNet(nn.Module):
-    """
-    Autoregressive multi-head MLP with model conditioning.
-
-    Input layout: [base_features | modell_onehot]. The trunk sees only the
-    base features (time encoding + EWMA); the modell head predicts
-    P(modell | t, ewma) unconditionally, while the remaining heads consume
-    cat(trunk_output, modell_onehot) to learn P(feature | t, ewma, modell).
-
-    Training uses teacher forcing (ground-truth one-hot).
-    TorchScript-compatible: a single forward(x) with fixed input shape.
-    """
 
     def __init__(
         self,
@@ -88,12 +71,6 @@ class MultiHeadProductNet(nn.Module):
 
 
 class ProductMLPModule(BaseTrainingModule, pl.LightningModule):
-    """
-    Lightning wrapper for MultiHeadProductNet with teacher forcing.
-
-    Loss: weighted sum of per-head cross-entropy. input_dim is the base size
-    WITHOUT conditioning; the net is built with input_dim + conditioning_dim.
-    """
 
     def __init__(
         self,
@@ -177,9 +154,7 @@ class ProductMLPModule(BaseTrainingModule, pl.LightningModule):
         return total_loss
 
 
-
 def prepare_data(data_dir: Path, output_dir: Path) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
-    """Prepare product training data (cached)."""
     from src.fitting.deep_data_preparation.prepare_product_data import (
         prepare_product_data,
     )
@@ -199,17 +174,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    """
-    Train the multi-head product-feature MLP.
-
-    Args:
-        _prep_dir: shared directory for prepared data; enables caching
-            across HPO trials.
-
-    Returns:
-        Dict with best_val_loss, test_metrics, epochs_trained, model_path,
-        metadata_path.
-    """
     # Reproducibility seed before anything else (model init, shuffling,
     # DataLoader workers). Together with Trainer(deterministic=True) in
     # foundation_training this yields bit-identical models for an identical

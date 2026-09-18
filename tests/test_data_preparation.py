@@ -1,7 +1,4 @@
-"""What the preparation turns the log into, and what the reference fits on it.
-
-    python -m pytest tests/ -q
-"""
+"""What the preparation turns the log into, and what the reference fits on it."""
 
 from __future__ import annotations
 
@@ -25,8 +22,6 @@ def _ev(t, station, *, order="O1", stype="machine", dur=10.0, breakdown=False, r
 
 
 def _one_machine_log():
-    """Three cycles on M1: jobs sum to 30, 50 and 70 operating seconds; three
-    breakdowns with repairs 100, 200, 300; one open cycle at the end."""
     log, t = [], 0.0
     for ops, rep in ((30.0, 100.0), (50.0, 200.0), (70.0, 300.0)):
         for _ in range(int(ops // 10)):

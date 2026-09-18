@@ -1,6 +1,4 @@
-"""
-    Station – unified runtime object for all station types.
-"""
+"""Station – unified runtime object for all station types."""
 
 from __future__ import annotations
 
@@ -85,7 +83,6 @@ class Station:
         return entry.order, entry.target_station_id
 
     def pop_departure(self) -> Tuple["Order", str]:
-        """Remove and return the front entry; frees a slot."""
         entry = self._departure_queue.popleft()
         return entry.order, entry.target_station_id
 
@@ -100,7 +97,6 @@ class Station:
         return self._departure_queue[0].target_station_id
 
     def add_to_waitlist(self, source_station_id: str) -> None:
-        """Add a station to the waitlist; repeat calls are no-ops."""
         if source_station_id not in self._waitlist_set:
             self._incoming_waitlist.append(source_station_id)
             self._waitlist_set.add(source_station_id)
@@ -115,7 +111,6 @@ class Station:
         return bool(self._incoming_waitlist)
 
     def get_utilization(self, current_time: float) -> float:
-        """Utilization in the current cycle: op_time / wall_clock, in [0, 1]; 1.0 if wall_clock=0."""
         wall_clock = current_time - self.cycle_start_wall_time
         if wall_clock <= 0:
             return 1.0

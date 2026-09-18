@@ -9,9 +9,7 @@ import numpy as np
 from src.dynamics.foundation_dynamics import ProductStrategy, weighted_draw
 
 
-
 class RefProduct(ProductStrategy):
-    """Features from fitted per-feature marginals; temporal_modulation is ignored."""
 
     def __init__(
         self,
@@ -27,7 +25,7 @@ class RefProduct(ProductStrategy):
         self._prepare_distributions(product_features)
 
     def initialize(self, product_features: Dict[str, Any], temporal_modulation: Optional[Dict] = None, markov_alphas: Optional[Dict[str, float]] = None) -> None:
-        """No-op: the distributions are fixed in __init__."""
+        ...
 
     def _prepare_distributions(self, product_features: Dict[str, Any]) -> None:
         self._distributions = {}
@@ -64,7 +62,6 @@ class RefProduct(ProductStrategy):
         realized_features: Optional[Dict[str, str]] = None,  # noqa: ARG002
         prev_features: Optional[Dict[str, str]] = None,  # noqa: ARG002
     ) -> Dict[str, Dict[str, float]]:
-        """Deployed categorical per attribute head; context-free (unconditional marginals)."""
         out: Dict[str, Dict[str, float]] = {}
         for feature_name, (values, probs) in self._distributions.items():
             head = self._HEAD_NAME.get(feature_name, feature_name)

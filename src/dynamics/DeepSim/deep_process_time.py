@@ -1,6 +1,4 @@
-"""
-Process-time strategy based on a trained neural network.
-"""
+"""Process-time strategy based on a trained neural network."""
 
 from __future__ import annotations
 
@@ -23,8 +21,6 @@ if TYPE_CHECKING:
 
 
 class DeepProcessTime(ProcessTimeStrategy):
-    """Process time from a PyTorch model; the output (mean, log_var) is sampled
-    as N(mean, exp(0.5 * log_var))."""
 
     def __init__(
         self,
@@ -85,9 +81,6 @@ class DeepProcessTime(ProcessTimeStrategy):
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,
     ) -> Dict[str, object]:
-        """Normal params on the TOTAL scale including setup time; pure query, no
-        state update. The 0.1 floor applied in predict() is not described here.
-        """
         self._ensure_loaded()
         output = infer_single(self._model, self._encode_single(station_id, order, current_time))
         return {"family": "normal", "mu": float(output[0].item()),

@@ -1,6 +1,4 @@
-"""
-    FailureManager – TTF-decrement failure control.
-"""
+"""FailureManager – TTF-decrement failure control."""
 
 from __future__ import annotations
 

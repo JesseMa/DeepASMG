@@ -1,15 +1,4 @@
-"""What preparation serializes must be what inference reads.
-
-The encoding maps travel from preparation to the deployed strategy as JSON in
-metadata.json. A feature block that exists in the arrays and in the layout but
-not in the serialized vocabulary passes every load-time check and then fails on
-the first prediction — hours into a rerun, with the models already trained.
-
-These tests pin the round trip for every categorical block the transition
-surrogate encodes.
-
-    python -m pytest tests/ -q
-"""
+"""What preparation serializes must be what inference reads."""
 
 from __future__ import annotations
 
@@ -28,7 +17,6 @@ from src.fitting.deep_data_preparation.prepare_transition_data import (
 
 
 def _groups(maps):
-    """The (name, vocabulary) list save() turns into the feature layout."""
     groups = [("modell", maps.modell), ("feature_a", maps.feature_a),
               ("feature_b", maps.feature_b), ("from_station", maps.from_station),
               ("visit", maps.visit)]
@@ -64,7 +52,6 @@ def maps():
 
 
 def test_every_encoded_block_survives_serialization(maps):
-    """Each block the encoder writes must be readable back from JSON."""
     serialized = json.loads(json.dumps(maps.to_dict()))
     for block in ("modell", "feature_a", "feature_b", "from_station", "visit",
                   "slot_target", "to_station"):
@@ -73,14 +60,12 @@ def test_every_encoded_block_survives_serialization(maps):
 
 
 def test_layout_and_vocabulary_agree_on_the_same_blocks(maps):
-    """A block in the layout without a vocabulary raises only at predict time."""
     serialized = json.loads(json.dumps(maps.to_dict()))
     layout, _ = build_feature_layout(_groups(maps))
     offsets = compile_offsets(layout)
     categorical = {k for k, v in serialized.items() if isinstance(v, dict)}
 
     def vocabulary_of(block: str) -> str:
-        """History slots reuse the modell and slot_target vocabularies."""
         if block.startswith("hist_modell_"):
             return "modell"
         if block.startswith("hist_target_"):
@@ -100,7 +85,6 @@ def test_feature_dim_matches_the_encoded_width(maps):
 
 
 def test_visit_block_is_one_hot_and_capped(maps):
-    """Exactly one visit position is set, and arrivals past the cap collapse."""
     layout, _ = build_feature_layout(_groups(maps))
     offsets = compile_offsets(layout)
     off = offsets["visit"]

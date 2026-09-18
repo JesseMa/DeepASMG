@@ -1,9 +1,4 @@
-"""Statistical time-to-failure strategies: Exponential (MTTF) and Weibull.
-
-A machine the topology declares fallible (mttr > 0) but whose training slice
-holds no usable failure is simulated from the fleet-pooled fit, with a
-warning. The topology decides whether a station can fail, the data how often.
-"""
+"""Statistical time-to-failure strategies: Exponential (MTTF) and Weibull."""
 
 from __future__ import annotations
 
@@ -22,11 +17,6 @@ _logger = logging.getLogger(__name__)
 
 def fill_pooled(name: str, table: Dict[str, object], pooled: object,
                 stations: Dict[str, "StationConfig"]) -> set:
-    """Give every fallible station without its own entry the pooled one.
-
-    Returns the set of stations that can fail at all (mttr > 0): the topology
-    decides that, whatever the fitted table happens to list.
-    """
     can_fail = {sid for sid, sc in stations.items() if sc.mttr > 0}
     missing = sorted(can_fail - set(table))
     if missing:
@@ -46,7 +36,6 @@ def fill_pooled(name: str, table: Dict[str, object], pooled: object,
 
 
 class RefSurvival(SurvivalStrategy):
-    """Exponential TTF from per-station MTTF in operating seconds."""
 
     def __init__(
         self,
@@ -65,7 +54,6 @@ class RefSurvival(SurvivalStrategy):
     def sample_time_to_failure(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[float]:
-        """TTF from Exp(MTTF); None if the station cannot fail."""
         if station_id not in self._can_fail:
             return None
         ttf = self._rng.exponential(scale=self._mttf[station_id])
@@ -77,18 +65,12 @@ class RefSurvival(SurvivalStrategy):
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[Dict[str, object]]:
-        """Deployed Exponential params (scale=MTTF). None = failure-free station."""
         if station_id not in self._can_fail:
             return None
         return {"family": "exponential", "scale": float(self._mttf[station_id])}
 
 
 class RefSurvivalWeibull(SurvivalStrategy):
-    """Per-station Weibull TTF in operating seconds.
-
-    Parameters are the interval-censored MLE over the training split's TTF
-    spells.
-    """
 
     def __init__(
         self,
@@ -107,7 +89,6 @@ class RefSurvivalWeibull(SurvivalStrategy):
     def sample_time_to_failure(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[float]:
-        """Weibull(shape, scale) TTF, one RNG draw; None if the station cannot fail."""
         if station_id not in self._can_fail:
             return None
         shape, scale = self._params[station_id]
@@ -120,7 +101,6 @@ class RefSurvivalWeibull(SurvivalStrategy):
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[Dict[str, object]]:
-        """Deployed Weibull params (shape, scale). None = failure-free station."""
         if station_id not in self._can_fail:
             return None
         shape, scale = self._params[station_id]

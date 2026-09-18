@@ -12,11 +12,6 @@ def bathtub_cumulative_hazard(
     w: float, p1: float, p2: float,
     h_early: float, h_normal: float, gamma: float,
 ) -> float:
-    """Piecewise-analytic cumulative hazard H(w) of the bathtub model.
-
-    The wear-out exponent is capped at 700 so H stays finite; beyond that
-    S = exp(-H) is 0 in double precision either way.
-    """
     if w <= 0:
         return 0.0
     h_at_p1 = h_early * p1 / 2.0 + h_normal * p1
@@ -35,16 +30,6 @@ BATHTUB = {"p1": 0.10, "p2": 0.80, "h_early": 0.30, "h_normal": 0.08, "gamma": 8
 
 
 class GroundSurvival(SurvivalStrategy):
-    """
-    Bathtub hazard model with TTF decrement.
-
-    Hazard rate h(W) with normalized wear W (W=1.0 at ttf_scale_seconds):
-        Phase 1 (0 ≤ W < p₁):  h_early·(1 - W/p₁) + h_normal   [linearly decreasing]
-        Phase 2 (p₁ ≤ W < p₂): h_normal                          [constant]
-        Phase 3 (W ≥ p₂):      h_normal · exp(γ·(W - p₂))        [exponential]
-
-    TTF = H⁻¹(E) × ttf_scale_seconds with E ~ Exp(1), inverted by bisection.
-    """
 
     def __init__(self, rng: np.random.Generator) -> None:
         self._rng = rng
@@ -71,7 +56,6 @@ class GroundSurvival(SurvivalStrategy):
     def sample_time_to_failure(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[float]:
-        """TTF in whole operating seconds (>= 1); None if the station cannot fail."""
         scale = self._ttf_scales.get(station_id)
         if scale is None or scale <= 0:
             return None
@@ -87,7 +71,6 @@ class GroundSurvival(SurvivalStrategy):
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[Dict[str, object]]:
-        """True bathtub TTF parameters (phases + scale); None = cannot fail."""
         scale = self._ttf_scales.get(station_id)
         if scale is None or scale <= 0:
             return None
@@ -103,7 +86,6 @@ class GroundSurvival(SurvivalStrategy):
         tol: float = 1e-8,
         max_iter: int = 80,
     ) -> float:
-        """Invert H(W) = target_H via bisection."""
         lo = 0.0
         hi = 3.0
 

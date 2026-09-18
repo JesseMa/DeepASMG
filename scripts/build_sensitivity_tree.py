@@ -1,10 +1,4 @@
-"""Build the sensitivity-configuration tree that run_sensitivity_sweeps consumes.
-
-One training-data draw and one trained model set per derivation horizon and per
-derivation seed, several GB, not part of the release. Every model set trains
-with the PRODUCTION hyperparameters (--hpo-dir, default models/hpo), so the
-data-regime comparison varies data volume alone.
-"""
+"""Build the sensitivity-configuration tree that run_sensitivity_sweeps consumes."""
 
 from __future__ import annotations
 

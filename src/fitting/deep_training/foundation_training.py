@@ -1,10 +1,4 @@
-"""
-Shared Lightning training infrastructure: split, training loop, TorchScript
-export and the component-level evaluation artifact.
-
-torch and pytorch_lightning are imported lazily so data preparation works
-without the GPU packages installed.
-"""
+"""Shared Lightning training infrastructure: split, training loop, TorchScript export and the component-level evaluation artifact."""
 
 from __future__ import annotations
 
@@ -33,24 +27,11 @@ def build_mlp_layers(
     dropout_rate: float = 0.0,
     output_activation: str = "none",
 ) -> "nn.Sequential":
-    """
-    Build an MLP as nn.Sequential: (Linear -> ReLU -> Dropout) x N [+ Linear [+ act]].
-
-    output_dim=None omits the final Linear (shared trunks). output_activation
-    "softplus_first" applies SoftPlus to channel 0 only, structurally forcing
-    mean > 0 for heteroscedastic regression.
-    """
     import torch
     import torch.nn as nn
     import torch.nn.functional as F
 
     class _SoftplusFirst(nn.Module):
-        """SoftPlus on channel 0, identity on the remaining channels.
-
-        The sampling-side floor in deep_process_time catches only the rare
-        deep negative tail of the Gaussian sample; the positive mean is the
-        primary constraint.
-        """
 
         def forward(self, x):
             first = F.softplus(x[..., 0:1])
@@ -87,9 +68,6 @@ _CACHE_SOURCE_FILE = "_source.txt"
 
 
 def _cache_signature(prepare_fn: Any, source_data_dir: Path) -> str:
-    """What a prepared cache depends on: the log directory and the preparation
-    code that produced it. Either changing rebuilds the cache, so a stale
-    preparation can never be trained on by accident."""
     source = Path(inspect.getsourcefile(prepare_fn)).read_bytes()
     return f"{source_data_dir.resolve()}\n{hashlib.sha256(source).hexdigest()}"
 
@@ -122,12 +100,6 @@ def cached_prepare(
     *,
     csv_pattern: str = "events",
 ) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
-    """
-    Load cached data if present, otherwise call prepare_fn.
-
-    csv_pattern selects which logs are globbed: 'events' (events+orders),
-    'orders', or 'events_only'.
-    """
     data_dir = Path(data_dir)
     output_dir = Path(output_dir)
     signature = _cache_signature(prepare_fn, data_dir)
@@ -165,7 +137,6 @@ def three_way_split(
     y: np.ndarray,
     test_size: float,
 ) -> Dict[str, Tuple[np.ndarray, np.ndarray]]:
-    """Chronological train/val/test split (data order; no shuffle, no random_state)."""
     if X.ndim != 2:
         raise ValueError(f"X must be 2D, got: {X.shape}")
     if y.ndim not in (1, 2):
@@ -310,14 +281,6 @@ def train_lightning_model(
 
 
 def init_output_at_marginal(net, bias: List[float]) -> None:
-    """Start a regression head at the marginal law of its training targets.
-
-    From a default initialization every target sits many standard deviations
-    from the prediction; a heteroscedastic head then inflates its spread first
-    and brings the mean back through a gradient the inflated spread has
-    flattened. Starting at the marginal skips that detour without changing
-    the objective. ``bias`` is the module's ``marginal_bias(y_train)``.
-    """
     import torch
     import torch.nn as nn
     last = [m for m in net if isinstance(m, nn.Linear)][-1]
@@ -326,8 +289,6 @@ def init_output_at_marginal(net, bias: List[float]) -> None:
 
 
 class BaseTrainingModule:
-    """Mixed with pl.LightningModule only in subclasses, so this module stays
-    importable without pytorch_lightning installed."""
 
     def _init_base(
         self,
@@ -373,42 +334,17 @@ class BaseTrainingModule:
 
 
 class GaussianNLLModule(BaseTrainingModule):
-    """Heteroscedastic regression: output (mean, log_var), interval NLL.
-
-    Targets are whole seconds (integer time contract): an observation k means
-    the latent duration lay in (k-1, k]. The loss is the interval likelihood
-    -log(Phi((k-mu)/sigma) - Phi((k-1-mu)/sigma)), so the module learns the
-    LATENT continuous density; sampling N(mu, sigma) and ceiling once at
-    inference then reproduces the observed integer distribution without the
-    +0.5 s double-discretization bias.
-
-    The probability is evaluated in log space via the scaled complementary
-    error function, which neither under- nor overflows, so the loss keeps a
-    gradient however far the prediction sits from the target. Taking the
-    probability first and its log second is not an option: in float32 the tail
-    probability is exactly zero beyond 14.5 standard deviations, and every
-    machine row starts there under a default initialization.
-    """
 
     _LOG_HALF = -0.6931471805599453
     _ROOT_TWO = 1.4142135623730951
 
     @classmethod
     def _log_sf(cls, z):
-        """log P(Z > z) for standard normal Z and z >= 0."""
         import torch
         return cls._LOG_HALF + torch.log(torch.special.erfcx(z / cls._ROOT_TWO)) - 0.5 * z * z
 
     @classmethod
     def _log_interval_prob(cls, zl, zu):
-        """log P(zl < Z <= zu) for standard normal Z, exact in both tails.
-
-        An interval on one side of the mean is reflected onto the upper tail
-        and taken as a difference of survival functions in log space; an
-        interval containing the mean holds at least the mass of a unit-width
-        interval at the mode and is taken directly. Every branch is finite on
-        every input so that torch.where cannot leak a NaN gradient.
-        """
         import torch
         near = torch.minimum(zl.abs(), zu.abs())
         far = torch.maximum(zl.abs(), zu.abs())
@@ -422,7 +358,6 @@ class GaussianNLLModule(BaseTrainingModule):
 
     @staticmethod
     def marginal_bias(y_train: np.ndarray) -> List[float]:
-        """Output bias reproducing the marginal law: mean through softplus, log variance."""
         y = np.asarray(y_train, dtype=float)
         # channel 0 passes through softplus: softplus(b) = mean
         return [float(np.log(np.expm1(y.mean()))), float(np.log(y.var()))]
@@ -450,21 +385,9 @@ class GaussianNLLModule(BaseTrainingModule):
         return loss
 
 class ExponentialNLLModule(BaseTrainingModule):
-    """
-    Conditional exponential regression: output (log_scale,), interval NLL.
-
-    Targets are whole seconds (integer time contract): observation k means the
-    latent Exp(scale) duration lay in (k-1, k], so
-    P(ceil(X) = k) = e^{-(k-1)/s} - e^{-k/s} and
-    NLL = (k-1)/s - log(1 - e^{-1/s})  with s = exp(log_scale).
-    log_scale is deliberately left unclamped.
-
-    Inference (inversion sampling + one ceil): y = ceil(-log(u) * scale).
-    """
 
     @staticmethod
     def marginal_bias(y_train: np.ndarray) -> List[float]:
-        """Output bias reproducing the marginal law: log of the mean."""
         return [float(np.log(np.asarray(y_train, dtype=float).mean()))]
 
     def _compute_loss(self, batch, stage: str):

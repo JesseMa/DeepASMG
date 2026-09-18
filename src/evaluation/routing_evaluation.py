@@ -1,8 +1,4 @@
-"""Routing-probability comparison per decision point and product variant.
-
-Predicted vectors are scored against the configuration truth by L1 and
-KL(true‖sys).
-"""
+"""Routing-probability comparison per decision point and product variant."""
 
 from __future__ import annotations
 
@@ -22,7 +18,6 @@ _KL_EPS = 1e-12
 
 
 def all_variants() -> List[Tuple[str, Dict[str, str]]]:
-    """All full product variants as (variant_key, features)."""
     pf = cfg.PRODUCT_FEATURES
     models = sorted(pf["modell"])
     fas = sorted({v for m in pf["feature_a"].values() for v in m})
@@ -42,12 +37,6 @@ def admissible_targets(process_config, station_id: str) -> set:
 def config_true_vector(
     process_config, station_id: str, features: Dict[str, str], *, visit: int = 1,
 ) -> Dict[str, float]:
-    """True routing vector from the config, normalized.
-
-    Resolved the same way the generator resolves it, visit index included, so
-    a station with a repeat-visit row is compared against what it actually
-    does rather than against its first-visit distribution.
-    """
     sc = {s.id: s for s in process_config.stations}[station_id]
     order = Order(id="probe", features=features, timestamp_creation=0.0,
                   visits={station_id: visit})
@@ -63,7 +52,6 @@ def _l1(a: Dict[str, float], b: Dict[str, float]) -> float:
 
 
 def _kl(true: Dict[str, float], sys: Dict[str, float]) -> float:
-    """KL(true‖sys) over the support of true; sys clipped at _KL_EPS."""
     s = 0.0
     for k, t in true.items():
         if t > 0.0:
@@ -75,12 +63,6 @@ Key = Tuple[str, str, int]   # (station, variant, visit)
 
 
 def deep_shadow_vectors(shadow_dir: Path, system: str) -> Dict[Key, Dict[str, float]]:
-    """Mean predicted vector per (station, variant, visit) from the shadow calls.
-
-    The visit index is part of the key because the configuration truth depends
-    on it: a repeat-visit row is a different conditional, and averaging the
-    calls over visits would compare a mixture against one of its parts.
-    """
     import pandas as pd
     tr = shadow_dir / f"{system}__transition.csv"
     sc = shadow_dir / "_context_variant.csv"
@@ -106,11 +88,6 @@ def deep_shadow_vectors(shadow_dir: Path, system: str) -> Dict[Key, Dict[str, fl
 
 def ref_fitted_vectors(ref_transition_strategy, process_config, keys: Iterable[Key]
                        ) -> Dict[Key, Dict[str, float]]:
-    """Ref vectors from ``distribution_params`` for exactly the given keys.
-
-    A probe order carries the variant and the visit index, so the row set is
-    the one realized in the shadow run for every system alike.
-    """
     strat = ref_transition_strategy
     strat.initialize({s.id: s for s in process_config.stations})
     feats_of = dict(all_variants())
@@ -126,11 +103,6 @@ def ref_fitted_vectors(ref_transition_strategy, process_config, keys: Iterable[K
 
 def compare_rows(process_config, vectors: Dict[Key, Dict[str, float]],
                  system_name: str) -> List[dict]:
-    """L1 + KL per (station, variant, visit) against the configuration truth.
-
-    A key whose truth is a point mass (e.g. the forced exit on the last
-    admissible visit) carries no routing decision and is not scored.
-    """
     feats_of = dict(all_variants())
     rows: List[dict] = []
     for (station, variant, visit), sysv in sorted(vectors.items()):

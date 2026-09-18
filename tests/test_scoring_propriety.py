@@ -1,15 +1,4 @@
-"""The scoring rule must prefer the truth.
-
-Every duration a strategy returns is ceil() of its latent draw, so the law a
-system deploys is the lattice law P(Y = k) = F(k) - F(k-1). Scoring a
-continuous density against those whole seconds instead is minimized half a bin
-away from the truth, which would reward a forecast that has absorbed the
-rounding once already and let it beat the generator's own parameters.
-
-These tests pin that the rule in use does not have that defect.
-
-    python -m pytest tests/ -q
-"""
+"""The scoring rule must prefer the truth."""
 
 from __future__ import annotations
 
@@ -23,12 +12,6 @@ from scipy.stats import norm  # noqa: E402
 
 
 def _expected_score(truth_mu, truth_sigma, mu, sigma, index) -> float:
-    """Exact expectation of the score under the truth's lattice law.
-
-    Y = ceil(X) with X ~ N(truth_mu, truth_sigma) has P(Y = k) = F(k) - F(k-1);
-    the expectation over the integers carrying its mass is exact, so the
-    propriety checks need no sampling and no tolerance for noise.
-    """
     ks = np.arange(np.floor(truth_mu - 9 * truth_sigma), np.ceil(truth_mu + 9 * truth_sigma) + 1)
     w = norm.cdf(ks, truth_mu, truth_sigma) - norm.cdf(ks - 1, truth_mu, truth_sigma)
     scores = np.array([continuous_scores("normal", {"mu": mu, "sigma": sigma}, float(k), False)[index]
@@ -38,7 +21,6 @@ def _expected_score(truth_mu, truth_sigma, mu, sigma, index) -> float:
 
 @pytest.mark.parametrize("index,name", [(0, "CRPS"), (1, "NLL")])
 def test_score_is_minimized_at_the_truth(index, name):
-    """Shifting the reported mean away from the truth must cost, in both signs."""
     mu, sigma = 74.0, 1.0
     at_truth = _expected_score(mu, sigma, mu, sigma, index)
     for delta in (-0.5, -0.25, 0.25, 0.5):
@@ -50,12 +32,6 @@ def test_score_is_minimized_at_the_truth(index, name):
 
 @pytest.mark.parametrize("sigma", [0.74, 1.0, 2.5, 4.5])
 def test_truth_beats_the_naively_quantized_competitor(sigma):
-    """The oracle must beat a forecast fitted to the log without dequantizing.
-
-    A model trained on ceil()'d observations as if they were exact converges to
-    mean + 1/2 and variance + 1/12. That competitor must lose to the generator's
-    own parameters at every station width in this topology.
-    """
     mu = 54.0
     naive_mu, naive_sigma = mu + 0.5, float(np.sqrt(sigma**2 + 1.0 / 12.0))
     for index, name in ((0, "CRPS"), (1, "NLL")):
@@ -68,7 +44,6 @@ def test_truth_beats_the_naively_quantized_competitor(sigma):
 
 
 def test_sharper_and_blunter_forecasts_both_lose():
-    """Misreporting the spread must cost in either direction."""
     mu, sigma = 74.0, 1.0
     at_truth = _expected_score(mu, sigma, mu, sigma, 1)
     assert _expected_score(mu, sigma, mu, sigma * 0.5, 1) > at_truth
@@ -99,19 +74,16 @@ def test_censored_rows_score_the_survival_term_only(family, params):
 
 
 def test_censoring_is_rejected_for_the_normal_family():
-    """Processing and repair durations always complete; a censored row there is a bug."""
     with pytest.raises(ValueError, match="censoring is not defined"):
         continuous_scores("normal", {"mu": 74.0, "sigma": 1.0}, 74.0, True)
 
 
 def test_far_tail_stays_finite():
-    """A grossly wrong forecast must score badly, not crash on underflow."""
     _, nll = continuous_scores("normal", {"mu": 50.0, "sigma": 1.0}, 120.0, False)
     assert np.isfinite(nll) and nll > 100
 
 
 def _reference_nll(family, params, k, censored=False):
-    """The lattice NLL at 40 digits, formed from the survival function."""
     mp = pytest.importorskip("mpmath")
     mp.mp.dps = 40
     if family == "normal":
@@ -138,11 +110,6 @@ def _reference_nll(family, params, k, censored=False):
     ("weibull", {"shape": 6.22, "scale": 253288.0}, [36.0, 139.0, 392.0, 1686.0, 9e5]),
 ])
 def test_both_tails_are_exact_at_the_shipped_shapes(family, params, points):
-    """The interval probability cancels in the upper tail when taken from the
-    cdf and in the lower tail when taken from the survival function. Early
-    failures under a steep Weibull (shape 4.8-6.2, the fitted reference) sit
-    in the lower tail at 36-57 nats; a scorer that floors them at -log(1e-300)
-    would move a pooled mean by more than the effects being measured."""
     for k in points:
         got = continuous_scores(family, params, k, False)[1]
         ref = _reference_nll(family, params, k)

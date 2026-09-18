@@ -1,12 +1,4 @@
-"""Two-way component substitutions at the system level.
-
-Scores every configuration in ``src.experiments.ablation_runner.CONFIGS`` against
-the paired ``Target (GroundSim)`` realization. The ``direction`` column labels
-each row: swap_to_one inserts one candidate mechanism into the true core,
-swap_to_perfect restores one true mechanism inside a learned or statistical
-core, module_selection is the learned core with statistical repair. The
-whole-core anchors appear under both substitution directions.
-"""
+"""Two-way component substitutions at the system level."""
 
 from __future__ import annotations
 
@@ -39,7 +31,6 @@ ANCHORS = ("DeepSim (All NN)", "RefSim (All Statistical)", "Floor (Full)")
 
 
 def _label(configuration: str) -> list[tuple[str, str]]:
-    """(direction, component) pairs a configuration contributes rows for."""
     if configuration == TARGET:
         return []
     if configuration == "Hybrid (Stat Repair)":

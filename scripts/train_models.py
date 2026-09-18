@@ -1,6 +1,4 @@
-"""Trains all five DeepSim models and extracts RefSim parameters from the same
-training data.
-"""
+"""Trains all five DeepSim models and extracts RefSim parameters from the same training data."""
 
 from __future__ import annotations
 
@@ -63,13 +61,6 @@ def _write_manifest(
     results: Dict[str, Dict[str, Any]], max_epochs: int, patience: int,
     test_size: float,
 ) -> Path:
-    """Emit production_training_manifest.json from what actually ran.
-
-    Everything here is read off the run itself — the data directory's
-    run_metadata, the hyperparameters that were loaded, the training constants
-    and the resulting artifacts — so the manifest cannot drift from the models
-    it describes.
-    """
     run_meta_path = data_dir / "run_metadata.json"
     run_meta = json.loads(run_meta_path.read_text()) if run_meta_path.exists() else {}
 
@@ -132,12 +123,6 @@ def _write_manifest(
 
 
 def _get_params(model_name: str, hpo_dir: Path) -> Dict[str, Any]:
-    """Load the HPO best params; their absence is an error, not a fallback.
-
-    A silent default would let the sensitivity tree train on one set of
-    hyperparameters while the production models use another, confounding data
-    volume with hyperparameter mismatch.
-    """
     from scripts.optimize_hyperparameters import load_best_params
     try:
         params = load_best_params(model_name, hpo_dir=hpo_dir)
@@ -159,7 +144,6 @@ def train_all(
     patience: int = PATIENCE,
     test_size: float = HPO_TEST_SIZE,
 ) -> Dict[str, Dict[str, Any]]:
-    """Train all 5 DeepSim models and save results."""
     model_dir.mkdir(parents=True, exist_ok=True)
 
     print("Loading hyperparameters...")
@@ -222,8 +206,6 @@ def train_all(
 
 
 def find_newest_data_dir(parent: Path) -> Path:
-    """Newest generated data directory under `parent` (single selection rule,
-    shared with scripts.build_sensitivity_tree)."""
     dirs = sorted(parent.rglob("data_4-stage-crossover-rework_*"))
     if not dirs:
         raise FileNotFoundError(f"no generated data directory under {parent}")

@@ -1,11 +1,4 @@
-"""Producer: writes all result CSVs plus a directory manifest.
-
-Runs the consumers (scores, routing, hazard, system level) against the shadow
-CSVs and the closed-loop pickle and stores outputs under results/verification/.
-The manifest inventories the actual derived CSVs, propagates available run
-metadata, and maps the T7-T9 and T12-T14 table labels to their source CSVs. Missing inputs are skipped (the producer is idempotent and
-incremental).
-"""
+"""Producer: writes all result CSVs plus a directory manifest."""
 
 from __future__ import annotations
 
@@ -74,14 +67,12 @@ PAPER_OUTPUTS = {
 }
 
 
-
 def _write(df_rows, path: Path) -> int:
     pd.DataFrame(df_rows).to_csv(path, index=False)
     return len(df_rows)
 
 
 def _produce_scores(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
-    """Aggregate component scores when shadow transition data are available."""
     if not any((shadow_dir / f"{name}__transition.csv").exists() for name in SYSTEMS):
         print(f"[skip] component scores: no shadow bundle under {shadow_dir}")
         return {}
@@ -97,13 +88,6 @@ def _produce_scores(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
 
 
 def _produce_routing(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
-    """Compare learned and fitted routing probabilities on shared conditionals.
-
-    All systems are scored on the identical set of (decision point, variant,
-    visit) conditionals: those realized during shadow replication. Reference vectors
-    for configured combinations that never occur in the evaluated traces are
-    excluded, so the per-system mean distances remain support-matched.
-    """
     context_file = shadow_dir / "_context_variant.csv"
     if not context_file.exists():
         print(f"[skip] routing comparison: {context_file} missing")
@@ -131,7 +115,6 @@ def _produce_routing(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
 
 
 def _produce_hazard(output_dir: Path) -> dict[str, int]:
-    """Export the true hazard grid and fitted reference parameters."""
     process_config = get_process_config()
     stats_data = load_stats_data()
     grid_rows, param_rows = [], []
@@ -236,7 +219,6 @@ def _cross_checked_bundle_value(
 
 
 def _closed_loop_metadata(bundle: dict, source_file: Path) -> dict:
-    """Extract and cross-check provenance stored in a closed-loop bundle."""
     runs = bundle["runs_by_sim"]
     declared_seeds = _normalise_seeds(bundle.get("seeds"))
     run_seeds = _observed_seed_order(runs)
@@ -307,7 +289,6 @@ def _missing_closed_loop_metadata(source_file: Path) -> dict:
 def _produce_system(
     closed_loop_file: Path, output_dir: Path
 ) -> tuple[dict[str, int], dict]:
-    """Export system-level comparisons from a closed-loop run bundle."""
     if not closed_loop_file.exists():
         print(f"[skip] system-level tables: {closed_loop_file.name} missing")
         return {}, _missing_closed_loop_metadata(closed_loop_file)
@@ -432,7 +413,6 @@ def _draw31_sensitivity_rows(sweeps: dict) -> list[dict]:
 
 
 def _produce_sensitivity(output_dir: Path) -> dict[str, int]:
-    """Convert an optional raw sensitivity bundle into per-seed CSVs."""
     sweep_file = output_dir / "sensitivity_sweeps.pkl"
     if not sweep_file.exists():
         print(f"[skip] sweep tables: {sweep_file} missing")
@@ -453,7 +433,6 @@ def _produce_sensitivity(output_dir: Path) -> dict[str, int]:
 
 
 def _shadow_metadata(shadow_dir: Path) -> dict:
-    """Report only provenance that the current shadow bundle records."""
     csv_files = sorted(shadow_dir.glob("*__*.csv")) if shadow_dir.is_dir() else []
     system_components = {
         tuple(path.stem.split("__", maxsplit=1))
@@ -521,7 +500,6 @@ def _csv_row_count(path: Path) -> int:
 
 
 def _csv_inventory(output_dir: Path, shadow_dir: Path) -> dict[str, int]:
-    """Count actual derived CSV rows, excluding raw shadow CSVs."""
     shadow_root = shadow_dir.resolve()
     inventory = {}
     for path in sorted(output_dir.rglob("*.csv")):
@@ -533,7 +511,6 @@ def _csv_inventory(output_dir: Path, shadow_dir: Path) -> dict[str, int]:
 
 
 def _enrich_closed_loop_metadata(metadata: dict, output_dir: Path) -> dict:
-    """Use derived system rows only when the excluded source bundle is absent."""
     if metadata["seeds"] is not None:
         return metadata
     distances_path = output_dir / "system_distances.csv"

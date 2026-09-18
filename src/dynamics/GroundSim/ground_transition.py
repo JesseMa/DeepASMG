@@ -19,12 +19,6 @@ if TYPE_CHECKING:
 
 
 class GroundTransition(TransitionStrategy):
-    """Transitions from configured probabilities (StationConfig.transitions).
-
-    With `sequential_routing` set, matching orders are routed deterministically
-    via a counter instead of stochastically; the target switches every `cycle`
-    orders.
-    """
 
     # Visit cap for M5: the configured return probabilities (largest at C_b.4)
     # would otherwise give a geometric tail with rare, very high visit counts.
@@ -95,12 +89,6 @@ class GroundTransition(TransitionStrategy):
         available_targets: Optional[Set[str]] = None,
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
-        """True categorical routing distribution (config, post-mask).
-
-        Visit-indexed rows resolve like any other, so a repeat-visit rule is
-        represented here. Sequential routing stays deterministic and is not;
-        its long-run marginal equals the tabulated distribution.
-        """
         config = self._stations[station_id]
         key = order.resolve_transition_key(config.transitions, station_id=station_id)
         dist = self._distributions.get(station_id, {}).get(key)
@@ -113,7 +101,6 @@ class GroundTransition(TransitionStrategy):
     def _resolve_sequential_rule(
         self, station_id: str, order: "Order"
     ) -> Optional[Dict[str, Any]]:
-        """Find a matching sequential_routing rule for this order, if any."""
         seq_conf = self._seq_configs.get(station_id)
         if not seq_conf:
             return None
@@ -126,8 +113,6 @@ class GroundTransition(TransitionStrategy):
         key: str,
         rule: Dict[str, Any],
     ) -> Optional[str]:
-        """Target from the per-key counter, incremented. `key` is the caller's
-        already-resolved transition key, counted under the same name."""
         counters = self._seq_counters[station_id]
         count = counters.get(key, 0)
 

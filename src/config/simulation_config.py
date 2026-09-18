@@ -1,4 +1,4 @@
-"""Run configuration and pipeline constants. Time unit is seconds, durations in days."""
+"""Run configuration and pipeline constants."""
 
 from __future__ import annotations
 
@@ -45,13 +45,11 @@ PATIENCE         = 15     # Early-stopping patience
 
 
 def get_seeds(n: int = N_RUNS) -> list[int]:
-    """CRN seed list for `n` replications, anchored at SEED_BASE."""
     return list(range(SEED_BASE, SEED_BASE + n))
 
 
 @dataclass
 class SimulationConfig:
-    """Configuration of one simulation run."""
 
     process_time_strategy: ProcessTimeStrategy
     transition_strategy: TransitionStrategy
@@ -67,15 +65,12 @@ class SimulationConfig:
 
     @property
     def max_time(self) -> float:
-        """Total simulation time in seconds (warmup + main duration)."""
         return (self.warmup_days + self.duration_days) * SECONDS_PER_DAY
 
     @property
     def warmup_time(self) -> float:
-        """Warmup time in seconds."""
         return self.warmup_days * SECONDS_PER_DAY
 
     @property
     def total_steps(self) -> int:
-        """Simulation length in whole one-second steps."""
         return int(self.max_time)

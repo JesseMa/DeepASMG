@@ -1,13 +1,4 @@
-"""Every duration a strategy returns is a whole second, rounded exactly once.
-
-The kernel schedules on these values directly, so a fractional duration would
-either be rounded a second time or rejected by the event queue. The contract
-is pinned at every emitting boundary: the three duration families of the
-generator, of the fitted reference and of the learned surrogates, and the
-queue that refuses anything else.
-
-    python -m pytest tests/ -q
-"""
+"""Every duration a strategy returns is a whole second, rounded exactly once."""
 
 from __future__ import annotations
 
@@ -80,7 +71,6 @@ def test_ref_strategies_return_whole_seconds_from_fractional_parameters():
 
 
 def test_deep_strategies_ceil_the_sampled_value(monkeypatch):
-    """The learned heads emit a continuous law; the strategy rounds its draw once."""
     import torch
     from src.dynamics.DeepSim import deep_process_time, deep_repair, deep_survival
 

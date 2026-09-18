@@ -25,7 +25,6 @@ PROCESS_LOG_DTYPE = np.dtype([
 
 @dataclass(slots=True)
 class ProcessRecord:
-    """A single station pass."""
 
     order_id: str
     timestamp_event_start: float
@@ -38,7 +37,6 @@ class ProcessRecord:
 
 
 class Recorder:
-    """Collects all simulation data for later analysis."""
 
     def __init__(self) -> None:
         self._process_log: List[ProcessRecord] = []
@@ -54,7 +52,6 @@ class Recorder:
         is_breakdown: bool = False,
         repair_time: float = 0.0,
     ) -> None:
-        """Log one station pass; process_time is wall clock and includes repair_time."""
         net_time = process_time - repair_time
         self._process_log.append(
             ProcessRecord(
@@ -78,7 +75,6 @@ class Recorder:
         self._orders[order_id].timestamp_completion = timestamp
 
     def get_process_log_array(self, warmup_time: float = 0.0) -> np.ndarray:
-        """Return the process log as a structured NumPy array (warmup filtered)."""
         filtered = [r for r in self._process_log if r.timestamp_event_start >= warmup_time]
         if not filtered:
             return np.array([], dtype=PROCESS_LOG_DTYPE)
@@ -96,7 +92,6 @@ class Recorder:
         )
 
     def get_order_log(self, warmup_time: float = 0.0) -> List[Dict]:
-        """Return the order log as a list of dicts (warmup filtered)."""
         results = []
         for order in self._orders.values():
             if order.timestamp_creation < warmup_time:

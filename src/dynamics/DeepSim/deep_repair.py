@@ -1,13 +1,4 @@
-"""
-DeepRepair — NN-based downtime duration, conditional Exponential.
-
-Exponential matches the GroundRepair family, so y > 0 holds structurally.
-
-A station the training log never saw fail keeps an all-zero station block, so
-its downtime is predicted from the wear features alone — the pooled behavior
-of the fleet. With one or two observations there is nothing station-specific
-to estimate, and on a real log that is the ordinary case rather than an error.
-"""
+"""DeepRepair — NN-based downtime duration, conditional Exponential."""
 
 from __future__ import annotations
 
@@ -30,8 +21,6 @@ _logger = logging.getLogger(__name__)
 
 
 class DeepRepair(RepairStrategy):
-    """Repair duration by inversion sampling from an Exponential with the
-    predicted scale."""
 
     def __init__(
         self,
@@ -122,7 +111,6 @@ class DeepRepair(RepairStrategy):
         utilization: float = 0.0,
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
-        """Deployed Exponential params (scale = exp(log_scale) = mean)."""
         if self._regressor_model is None:
             raise RuntimeError("DeepRepair.distribution_params: model not loaded.")
         output = infer_single(
@@ -137,12 +125,6 @@ class DeepRepair(RepairStrategy):
         operating_time_since_last: float,
         utilization: float,
     ) -> np.ndarray:
-        """Regressor feature vector: [station_onehot, operating_time,
-        utilization, wear_ratio], the three continuous entries normalized with
-        the training statistics. wear_ratio is rebuilt at inference time from
-        the train-fitted per-station median cycle length; a station without a
-        median (fewer than two observed cycles) yields 0.0, matching the cold
-        start used during data preparation."""
         x = np.zeros(self._reg_feature_dim, dtype=np.float32)
 
         n_stations = len(self._reg_station_map)

@@ -1,7 +1,4 @@
-"""Statistical repair-duration strategy: Exponential from per-station repair means.
-
-A fallible machine without a training repair is simulated from the
-fleet-pooled scale, as in ref_survival."""
+"""Statistical repair-duration strategy: Exponential from per-station repair means."""
 
 from __future__ import annotations
 
@@ -17,7 +14,6 @@ if TYPE_CHECKING:
 
 
 class RefRepair(RepairStrategy):
-    """Exponential repair time per station (scale in seconds); wear and utilization ignored."""
 
     def __init__(
         self,
@@ -50,5 +46,4 @@ class RefRepair(RepairStrategy):
         utilization: float = 0.0,  # noqa: ARG002
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
-        """Deployed Exponential params (scale = mean)."""
         return {"family": "exponential", "scale": float(self._repair_scales[station_id])}

@@ -1,9 +1,4 @@
-"""
-Downtime-duration training, conditional exponential regression.
-
-The output is the log_scale of an exponential, matching the GroundRepair
-family. Entry point: train().
-"""
+"""Downtime-duration training, conditional exponential regression."""
 
 from __future__ import annotations
 
@@ -21,14 +16,7 @@ from src.fitting.deep_training.foundation_training import (
 )
 
 
-
 class RepairTimeRegressorModule(ExponentialNLLModule, pl.LightningModule):
-    """
-    MLP for downtime-duration prediction (conditional exponential).
-
-    Output: log_scale (1 channel). Sampling y = -log(u) * exp(log_scale),
-            u ~ Uniform(0, 1); mean = exp(log_scale).
-    """
 
     def __init__(
         self,
@@ -47,7 +35,6 @@ class RepairTimeRegressorModule(ExponentialNLLModule, pl.LightningModule):
 
 
 def prepare_data(data_dir: Path, output_dir: Path) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
-    """Prepare downtime-duration training data (cached)."""
     from src.fitting.deep_data_preparation.prepare_repair_time_data import (
         prepare_repair_time_data,
     )
@@ -67,17 +54,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    """
-    Train the downtime-duration regressor.
-
-    Args:
-        _prep_dir: shared directory for prepared data; enables caching across
-            HPO trials (CSVs are loaded only once).
-
-    Returns:
-        Dict with best_val_loss, test_metrics, epochs_trained, model_path,
-        metadata_path.
-    """
     # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
 

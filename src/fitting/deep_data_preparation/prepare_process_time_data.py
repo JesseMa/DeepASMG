@@ -1,8 +1,4 @@
-"""
-Training-data preparation for NN-based process-time prediction.
-
-Target: net_process_time (pure processing time, repairs excluded).
-"""
+"""Training-data preparation for NN-based process-time prediction."""
 
 from __future__ import annotations
 
@@ -47,7 +43,6 @@ class TrainingSample:
 
 @dataclass
 class EncodingMaps:
-    """Categorical value → index mappings."""
     modell: Dict[str, int] = field(default_factory=dict)
     feature_a: Dict[str, int] = field(default_factory=dict)
     feature_b: Dict[str, int] = field(default_factory=dict)
@@ -81,15 +76,6 @@ def filter_and_join(
     events: List[RawEvent],
     orders: Dict[str, Dict[str, str]],
 ) -> List[Tuple[RawEvent, Dict[str, str]]]:
-    """Filter to productive machine operations and join with order features.
-
-    Only machine rows are samples: the surrogate is queried for machines alone
-    (buffers pass orders on in their fixed transit time), so a buffer row
-    would be a constant-target sample that never gets predicted. Breakdown
-    rows and deadlock displacements (zero duration) are not operations.
-
-    Returns (event, features) tuples in chronological order.
-    """
     result = []
     skipped_no_order = 0
     skipped_system = 0
@@ -119,10 +105,6 @@ def filter_and_join(
 def build_training_samples(
     joined: List[Tuple[RawEvent, Dict[str, str]]],
 ) -> List[TrainingSample]:
-    """Build training samples with per-machine predecessor features.
-
-    <NONE> for a machine's first order.
-    """
     prev_on_machine: Dict[str, Dict[str, str]] = {}
 
     samples = []
@@ -157,8 +139,6 @@ def build_training_samples(
 
 
 def build_encoding_maps(samples: List[TrainingSample]) -> EncodingMaps:
-    """Encoding maps over the values present in `samples` (the caller passes the
-    train slice only). <NONE> is a regular value with its own index."""
     modell_vals = sorted({s.modell for s in samples} | {s.prev_modell for s in samples})
     fa_vals = sorted({s.feature_a for s in samples} | {s.prev_feature_a for s in samples})
     fb_vals = sorted({s.feature_b for s in samples} | {s.prev_feature_b for s in samples})
@@ -176,14 +156,6 @@ def encode_samples(
     samples: List[TrainingSample],
     maps: EncodingMaps,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """
-    One-hot encoded feature matrix and target vector.
-
-    Feature-vector layout (per sample):
-        [modell_onehot | feature_a_onehot | feature_b_onehot |
-         prev_modell_onehot | prev_feature_a_onehot | prev_feature_b_onehot |
-         station_onehot | shift_onehot | sin/cos_time_per_period]
-    """
     n = len(samples)
     dim = maps.feature_dim
     X = np.zeros((n, dim), dtype=np.float32)
@@ -231,7 +203,6 @@ def save(
     n_train_vocab_fit: int,
     oov_stats: Dict[str, Dict[str, float]],
 ) -> None:
-    """Save all samples as data.npz + metadata.json (no split)."""
     layout, offset = build_feature_layout([
         ("modell", maps.modell),
         ("feature_a", maps.feature_a),
@@ -312,12 +283,6 @@ def prepare_training_data(
     output_dir: Path,
     train_ratio: float = DEFAULT_TRAIN_RATIO,
 ) -> Tuple[np.ndarray, np.ndarray, EncodingMaps]:
-    """Full pipeline: CSVs → training-ready arrays. Returns (X, y, encoding_maps).
-
-    The encoding vocabulary is fitted on the first train_ratio fraction
-    only (same slice as three_way_split); categories first seen in val/test
-    collapse to an all-zero one-hot and are counted in oov_stats.
-    """
     print("=" * 60)
     print("TRAINING-DATA PREPARATION")
     print("=" * 60)

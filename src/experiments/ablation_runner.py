@@ -1,3 +1,4 @@
+"""The substitution grid: every system as one module kind per slot, CRN-paired or decorrelated."""
 
 from __future__ import annotations
 
@@ -55,7 +56,6 @@ CONFIGS: dict[str, tuple] = {
 
 
 def run_ablation_grid(seeds: list[int]) -> dict[str, list[dict]]:
-    """Run all CONFIGS × len(seeds) simulations."""
     fs = SimFactorySet()
     return {
         name: run_replications(

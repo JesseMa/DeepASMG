@@ -1,6 +1,4 @@
-"""
-    DeadlockManager - cycle detection and overflow buffer.
-"""
+"""DeadlockManager - cycle detection and overflow buffer."""
 
 from __future__ import annotations
 
@@ -25,7 +23,6 @@ class DeadlockManager:
 
     @property
     def deadlock_count(self) -> int:
-        """Total number of deadlocks resolved since simulation start."""
         return self._deadlock_count
 
     @property

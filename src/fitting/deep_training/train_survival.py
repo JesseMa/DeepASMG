@@ -1,11 +1,4 @@
-"""
-Weibull survival model training (time to failure in normalized operating time).
-
-Learns per-station Weibull parameters (shape k, scale λ) so that
-TTF ~ Weibull(k, λ) in normalized units. Training data are divided by the
-mean operating time (duration_scale); inference converts back via
-TTF_seconds = TTF_normalized * duration_scale.
-"""
+"""Weibull survival model training (time to failure in normalized operating time)."""
 
 from __future__ import annotations
 
@@ -24,7 +17,6 @@ from src.fitting.deep_training.foundation_training import (
 )
 
 
-
 def weibull_nll_loss(
     log_shape: torch.Tensor,
     log_scale: torch.Tensor,
@@ -32,16 +24,6 @@ def weibull_nll_loss(
     event: torch.Tensor,
     bin_width: float,
 ) -> torch.Tensor:
-    """Mean Weibull interval negative log-likelihood with right-censoring.
-
-    duration is normalized operating time; event is 1.0 for an observed
-    breakdown and 0.0 for a right-censored cycle. Targets are whole seconds
-    (integer time contract), so an observed breakdown at t means the latent
-    TTF lay in (t - bin_width, t] with bin_width = one second in normalized
-    units:  -log(S(t - w) - S(t)) = -log S(t - w) - log(1 - S(t)/S(t - w)).
-    A censored cycle contributes -log S(t). Everything is evaluated in log
-    space from the cumulative hazard u(t) = (t/lambda)^k.
-    """
     k = torch.exp(log_shape)
     lam = torch.exp(log_scale)
 
@@ -63,12 +45,6 @@ def weibull_nll_loss(
 
 
 class WeibullSurvivalModule(BaseTrainingModule, pl.LightningModule):
-    """
-    MLP for Weibull survival modelling.
-
-    Input:  [station_onehot, prev_ttf, prev_n_jobs, mean_ttf, prev_repair_time]  (n_stations + 4)
-    Output: [log_shape, log_scale] — Weibull parameters in normalized units.
-    """
 
     def __init__(
         self,
@@ -89,7 +65,6 @@ class WeibullSurvivalModule(BaseTrainingModule, pl.LightningModule):
 
     @staticmethod
     def marginal_bias(y_train: np.ndarray) -> List[float]:
-        """Output bias reproducing the marginal law: shape 1 at the mean duration."""
         return [0.0, float(np.log(np.asarray(y_train, dtype=float)[:, 0].mean()))]
 
     def _compute_loss(self, batch, stage: str):
@@ -118,9 +93,7 @@ class WeibullSurvivalModule(BaseTrainingModule, pl.LightningModule):
         return loss
 
 
-
 def prepare_data(data_dir: Path, output_dir: Path) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
-    """Prepare survival training data (cached)."""
     from src.fitting.deep_data_preparation.prepare_survival_data import (
         prepare_survival_data,
     )
@@ -140,17 +113,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    """
-    Train the Weibull survival model (normalized operating time).
-
-    Args:
-        _prep_dir: shared directory for prepared data; enables caching across
-            HPO trials (CSVs are loaded only once).
-
-    Returns:
-        Dict with best_val_loss, test_metrics, epochs_trained, model_path,
-        metadata_path.
-    """
     # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
 

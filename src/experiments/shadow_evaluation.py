@@ -1,3 +1,5 @@
+"""Shadow evaluation: one GroundSim trajectory per seed, every system queried on the identical context."""
+
 
 from __future__ import annotations
 
@@ -237,7 +239,6 @@ def _build_systems(fs: SimFactorySet, seed: int) -> Dict[str, SimulationConfig]:
 def run_shadow_pilot(
     seed: int, *, days: int, out_dir: Path, warmup_days: float = 1.0,
 ) -> int:
-    """Run one shadow run for a seed, write the CSVs and return the row count."""
     fs = SimFactorySet(duration_days=days, warmup_days=warmup_days)
     pc = fs.process_config
     cfgs = _build_systems(fs, seed)

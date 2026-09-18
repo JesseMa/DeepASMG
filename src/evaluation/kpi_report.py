@@ -8,7 +8,6 @@ from typing import Dict, List
 import numpy as np
 
 
-
 def analyze(
     process_log: np.ndarray,
     order_log: List[Dict],
@@ -17,13 +16,6 @@ def analyze(
     num_machines: int,
     rework_station_id: str,
 ) -> Dict[str, float]:
-    """KPI panel for one run.
-
-    ``rework_station_id`` names the optional stage (e.g. M5, a class-specific
-    task or audit rather than classic rework). ``rework_rate`` is the
-    percentage of orders that visit it at least once and ``multi_rework_rate``
-    the percentage visiting it twice or more.
-    """
     completed = [o for o in order_log if o.get("timestamp_completion") is not None]
     n_valid = len(completed)
     if n_valid == 0:
@@ -135,11 +127,6 @@ def _compute_availability(total_breakdown_time: float, sim_duration: float,
 def extract_cycle_times(
     process_log: np.ndarray, order_log: list[dict],
 ) -> np.ndarray:
-    """CT = t_completion - first machine start, per completed order.
-
-    Same definition as the cycle_time in ``analyze``, which computes it
-    alongside its other per-order metrics.
-    """
     completed = [o for o in order_log if o.get("timestamp_completion") is not None]
     events_by_order: dict[str, list] = defaultdict(list)
     for row in process_log:

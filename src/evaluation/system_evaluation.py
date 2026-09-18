@@ -1,8 +1,4 @@
-"""System level: cycle-time distances and the KPI panel.
-
-All inputs must be index-paired under common random numbers (same seed at the
-same index).
-"""
+"""System level: cycle-time distances and the KPI panel."""
 
 from __future__ import annotations
 
@@ -25,14 +21,6 @@ def paired_w1(ref_runs: Sequence[dict], sys_runs: Sequence[dict]) -> np.ndarray:
 
 
 def per_seed_distances(ref_runs: Sequence[dict], sys_runs: Sequence[dict]) -> List[dict]:
-    """W1 and KS distance per seed pair against the reference.
-
-    The KS p-value is deliberately not reported: cycle times within a run are
-    serially correlated (lag-1 around 0.5), so its i.i.d. null makes it
-    strongly anti-conservative. Significance comes from the per-seed W1 with
-    the paired Wilcoxon test, which works at the resolution the CRN design
-    actually provides.
-    """
     assert_paired_seeds(ref_runs, sys_runs)
     rows: List[dict] = []
     for r, s in zip(ref_runs, sys_runs, strict=True):
@@ -49,7 +37,6 @@ def per_seed_distances(ref_runs: Sequence[dict], sys_runs: Sequence[dict]) -> Li
 def system_distance_table(
     runs_by_sim: Dict[str, List[dict]], *, ref_name: str = REF_SYSTEM
 ) -> List[dict]:
-    """Long-format W1/KS per (system, seed) against ref_name (ref itself omitted)."""
     ref = runs_by_sim[ref_name]
     out: List[dict] = []
     for name, runs in runs_by_sim.items():
@@ -63,7 +50,6 @@ def system_distance_table(
 def w1_summary(
     runs_by_sim: Dict[str, List[dict]], *, ref_name: str = REF_SYSTEM
 ) -> List[dict]:
-    """Per-system W1 over seeds: mean, standard deviation and standard error."""
     ref = runs_by_sim[ref_name]
     out: List[dict] = []
     for name, runs in runs_by_sim.items():
@@ -83,8 +69,6 @@ def w1_paired_difference(
     b_name: str,
     ref_name: str = REF_SYSTEM,
 ) -> dict:
-    """Paired difference d_i = W1_a,i - W1_b,i over seeds: mean, SD, t-based
-    95 % confidence interval and the two-sided Wilcoxon signed-rank p-value."""
     ref = runs_by_sim[ref_name]
     diff = paired_w1(ref, runs_by_sim[a_name]) - paired_w1(ref, runs_by_sim[b_name])
     n = int(len(diff))
@@ -111,7 +95,6 @@ def kpi_panel(
     ref_name: str = REF_SYSTEM,
     kpis: Optional[Sequence[str]] = None,
 ) -> List[dict]:
-    """Relative KPI deltas: mean(r_i), sd(r_i), pooled."""
     ref, sys = runs_by_sim[ref_name], runs_by_sim[sys_name]
     assert_paired_seeds(ref, sys)
     rows: List[dict] = []
@@ -139,10 +122,6 @@ def kpi_wilcoxon_bh(
     kpis: Optional[Sequence[str]] = None,
     alpha: float = 0.05,
 ) -> List[dict]:
-    """Per-KPI paired Wilcoxon (sys vs ground) + BH across the panel.
-
-    KPIs with all-zero differences get p=1.0 and stay in the BH family.
-    """
     ref, sys = runs_by_sim[ref_name], runs_by_sim[sys_name]
     assert_paired_seeds(ref, sys)
     keys = _kpi_keys(ref, kpis)

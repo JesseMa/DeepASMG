@@ -14,13 +14,6 @@ REPAIR_UTIL_WEIGHT = 0.3
 
 
 class GroundRepair(RepairStrategy):
-    """
-    Wear-dependent repair duration: the later the failure, the longer the mean repair.
-
-    The max(0.1, stress) floor prevents degenerately short repairs on early
-    failures; the max(1.0, ·) clamp prevents sub-second durations from
-    exponential draws with small effective_mttr.
-    """
 
     def __init__(self, rng: np.random.Generator) -> None:
         self._rng = rng
@@ -74,7 +67,6 @@ class GroundRepair(RepairStrategy):
         utilization: float = 0.0,
         current_time: float = 0.0,  # noqa: ARG002
     ) -> "Optional[Dict[str, object]]":
-        """True exponential params (scale=effective_mttr); None = cannot fail."""
         stress = self._stress(station_id, operating_time_since_last, utilization)
         if stress is None:
             return None
@@ -84,7 +76,6 @@ class GroundRepair(RepairStrategy):
     def _stress(
         self, station_id: str, operating_time_since_last: float, utilization: float,
     ) -> "Optional[float]":
-        """Wear/utilization stress factor; None when the station cannot fail."""
         if station_id not in self._mttr:
             return None
         scale = self._ttf_scales.get(station_id, 1.0)

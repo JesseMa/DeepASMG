@@ -1,6 +1,4 @@
-"""
-Sim runner — canonical replication series for GroundSim/RefSim/DeepSim.
-"""
+"""Sim runner — canonical replication series for GroundSim/RefSim/DeepSim."""
 
 from __future__ import annotations
 
@@ -47,7 +45,6 @@ MODEL_DIR_DEFAULT       = REPO_ROOT / "models"
 MODULES = ("pt", "tr", "sv", "rt", "pr")
 Kinds = Tuple[str, str, str, str, str]
 
-# Where the trainers write each surrogate, relative to the model directory.
 MODEL_FILES: Dict[str, Tuple[str, str]] = {
     "pt": ("process_time_model.pt", "process_time_data/metadata.json"),
     "tr": ("transition_model.pt", "transition_data/metadata.json"),
@@ -70,7 +67,6 @@ def get_process_config() -> ProcessConfig:
 
 
 def model_paths(model_dir: Path = MODEL_DIR_DEFAULT) -> Dict[str, str]:
-    """Absolute paths of the five models and their metadata under model_dir."""
     model_dir = Path(model_dir).expanduser().resolve()
     out: Dict[str, str] = {}
     for slot, (model_file, metadata_file) in MODEL_FILES.items():
@@ -80,7 +76,6 @@ def model_paths(model_dir: Path = MODEL_DIR_DEFAULT) -> Dict[str, str]:
 
 
 def models_trained(model_dir: Path) -> bool:
-    """True once every file a model set consists of exists under model_dir."""
     return all(Path(p).exists() for p in model_paths(model_dir).values())
 
 
@@ -93,10 +88,6 @@ def load_stats_data(model_dir: Path = MODEL_DIR_DEFAULT) -> dict:
 
 
 class SimFactorySet:
-    """Holds ONE copy of model_paths / stats_data / process_config (C1); every
-    composition creates fresh RNG streams (C3).
-    """
-
     def __init__(
         self,
         *,
@@ -111,10 +102,7 @@ class SimFactorySet:
         self.duration_days  = duration_days
         self.warmup_days    = warmup_days
 
-    # ---- the five modules in their three kinds --------------------------
-
     def module(self, kind: str, slot: str, rng: np.random.Generator):
-        """One strategy of the given kind for the given module slot."""
         mp, sd = self.model_paths, self.stats_data
         if kind == "ground":
             return {
@@ -169,9 +157,6 @@ class SimFactorySet:
 
     @staticmethod
     def _module_rngs(seed: int, decorrelated: FrozenSet[str]) -> Dict[str, np.random.Generator]:
-        """One stream per module slot (C3). A decorrelated slot takes its child
-        from the offset root, so swapping one module never shifts the streams
-        of the others (common random numbers)."""
         target = dict(zip(MODULES, np.random.SeedSequence(seed).spawn(len(MODULES)), strict=True))
         offset = dict(zip(MODULES, np.random.SeedSequence(seed + SEED_OFFSET_FLOOR).spawn(len(MODULES)), strict=True))
         return {m: np.random.default_rng(offset[m] if m in decorrelated else target[m])
@@ -181,7 +166,6 @@ class SimFactorySet:
         self, seed: int, run_id: int, kinds: Kinds, *,
         decorrelated: FrozenSet[str] = frozenset(),
     ) -> SimulationConfig:
-        """A system from one module kind per slot, in MODULES order."""
         rngs = self._module_rngs(seed, decorrelated)
         pt, tr, sv, rt, pr = (self.module(kind, slot, rngs[slot])
                               for kind, slot in zip(kinds, MODULES, strict=True))
@@ -195,28 +179,21 @@ class SimFactorySet:
     # ---- the named systems --------------------------------------------------
 
     def base(self, seed: int, run_id: int) -> SimulationConfig:
-        """GroundSim: the generator."""
         return self.compose(seed, run_id, ("ground",) * 5)
 
     def floor(self, seed: int, run_id: int) -> SimulationConfig:
-        """GroundSim-DEC: the generator on decorrelated streams (C2: the entry
-        keeps the un-offset seed)."""
         return self.compose(seed, run_id, ("ground",) * 5, decorrelated=frozenset(MODULES))
 
     def deep(self, seed: int, run_id: int) -> SimulationConfig:
-        """DeepSim: five learned surrogates."""
         return self.compose(seed, run_id, ("deep",) * 5)
 
     def refm(self, seed: int, run_id: int) -> SimulationConfig:
-        """RefSim-M: station-marginal statistics, masked routing."""
         return self.compose(seed, run_id, ("stat",) * 5)
 
     def refv(self, seed: int, run_id: int) -> SimulationConfig:
-        """RefSim-V: RefSim-M with variant-conditioned processing and routing."""
         return self.compose(seed, run_id, ("statv", "statv", "stat", "stat", "stat"))
 
     def refw(self, seed: int, run_id: int) -> SimulationConfig:
-        """RefSim-W: RefSim-M with a per-station Weibull failure law."""
         return self.compose(seed, run_id, ("stat", "stat", "statw", "stat", "stat"))
 
 
@@ -252,12 +229,6 @@ def run_replications(
     factory: Callable[[int, int], SimulationConfig],
     seeds: list[int],
 ) -> list[dict]:
-    """One replication series for a sim variant.
-
-    CRN guarantee: with an identical ``seeds`` list across sim variants,
-    runs[i] is paired — the five per-module RNG streams are identical, so
-    differences between variants come from the strategies, not the draws.
-    """
     pc = get_process_config()
     out: list[dict] = []
 

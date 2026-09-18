@@ -1,3 +1,5 @@
+"""The instantiated four-stage crossover-rework testbed: 21 stations, product features and their modulation."""
+
 # Process station layout for "4-stage-crossover-rework". All times in seconds.
 
 from src.config.schema import StationConfig

@@ -1,6 +1,4 @@
-"""Runs GroundSim and saves the resulting process events and order logs as CSVs
-for the DeepSim training pipeline.
-"""
+"""Runs GroundSim and saves the resulting process events and order logs as CSVs for the DeepSim training pipeline."""
 
 from __future__ import annotations
 
@@ -42,7 +40,6 @@ def generate(
     output_dir: str | Path = DEFAULT_OUTPUT,
     experiment_name: str = DEFAULT_EXPERIMENT,
 ) -> Path:
-    """Run GroundSim and write process, order and run-metadata logs."""
     output_dir = Path(output_dir)
 
     process_config = get_process_config()

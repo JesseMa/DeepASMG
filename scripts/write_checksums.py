@@ -1,13 +1,5 @@
 #!/usr/bin/env python3
-"""Regenerate checksums.sha256 over the released model and research-data artifacts.
-
-The file lists every artifact a third party should be able to verify. Paths are
-collected from the patterns below rather than maintained by hand, so an added or
-removed artifact cannot silently drift out of the manifest.
-
-    python -m scripts.write_checksums            # rewrite
-    python -m scripts.write_checksums --check    # verify only, non-zero on drift
-"""
+"""Regenerate checksums.sha256 over the released model and research-data artifacts."""
 
 from __future__ import annotations
 

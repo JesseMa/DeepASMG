@@ -1,11 +1,4 @@
-"""
-Training-data preparation for the released-order surrogate.
-
-Timestamps are absolute epoch values (generation anchor + timestamp_creation).
-Week and month periods are not multiples of a day, so a sim-relative clock
-would be phase-shifted by start_timestamp mod period against both the generator
-and the deployment query.
-"""
+"""Training-data preparation for the released-order surrogate."""
 
 from __future__ import annotations
 
@@ -49,7 +42,6 @@ class RawOrder:
 
 @dataclass
 class ProductSample:
-    """Training sample: timestamp + previous order → current order."""
     timestamp: float
     prev_features: Optional[Dict[str, str]]
     curr_features: Dict[str, str]
@@ -63,12 +55,10 @@ class ProductEncodingMaps:
 
     @property
     def n_time_features(self) -> int:
-        """Two values (sin + cos) per period."""
         return len(self.time_periods) * 2
 
     @property
     def prev_order_dim(self) -> int:
-        """Size of the prev_order EWMA block (n_classes per feature, no NONE)."""
         return sum(self.n_classes(f) for f in self.feature_names)
 
     @property
@@ -76,11 +66,9 @@ class ProductEncodingMaps:
         return self.n_time_features + self.prev_order_dim
 
     def n_classes(self, feat_name: str) -> int:
-        """Number of real classes (excluding NONE token) for a feature head."""
         return len(self.maps[feat_name]) - 1
 
     def feature_layout(self) -> List[Dict]:
-        """Offset table for the input vector."""
         layout = []
         offset = 0
 
@@ -98,7 +86,6 @@ class ProductEncodingMaps:
         return layout
 
     def head_layout(self) -> List[Dict]:
-        """Offset table for the output vector (no NONE)."""
         layout = []
         offset = 0
         for feat_name in self.feature_names:
@@ -129,11 +116,6 @@ class ProductEncodingMaps:
 
 
 def _generation_anchor(path: Path) -> float:
-    """Absolute generation start of the run this order log belongs to.
-
-    Fail-fast: without the anchor the week/month phases cannot be aligned
-    with the generator and deployment clocks.
-    """
     import json as _json
     for candidate in (path.parent / "run_metadata.json",
                       path.parent.parent / "run_metadata.json"):
@@ -147,11 +129,6 @@ def _generation_anchor(path: Path) -> float:
 
 
 def load_orders(paths: Sequence[Path]) -> List[RawOrder]:
-    """Load orders from order-log CSVs; feature columns are auto-detected.
-
-    timestamp_creation is shifted to the absolute generation clock so that
-    encode_time sees the same phases the generator modulated on.
-    """
     orders = []
 
     for path in paths:
@@ -192,7 +169,6 @@ def extract_sequence_samples(
     orders: List[RawOrder],
     feature_names: List[str],
 ) -> List[ProductSample]:
-    """Extract (prev → curr) sequence pairs with timestamps; run boundaries preserved (no cross-run pairs)."""
     by_run: Dict[str, List[RawOrder]] = defaultdict(list)
     for order in orders:
         by_run[order.run_id].append(order)
@@ -228,7 +204,6 @@ def build_encoding_maps(
     feature_names: List[str],
     time_periods: List[str],
 ) -> ProductEncodingMaps:
-    """NONE token always index 0; real values from index 1 (lexicographic)."""
     maps = ProductEncodingMaps(
         feature_names=feature_names,
         time_periods=time_periods,
@@ -244,7 +219,6 @@ def build_encoding_maps(
 
 
 def encode_time(timestamp: float, time_periods: List[str]) -> np.ndarray:
-    """Encode a timestamp as a sin/cos vector, one (sin, cos) pair per period."""
     return encode_time_features(
         timestamp, [NAMED_PERIODS_SECONDS[p] for p in time_periods],
     )
@@ -255,17 +229,6 @@ def encode_samples(
     maps: ProductEncodingMaps,
     ewma_alpha: float = 0.3,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Encode samples into numeric arrays with EWMA frequency context.
-
-    X: [sin/cos time encodings | prev_order_ewma], shape (n, feature_dim).
-       prev_order_ewma: smoothed frequency vector of recent orders.
-           - run start: uniform [1/n_classes, ...]
-           - update after order v: freq = (1-alpha)*freq; freq[v] += alpha  (Σ freq = 1)
-    y: class indices (0-based), shape (n, n_features).
-
-    Samples must be in run order; run boundaries are detected via
-    sample.prev_features == None (EWMA reset).
-    """
     n = len(samples)
     n_features = len(maps.feature_names)
 
@@ -336,7 +299,6 @@ def save(
     oov_stats: Optional[Dict[str, Dict[str, float]]] = None,
     vocab_fit_scope: str = "full_dataset",
 ) -> None:
-    """Save all samples as data.npz + metadata.json (no split)."""
     from src.fitting.deep_data_preparation.data_io import save_prepared_data
 
     metadata = maps.to_dict(ewma_alpha=ewma_alpha)
@@ -449,11 +411,6 @@ def prepare_product_data(
     ewma_alpha: float = 0.3,
     train_ratio: float = DEFAULT_TRAIN_RATIO,
 ) -> Tuple[np.ndarray, np.ndarray, ProductEncodingMaps]:
-    """Full pipeline: order-log CSVs → training-ready arrays.
-
-    feature_names fixes the head order and must start with 'modell'; ewma_alpha
-    must lie in (0, 1] and is persisted to metadata.json for inference.
-    """
     print("=" * 60)
     print("PRODUCT DATA PREPARATION (sequences + time encoding)")
     print("=" * 60)

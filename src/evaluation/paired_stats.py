@@ -11,18 +11,12 @@ from scipy.stats import (
 def fdr_correction(
     pvals, alpha: float = 0.05,
 ) -> tuple[np.ndarray, np.ndarray]:
-    """Benjamini-Hochberg FDR correction, returning (rejected, q_values).
-
-    Apply per family (e.g. per KPI group); BH over all tests at once is
-    over-conservative.
-    """
     p = np.asarray(pvals, dtype=float)
     q = false_discovery_control(p, method="bh")
     return q < alpha, q
 
 
 def assert_paired_seeds(runs_a, runs_b) -> None:
-    """Assert CRN pairing: equal length and equal seed at each index."""
     assert len(runs_a) == len(runs_b), (
         f"CRN pairing violated: len mismatch {len(runs_a)} vs {len(runs_b)}"
     )

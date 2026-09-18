@@ -1,9 +1,4 @@
-"""
-Training-data preparation for NN-based downtime-duration prediction.
-
-Target (y):
-    repair_time      → downtime duration in seconds.
-"""
+"""Training-data preparation for NN-based downtime-duration prediction."""
 
 from __future__ import annotations
 
@@ -34,12 +29,10 @@ class RepairTimeSample:
 
 @dataclass
 class RepairTimeEncodingMaps:
-    """Categorical value → index mappings."""
     station: Dict[str, int] = field(default_factory=dict)
 
     @property
     def feature_dim(self) -> int:
-        """station (one-hot) + operating_time + utilization + wear_ratio."""
         return len(self.station) + 3
 
     def to_dict(self) -> dict:
@@ -52,13 +45,6 @@ class RepairTimeEncodingMaps:
 def extract_repair_samples(
     events: List[RawEvent],
 ) -> List[RepairTimeSample]:
-    """Extract downtime-duration samples with cycle context.
-
-    Chronological per machine; at each downtime (breakdown) the cycle state
-    (operating_time) is recorded. The sample list is sorted globally by downtime
-    timestamp — prerequisite for a meaningful temporal cut in
-    chronological_train_end_idx.
-    """
     machine_events = [e for e in events if e.station_type == "machine"]
 
     events_by_station: Dict[str, List[RawEvent]] = defaultdict(list)
@@ -157,9 +143,6 @@ def extract_repair_samples(
 def compute_median_ttf(
     samples: List[RepairTimeSample],
 ) -> Dict[str, float]:
-    """Per-station median operating time per failure cycle: the wear_ratio
-    denominator. Fitted on the training slice only. Stations with fewer than
-    two observations get 0.0, which yields wear_ratio 0.0 (cold start)."""
     per_station: Dict[str, List[float]] = defaultdict(list)
     for s in samples:
         per_station[s.station].append(s.operating_time_since_last)
@@ -173,7 +156,6 @@ def apply_wear_ratio(
     samples: List[RepairTimeSample],
     median_ttf_per_station: Dict[str, float],
 ) -> None:
-    """Backfill wear_ratio in place from a train-fitted denominator."""
     for s in samples:
         denom = median_ttf_per_station.get(s.station, 0.0)
         s.wear_ratio = s.operating_time_since_last / max(denom, 1.0) if denom > 0 else 0.0
@@ -192,13 +174,6 @@ def encode_samples(
     samples: List[RepairTimeSample],
     maps: RepairTimeEncodingMaps,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Feature matrix and target vector.
-
-    Features: [station_onehot, operating_time, utilization, wear_ratio].
-    Target: repair_time (seconds).
-    operating_time stays unnormalized — normalization is derived after the split
-    from the training set (train_repair_time.py) to avoid data leakage.
-    """
     n = len(samples)
     dim = maps.feature_dim
     n_stations = len(maps.station)
@@ -230,11 +205,6 @@ def save(
     oov_stats: Dict[str, Dict[str, float]],
     median_ttf_per_station: Dict[str, float],
 ) -> None:
-    """Save all samples as data.npz + metadata.json (no split, no normalization).
-
-    median_ttf_per_station is the wear_ratio denominator and is fitted on the
-    training slice; inference needs it to rebuild the feature.
-    """
     y_mean = float(np.mean(y))
     y_std = float(np.std(y))
     n_stations = len(maps.station)
@@ -313,12 +283,6 @@ def prepare_repair_time_data(
     output_dir: Path,
     train_ratio: float = DEFAULT_TRAIN_RATIO,
 ) -> Tuple[np.ndarray, np.ndarray, RepairTimeEncodingMaps]:
-    """Full pipeline: CSVs → training-ready arrays.
-
-    The encoding vocabulary is fitted on the first train_ratio fraction only
-    (same slice as three_way_split); OOV in the val/test slice → oov_stats in
-    metadata. Returns (X, y, encoding_maps).
-    """
     print("=" * 60)
     print("DOWNTIME-DURATION REGRESSOR DATA PREPARATION")
     print("=" * 60)

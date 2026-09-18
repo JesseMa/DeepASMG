@@ -1,9 +1,4 @@
-"""Released-order attributes: which order is created, not when.
-
-Feature distributions are either unconditional ({value: prob}) or conditional on
-'modell' ({modell_key: {value: prob}}), auto-detected from the nesting. 'modell' is
-always sampled first; initialize() moves it to the front of the feature order.
-"""
+"""Released-order attributes: which order is created, not when."""
 
 from __future__ import annotations
 
@@ -31,11 +26,6 @@ def _is_conditional(feature_config: Dict) -> bool:
 
 
 class GroundProduct(ProductStrategy):
-    """Sample features from configured probabilities, optionally time-modulated.
-
-    start_timestamp is the modulation's absolute time reference; it is added to
-    current_time only when a modulation is configured.
-    """
 
     def __init__(self, rng: np.random.Generator, start_timestamp: int = 0) -> None:
         self._rng = rng
@@ -105,7 +95,6 @@ class GroundProduct(ProductStrategy):
         self._is_cond[feat_name] = False
 
     def _init_conditional_feature(self, feat_name: str, config: Dict[str, Dict[str, float]]) -> None:
-        """Validate and store P(feat | modell); every model key must be covered."""
         if not config:
             raise ValueError(f"Fail fast: feature '{feat_name}' has no conditional distributions.")
 
@@ -137,12 +126,6 @@ class GroundProduct(ProductStrategy):
         self._is_cond[feat_name] = True
 
     def _compile_modulations(self, temporal_modulation: Dict[str, Dict[str, Any]]) -> None:
-        """Compile the modulation config into NumPy structures.
-
-        Conditional features share one period/amplitude; the phase offsets are built
-        from the first condition's value count and recomputed at runtime when a
-        condition's value count differs.
-        """
         for feat_name, mod_config in temporal_modulation.items():
             if feat_name not in self._is_cond:
                 raise ValueError(
@@ -175,7 +158,6 @@ class GroundProduct(ProductStrategy):
 
     @staticmethod
     def _resolve_period(feat_name: str, mod_config: Dict[str, Any]) -> float:
-        """Resolve named or numeric periods to seconds."""
         period = mod_config.get("period", "day")
         if isinstance(period, str):
             if period not in NAMED_PERIODS_HOURS:
@@ -193,7 +175,6 @@ class GroundProduct(ProductStrategy):
         return period_hours * 3600.0
 
     def sample_features(self, current_time: float = 0.0) -> Dict[str, str]:
-        """Sample one value per feature; 'modell' first, conditionals condition on it."""
         features: Dict[str, str] = {}
 
         absolute_time = (
@@ -228,11 +209,6 @@ class GroundProduct(ProductStrategy):
         realized_features: Optional[Dict[str, str]] = None,
         prev_features: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Dict[str, float]]:
-        """Categorical distribution per attribute head, without drawing.
-
-        Conditional features use the realized 'modell'; the lazy-walk mixing uses
-        prev_features, the Markov state BEFORE the draw.
-        """
         realized_features = realized_features or {}
         prev = prev_features or {}
         abs_time = (float(self._start_timestamp) + current_time) if self._modulations else 0.0
@@ -284,12 +260,6 @@ class GroundProduct(ProductStrategy):
         absolute_time: float,
         prev_modell: Optional[str],
     ) -> str:
-        """Sample P(feat | modell).
-
-        Lazy-walk reset: when the model context changed since the last draw the
-        previous state is discarded, otherwise the stationary distribution
-        P(feat | new modell) would be violated.
-        """
         cond_dist = self._cond_dists[feat_name]
 
         if sampled_model is None or sampled_model not in cond_dist:
@@ -324,12 +294,6 @@ class GroundProduct(ProductStrategy):
         probs: np.ndarray,
         prev_value: Optional[str],
     ) -> np.ndarray:
-        """Lazy-random-walk mixing: T(i→j) = α·1[i=j] + (1-α)·π_j.
-
-        Keeps π exactly stationary (π · T = π). The first draw
-        (prev_value=None) uses π unchanged — the correct start from the
-        stationary distribution.
-        """
         alpha = self._markov_alphas.get(feat_name, 0.0)
         if alpha <= 0.0 or prev_value is None:
             return probs
@@ -349,7 +313,6 @@ def _modulate_probs(
     absolute_time: float,
     modulation: _Modulation,
 ) -> np.ndarray:
-    """weight_i = base_prob_i × (1 + amplitude × sin(2π·t/period + offset_i)), renormalized."""
     period_s, amplitude, phase_offsets = modulation
 
     cycle_phase = TWO_PI * absolute_time / period_s

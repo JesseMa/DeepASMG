@@ -1,7 +1,4 @@
-"""How component scores are pooled and compared across systems.
-
-    python -m pytest tests/ -q
-"""
+"""How component scores are pooled and compared across systems."""
 
 from __future__ import annotations
 
@@ -32,8 +29,6 @@ def _continuous_frame(seed_means, *, n_per_seed=200, noise=0.01, station="M1"):
 
 
 def test_standard_error_is_clustered_by_seed():
-    """Rows within a replication share its trajectory; the resolution the
-    design provides is the spread across seeds, not across rows."""
     df = _continuous_frame({1000: 70.0, 1001: 71.0})
     rows, _ = aggregate_continuous(df, "S", "processing")
     pooled = next(r for r in rows if r["station"] == "POOLED")
@@ -75,8 +70,6 @@ def test_categorical_aggregation_is_seed_clustered():
 
 
 def test_routing_comparison_scores_each_visit_against_its_own_truth(tmp_path):
-    """A perfect surrogate must score zero at every decision, including the
-    repeat visits whose truth differs from the first arrival's."""
     pc = get_process_config()
     rows, side, i = [], [], 0
     for variant, feats in routing.all_variants():

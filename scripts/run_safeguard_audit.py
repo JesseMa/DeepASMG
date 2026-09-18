@@ -1,13 +1,4 @@
-"""Side-effect-free instrumented closed-loop safeguard audit.
-
-Reruns the authoritative closed loop on the same seeds, horizon and
-common-random-number plan with the read-only `_sg_*` counters captured. The
-instrumentation consumes no random numbers and changes no control flow.
-
-Hard gate: every run must reproduce the authoritative bundle bit-identically in
-cycle times, completion counts and KPIs, otherwise the counters are not
-integrated.
-"""
+"""Side-effect-free instrumented closed-loop safeguard audit."""
 from __future__ import annotations
 
 import argparse
@@ -52,11 +43,6 @@ def run_instrumented(seeds, out_pkl=OUT_PKL):
 
 
 def gate_no_behavior_change(runs_by_sim, auth_pkl=AUTH_PKL, audit_dir=AUDIT_DIR):
-    """Every instrumented run must reproduce its authoritative run bit for bit.
-
-    Cycle-time series and KPIs are compared directly; anything derived from
-    them (W1 and its tables) is then identical by construction.
-    """
     auth = pickle.load(auth_pkl.open("rb"))["runs_by_sim"]
     rows, ok_all = [], True
     for sys_name, runs in runs_by_sim.items():
@@ -80,7 +66,6 @@ def gate_no_behavior_change(runs_by_sim, auth_pkl=AUTH_PKL, audit_dir=AUDIT_DIR)
 
 
 def aggregate(runs_by_sim, audit_dir=AUDIT_DIR):
-    """Flatten per-(system,seed) safeguard counters and separate the two categories."""
     by_seed = []
     for sys_name, runs in runs_by_sim.items():
         for r in runs:

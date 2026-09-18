@@ -1,8 +1,4 @@
-"""Aggregate proper scores from the shadow CSVs.
-
-Under censoring the NLL uses the survival term −log S, and CRPS is scored only
-on uncensored rows, whose excluded count is reported.
-"""
+"""Aggregate proper scores from the shadow CSVs."""
 
 from __future__ import annotations
 
@@ -18,7 +14,6 @@ from src.evaluation import proper_scores as ps
 from src.evaluation import bathtub_hazard as bathtub
 
 
-
 def _parse(x) -> Optional[dict]:
     if x is None or isinstance(x, float) or (isinstance(x, str) and not x.strip()):
         return None
@@ -29,13 +24,6 @@ def _parse(x) -> Optional[dict]:
 
 
 def _family_log_cdf_sf(family: str, p: dict):
-    """(log_cdf, log_sf) of the family's continuous law, each exact in its tail.
-
-    The families with a closed cumulative hazard H build log_sf = -H and
-    log_cdf = log(-expm1(-H)); the normal uses scipy's pair. Working in log
-    space is what lets the lattice scores stay exact however far out a
-    realization falls.
-    """
     if family == "normal":
         mu, sigma = p["mu"], p["sigma"]
         return (lambda x: norm.logcdf(x, mu, sigma), lambda x: norm.logsf(x, mu, sigma))
@@ -60,7 +48,6 @@ def _family_log_cdf_sf(family: str, p: dict):
 
 
 def _crps_step(family: str, p: dict) -> float:
-    """Grid stride for the lattice CRPS support walk, one order below the scale."""
     if family == "normal":
         return max(float(p["sigma"]), 1.0)
     if family == "exponential":
@@ -70,18 +57,6 @@ def _crps_step(family: str, p: dict) -> float:
 
 def continuous_scores(family: str, p: dict, y: float, censored: bool
                       ) -> Tuple[Optional[float], float]:
-    """(CRPS|None if censored, NLL) for a whole-second realization y.
-
-    Every duration a strategy returns is ceil() of its latent draw (integer
-    time contract), so the deployed predictive law is the lattice law
-    P(Y = k) = F(k) - F(k-1). Both scores are taken on that law: the NLL is its
-    log-likelihood, the CRPS is the CRPS definition applied to the step CDF.
-    Under censoring the NLL keeps the survival term and CRPS is not scored.
-
-    A survival realization is the operating time at which the failure was
-    observed: the boundary of the job that exhausted the time to failure,
-    which is what a log records and what the surrogates are fitted on.
-    """
     if censored and family == "normal":
         raise ValueError(
             "Fail fast: censoring is not defined for the normal family "
@@ -99,10 +74,6 @@ def continuous_scores(family: str, p: dict, y: float, censored: bool
 
 
 def _seed_means(by_seed: Dict[int, List[float]]) -> Tuple[Dict[int, float], Dict[int, int]]:
-    """Per-seed means and per-seed counts of the usable observations.
-
-    A seed with no usable value is absent from both mappings rather than NaN.
-    """
     means: Dict[int, float] = {}
     counts: Dict[int, int] = {}
     for seed, vals in by_seed.items():
@@ -114,13 +85,6 @@ def _seed_means(by_seed: Dict[int, List[float]]) -> Tuple[Dict[int, float], Dict
 
 
 def _mean_se(seed_means: Dict[int, float]) -> Tuple[float, float, int]:
-    """Mean over replications and its seed-clustered standard error.
-
-    The score rows within one replication are not independent: they come from
-    one trajectory. Averaging per seed first and taking the spread across the
-    k seeds is the resolution the design actually provides; treating the rows
-    as independent understates the standard error.
-    """
     a = np.asarray(sorted(seed_means.values()), dtype=float)
     k = len(a)
     if k == 0:
@@ -134,14 +98,6 @@ def _paired_mean_se(
     seed_means: Dict[int, float], counts: Dict[int, int],
     ref_means: Dict[int, float], ref_counts: Dict[int, int],
 ) -> Tuple[float, float, int]:
-    """Mean paired difference against the reference and its standard error.
-
-    Under common random numbers the systems share a seed, so the per-seed
-    difference removes the between-seed variation the two share. This is the
-    comparison the design was built for, and it is much sharper than the
-    unpaired one. Pairing is only meaningful over the same decisions, so a
-    seed on which the two systems scored different numbers of rows is refused.
-    """
     shared = sorted(set(seed_means) & set(ref_means))
     if not shared:
         return float("nan"), float("nan"), 0
@@ -158,12 +114,6 @@ def _paired_mean_se(
 
 
 def _label(row, column: str) -> str:
-    """Label cell of a scored row; empty where the column does not apply.
-
-    The CSV round-trip turns an empty field into NaN, which must not become
-    the string "nan" (arrival rows have no station, several components have
-    no head).
-    """
     value = row.get(column, "")
     if value is None or value != value:
         return ""
@@ -173,12 +123,6 @@ def _label(row, column: str) -> str:
 def aggregate_continuous(
     df, system: str, component: str, *, reference: Optional[dict] = None,
 ) -> Tuple[List[dict], dict]:
-    """CRPS/NLL per (station[, head]) plus pooled, for one continuous component.
-
-    Returns the rows and a {(group, metric): ({seed: mean}, {seed: n})} map.
-    Passing the reference system's map back in adds the CRN-paired difference
-    columns.
-    """
     by_group: Dict[tuple, dict] = defaultdict(
         lambda: {"crps": defaultdict(list), "nll": defaultdict(list), "n_cens": 0}
     )
@@ -234,7 +178,6 @@ def aggregate_continuous(
 
 
 def _row_brier(probs: Dict[str, float], realized: str) -> float:
-    """Multiclass Brier for one row: Σ_k (p_k − 1{k=realized})² (+1 if realized ∉ support)."""
     s = sum(v * v for k, v in probs.items() if k != realized)
     if realized in probs:
         s += (probs[realized] - 1.0) ** 2
@@ -244,12 +187,6 @@ def _row_brier(probs: Dict[str, float], realized: str) -> float:
 
 
 def aggregate_categorical(df, system: str, component: str, *, n_bins: int = 15) -> List[dict]:
-    """Brier + ECE per (station[, head]) plus pooled, for one categorical component.
-
-    The Brier score is averaged per seed and reported with the seed-clustered
-    standard error like the continuous scores; the ECE is a property of the
-    whole set of decisions and is pooled over all rows of a group.
-    """
     by_group: Dict[tuple, dict] = defaultdict(
         lambda: {"brier": defaultdict(list), "conf": [], "correct": []}
     )
@@ -291,11 +228,6 @@ CATEGORICAL = ("transition", "arrival")
 def aggregate_all(
     shadow_dir: Path, systems, components, *, reference: str = "GroundSim",
 ) -> Dict[str, List[dict]]:
-    """Aggregate all existing <system>__<component>.csv files.
-
-    The reference system is scored first so every other system can carry the
-    CRN-paired difference against it.
-    """
     import pandas as pd
     cont: List[dict] = []
     cat: List[dict] = []

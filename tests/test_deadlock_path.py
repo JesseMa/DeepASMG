@@ -1,12 +1,4 @@
-"""Deadlock detection, overflow displacement and delivery.
-
-These paths are reached only when several stations block each other in a cycle,
-which the bundled verification runs do not reliably produce. The tests below
-force the situation deterministically on a three-station ring at capacity one,
-so the machinery stays covered independently of any particular seed.
-
-    python -m pytest tests/ -q
-"""
+"""Deadlock detection, overflow displacement and delivery."""
 
 from __future__ import annotations
 
@@ -21,7 +13,6 @@ from src.simulation.station import Station
 
 
 class _Recorder:
-    """Minimal stand-in capturing what the manager writes."""
 
     def __init__(self) -> None:
         self.rows: List[dict] = []
@@ -31,7 +22,6 @@ class _Recorder:
 
 
 def _ring(n: int = 3) -> Dict[str, Station]:
-    """n stations of capacity 1, each holding one order bound for the next."""
     stations = {
         f"S{i}": Station(StationConfig(id=f"S{i}", capacity=1, is_machine=True))
         for i in range(n)
@@ -158,9 +148,6 @@ if __name__ == "__main__":
 
 
 def test_down_station_with_a_free_slot_is_not_a_cycle_member():
-    """M5-shaped case: a three-slot machine under repair, one slot free, whose
-    finished order is bound back to its full feeder. The feeder's wait ends
-    with the repair, so displacing its order would be a spurious resolution."""
     feeder = Station(StationConfig(id="B5", capacity=1))
     machine = Station(StationConfig(id="M5", capacity=3, is_machine=True))
     feeder.add_to_departure(Order(id="O_in", features={}, timestamp_creation=0.0), "M5")

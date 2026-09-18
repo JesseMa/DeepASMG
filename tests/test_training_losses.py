@@ -1,12 +1,4 @@
-"""The interval likelihoods the surrogates are trained with.
-
-Every duration in the log is a whole second, so a loss must score the
-probability of the observed integer under the latent law, and it must keep a
-gradient however far a freshly initialized network sits from the data: a
-loss that is exact near the data but flat in the tail trains nothing.
-
-    python -m pytest tests/ -q
-"""
+"""The interval likelihoods the surrogates are trained with."""
 
 from __future__ import annotations
 
@@ -23,7 +15,6 @@ from src.fitting.deep_training.train_survival import weibull_nll_loss  # noqa: E
 
 
 def _gaussian_nll(pred, y):
-    """The module's loss without a Lightning instance behind it."""
     class Stub:
         _log_interval_prob = GaussianNLLModule._log_interval_prob
         _nll_loss = GaussianNLLModule._nll_loss
@@ -31,8 +22,6 @@ def _gaussian_nll(pred, y):
 
 
 def _reference_log_interval(mu, sigma, k):
-    """log(Phi((k-mu)/s) - Phi((k-1-mu)/s)) in float64, formed from the tail
-    that does not cancel."""
     a, b = (k - 1 - mu) / sigma, (k - mu) / sigma
     if b <= 0:
         return norm.logcdf(b) + np.log1p(-np.exp(norm.logcdf(a) - norm.logcdf(b)))
@@ -52,8 +41,6 @@ def test_gaussian_interval_loss_matches_scipy_into_both_tails(mu, sigma):
 
 
 def test_gaussian_interval_loss_has_gradient_far_from_the_mean():
-    """At a default initialization every machine row sits 20-130 standard
-    deviations from the prediction. The gradient must still point at the data."""
     for y in (20.0, 70.0, 134.0, 1000.0):
         pred = torch.tensor([[0.7, 0.0]], requires_grad=True)
         _gaussian_nll(pred, torch.tensor([y])).backward()
@@ -72,10 +59,6 @@ def test_gaussian_interval_loss_is_finite_on_every_input():
 
 
 def test_process_time_module_learns_mixed_scale_targets_from_default_init():
-    """The situation the preparation produces: stations of very different
-    scale in one batch, the network started at the marginal law as the
-    trainers do. The loss must carry every station to its latent mean and
-    spread, i.e. recover the continuous law behind the ceil'd targets."""
     torch.manual_seed(0)
     rng = np.random.default_rng(0)
     latent = {0: (36.0, 2.0), 1: (74.0, 1.0), 2: (134.0, 3.0)}

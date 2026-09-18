@@ -16,8 +16,6 @@ from src.fitting.deep_training.foundation_training import (
 )
 
 
-
-
 class TransitionLightningModule(BaseTrainingModule, pl.LightningModule):
 
     def __init__(

@@ -13,7 +13,6 @@ import numpy as np
 
 @dataclass
 class RawEvent:
-    """A single event row from the CSV."""
     order_id: str
     timestamp_event_start: float
     station: str
@@ -25,11 +24,6 @@ class RawEvent:
 
 
 def load_events(paths: Sequence[Path]) -> List[RawEvent]:
-    """Load events from one or more CSV files.
-
-    Reads the superset of all fields (station_type defaults to 'machine') so that
-    process_time/transition and survival/repair_time share one loader.
-    """
     events: List[RawEvent] = []
     for path in paths:
         with open(path, "r") as f:
@@ -53,12 +47,6 @@ def load_orders(
     *,
     with_completions: bool = False,
 ) -> "Dict[str, Dict[str, str]] | Tuple[Dict[str, Dict[str, str]], Dict[str, Optional[float]]]":
-    """Load orders as a mapping order_id → features.
-
-    All non-meta columns count as features. With with_completions=True,
-    additionally returns order_id → timestamp_completion (for transition
-    detection).
-    """
     features: Dict[str, Dict[str, str]] = {}
     completions: Dict[str, Optional[float]] = {}
     meta_cols = {"order_id", "timestamp_creation", "timestamp_completion"}
@@ -81,10 +69,6 @@ def load_orders(
 def build_feature_layout(
     groups: List[Tuple[str, Dict[str, int]]],
 ) -> Tuple[List[Dict[str, Any]], int]:
-    """Build a feature_layout from (name, mapping) tuples.
-
-    Offsets are cumulative. Returns (layout, total_dim).
-    """
     layout: List[Dict[str, Any]] = []
     offset = 0
 
@@ -101,7 +85,6 @@ def save_prepared_data(
     metadata: Dict[str, Any],
     output_dir: Path,
 ) -> None:
-    """Save data.npz + metadata.json to output_dir."""
     output_dir.mkdir(parents=True, exist_ok=True)
     np.savez_compressed(output_dir / "data.npz", X=X, y=y)
 
@@ -113,7 +96,6 @@ def save_prepared_data(
 
 
 def find_csv_files(base_dir):
-    """All event/order CSVs below base_dir, sorted for deterministic order."""
     events = sorted(base_dir.rglob("*_events_*.csv"))
     orders = sorted(base_dir.rglob("*_orders_*.csv"))
     return events, orders

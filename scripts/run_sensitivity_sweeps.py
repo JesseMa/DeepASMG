@@ -1,7 +1,4 @@
-"""Bundled closed-loop sweep runs for the data-regime analysis.
-
-Build the configuration tree first: python -m scripts.build_sensitivity_tree.
-"""
+"""Bundled closed-loop sweep runs for the data-regime analysis."""
 
 from __future__ import annotations
 
@@ -31,12 +28,6 @@ def _run_config(
     name: str, data_dir: Path, model_dir: Path, ref_variants, seeds,
     shared: dict, *, with_dec: bool = False,
 ) -> tuple[dict, "SimFactorySet"]:
-    """Run one sweep configuration; returns (runs, factory set).
-
-    The factory set is returned so callers that need more replications on the
-    same fit do not rebuild the analyzer, and it is deliberately NOT part of
-    the runs dict so it can never reach the pickle.
-    """
     print(f"\n[{name}] refit RefSim (extended analyzer) on {data_dir.name} …")
     stats = RefSimAnalyzer(data_dir=data_dir, train_ratio=TRAIN_RATIO).extract_all()
     fs = SimFactorySet(model_dir=model_dir, stats_data=stats)
@@ -60,8 +51,6 @@ def _run_config(
 
 
 def _hybrid_factory(fs: SimFactorySet, *, stat_survival: bool):
-    """Learned core with the statistical repair module (module selection), and
-    optionally the statistical survival module as the exposure-only contrast."""
     kinds = ("deep", "deep", "stat" if stat_survival else "deep", "stat", "deep")
     return lambda seed, run_id: fs.compose(seed, run_id, kinds)
 
@@ -81,11 +70,6 @@ DATA_COMPONENTS = (
 
 
 def _observation_counts(section: str, config: str, model_dir: Path) -> list[dict]:
-    """Per-component observation counts of one derivation.
-
-    The training logs are excluded from the release; exporting the counts per
-    derivation horizon keeps the sample sizes verifiable without them.
-    """
     rows = []
     for component, data_dir in DATA_COMPONENTS:
         meta_path = model_dir / data_dir / "metadata.json"

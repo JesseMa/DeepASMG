@@ -1,6 +1,4 @@
-"""
-    SimulationEngine – time-discrete simulation at one-second resolution.
-"""
+"""SimulationEngine – time-discrete simulation at one-second resolution."""
 
 from __future__ import annotations
 

@@ -1,11 +1,4 @@
-"""
-Transition strategy based on a neural network.
-
-K-slot history per from_station (autoregressive online; teacher-forced offline
-in `prepare_transition_data.py`). K separate slots (modell + target per slot)
-resolve deterministic counter patterns such as the InputBuffer cycle. K is
-stored in metadata.json.
-"""
+"""Transition strategy based on a neural network."""
 
 from __future__ import annotations
 
@@ -26,11 +19,6 @@ if TYPE_CHECKING:
 
 
 class DeepTransition(TransitionStrategy):
-    """Transitions from a trained classification NN.
-
-    Model and metadata load on first use (initialize() or predict()), so the
-    strategy can be constructed before the model exists.
-    """
 
     def __init__(
         self,
@@ -114,7 +102,6 @@ class DeepTransition(TransitionStrategy):
         order: "Order",
         available_targets: Set[str],
     ) -> np.ndarray:
-        """Classes outside available_targets are masked to -inf before the softmax."""
         import torch
 
         x = self._encode_single(station_id, order)
@@ -148,8 +135,6 @@ class DeepTransition(TransitionStrategy):
         available_targets: Set[str],
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[str]:
-        """Sample the next station; None if "End" was sampled. Order: encode with
-        the CURRENT buffer, predict, then append (modell, chosen_station)."""
         self._ensure_loaded()
 
         # Read-only instrumentation: no RNG draw, no control-flow effect. The
@@ -177,7 +162,6 @@ class DeepTransition(TransitionStrategy):
         available_targets: Set[str],
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
-        """Categorical distribution over the admissible targets; no buffer update."""
         self._ensure_loaded()
         probs = self._compute_probs(station_id, order, available_targets)
         return {"family": "categorical",

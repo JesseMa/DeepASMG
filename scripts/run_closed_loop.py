@@ -1,10 +1,4 @@
-"""Bundled closed-loop run at the system level.
-
-All systems run on the production training state (models/ plus
-statistic_params.pkl) that was derived from a 365-day log; the evaluation
-window itself is the short horizon from simulation_config, NOT 365 days.
-One common-random-numbers replication series per system, stored as a pickle.
-"""
+"""Bundled closed-loop run at the system level."""
 
 from __future__ import annotations
 
@@ -24,11 +18,6 @@ from src.config.simulation_config import (  # noqa: E402
 
 
 def build_systems(fs: SimFactorySet) -> dict:
-    """The six evaluated systems, in evaluation order.
-
-    Single source of truth: scripts/run_safeguard_audit.py reuses this so the
-    instrumented rerun cannot drift from the authoritative run.
-    """
     return {
         "GroundSim": fs.base, "GroundSim-DEC": fs.floor,
         "DeepSim": fs.deep,

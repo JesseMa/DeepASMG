@@ -13,7 +13,6 @@ from src.recording.recorder import PROCESS_LOG_DTYPE
 
 
 class ResultsSaver:
-    """Writes the process and order logs of one run as CSV files."""
 
     def __init__(self, base_dir: Path, experiment_name: str, process_name: str) -> None:
         self._timestamp = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")

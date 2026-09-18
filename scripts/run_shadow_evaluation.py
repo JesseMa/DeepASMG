@@ -1,8 +1,4 @@
-"""Bundled shadow run over all shadow systems and evaluation seeds.
-
-context_ids carry the seed as prefix, so they stay unique when the per-seed
-CSVs are concatenated.
-"""
+"""Bundled shadow run over all shadow systems and evaluation seeds."""
 
 from __future__ import annotations
 

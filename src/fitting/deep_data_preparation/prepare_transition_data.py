@@ -1,11 +1,4 @@
-"""
-Training-data preparation for the transition surrogate.
-
-Teacher forcing: training fills the per-station slot buffer with the TRUE
-to_station, while online inference fills it autoregressively with its own
-prediction. Under shadow inference GroundSim drives, so true targets feed the
-buffer there as well.
-"""
+"""Training-data preparation for the transition surrogate."""
 
 from __future__ import annotations
 
@@ -53,7 +46,6 @@ class TransitionSample:
 
 @dataclass
 class TransitionEncodingMaps:
-    """Categorical value → index mappings."""
     modell: Dict[str, int] = field(default_factory=dict)
     feature_a: Dict[str, int] = field(default_factory=dict)
     feature_b: Dict[str, int] = field(default_factory=dict)
@@ -81,7 +73,6 @@ class TransitionEncodingMaps:
 
     @property
     def num_classes(self) -> int:
-        """Number of possible target stations (incl. End)."""
         return len(self.to_station)
 
     def to_dict(self) -> dict:
@@ -104,19 +95,6 @@ def reconstruct_transitions(
     order_features: Dict[str, Dict[str, str]],
     order_completions: Dict[str, Optional[float]],
 ) -> List[Tuple[str, Dict[str, str], str, str]]:
-    """Reconstruct transitions from the event sequence.
-
-    Per order, the chronological station sequence is derived; each pair
-    (station_i → station_{i+1}) becomes one transition, and the final step of a
-    completed order maps to 'End'.
-
-    The list is sorted globally by completion time (timestamp_event_start +
-    time_processing of the source station) — the instant the engine calls
-    predict() at PROCESS_COMPLETE. At stations with capacity > 1 (notably M5,
-    capacity=3) orders can reorder relative to their start order, so the slot
-    history must follow completion order (train/inference parity). This also
-    enables a true temporal cut in chronological_train_end_idx.
-    """
     productive = [
         e for e in events
         if not e.is_breakdown
@@ -167,11 +145,6 @@ def build_transition_samples(
     transitions: List[Tuple[str, Dict[str, str], str, str]],
     n_hist_slots: int = MAX_HIST_SLOTS,
 ) -> List[TransitionSample]:
-    """Build training samples with a K-slot history per from_station.
-
-    Slot 0 = most recent, NONE-padded before availability. Teacher forcing:
-    after each sample the buffer is updated with the TRUE to_station.
-    """
     slot_buffers: Dict[str, Deque[Tuple[str, str]]] = defaultdict(
         lambda: deque(
             [(NONE_TOKEN, NONE_TOKEN)] * n_hist_slots,
@@ -210,14 +183,6 @@ def build_encoding_maps(
     all_samples: List[TransitionSample],
     n_hist_slots: int = MAX_HIST_SLOTS,
 ) -> TransitionEncodingMaps:
-    """Build encoding maps.
-
-    Feature vocabularies are fitted on the TRAIN slice only; values first
-    seen in val/test yield all-zero one-hot blocks (OOV). The slot_target
-    vocabulary comes from the train slot targets plus NONE_TOKEN (padding). The
-    target vocabulary (to_station) is built from the FULL dataset because label
-    encoding for y has no all-zero path.
-    """
     modell_train_vals = (
         {s.modell for s in train_samples}
         | {m for s in train_samples for m in s.hist_modells}
@@ -252,12 +217,6 @@ def encode_samples(
     samples: List[TransitionSample],
     maps: TransitionEncodingMaps,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """One-hot feature matrix and integer label vector.
-
-    Feature-vector layout (cumulative offsets):
-        [modell | feature_a | feature_b | from_station |
-         hist_modell_0 | hist_target_0 | ... | hist_modell_{K-1} | hist_target_{K-1}]
-    """
     n = len(samples)
     dim = maps.feature_dim
     K = maps.n_hist_slots
@@ -303,7 +262,6 @@ def save(
     n_train_vocab_fit: int,
     oov_stats: Dict[str, Dict[str, float]],
 ) -> None:
-    """Save all samples as data.npz + metadata.json (no split)."""
     groups: List[Tuple[str, Dict[str, int]]] = [
         ("modell", maps.modell),
         ("feature_a", maps.feature_a),
@@ -392,11 +350,6 @@ def prepare_transition_data(
     train_ratio: float = DEFAULT_TRAIN_RATIO,
     n_hist_slots: int = MAX_HIST_SLOTS,
 ) -> Tuple[np.ndarray, np.ndarray, TransitionEncodingMaps]:
-    """Full pipeline: CSVs → training-ready arrays.
-
-    Feature vocabulary from the first train_ratio fraction only; target
-    classes from the full dataset (topology). Returns (X, y, encoding_maps).
-    """
     print("=" * 60)
     print(f"TRANSITION TRAINING-DATA PREPARATION (K={n_hist_slots})")
     print("=" * 60)

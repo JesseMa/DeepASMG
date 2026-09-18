@@ -1,12 +1,4 @@
-"""Statistical process times: N(mean, std) per station, optionally refined per
-product type and per full variant.
-
-RefSim-M uses the station-marginal moments alone; RefSim-V adds the
-conditioned cells and falls back through (station, variant) →
-(station, product type) → station when a cell is missing. The moments are the
-dequantized fit of the whole-second log, so the draw is ceiled once here, as
-GroundSim does. One RNG draw per call.
-"""
+"""Statistical process times: N(mean, std) per station, optionally refined per product type and per full variant."""
 
 from __future__ import annotations
 
@@ -25,7 +17,6 @@ Cell = Tuple[float, float]
 
 
 class RefProcessTime(ProcessTimeStrategy):
-    """Fitted N(mean, std) per station with cell fallback; ceil(max(0.1, draw))."""
 
     def __init__(
         self,
@@ -60,7 +51,6 @@ class RefProcessTime(ProcessTimeStrategy):
             )
 
     def _resolve(self, station_id: str, order: "Order") -> Cell:
-        """The most specific fitted cell available."""
         feats = order.features
         cell = self._byv.get(station_id, {}).get(full_variant_key(feats))
         if cell is None:
@@ -82,7 +72,5 @@ class RefProcessTime(ProcessTimeStrategy):
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
-        """Deployed Normal params of the resolved cell, on the total scale (the
-        fitted values include setup time); the 0.1 s floor is not represented."""
         mean, std = self._resolve(station_id, order)
         return {"family": "normal", "mu": float(mean), "sigma": float(std)}

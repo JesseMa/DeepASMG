@@ -28,10 +28,6 @@ logger = logging.getLogger(__name__)
 
 
 def _make_objective(train_module: str, suggest_fn, *, train_kwargs: Dict[str, Any]):
-    """Factory for HPO objective functions.
-
-    ``train_module`` is the fully qualified module path of a train() function.
-    """
     def objective(trial, data_dir: Path, model_dir: Path,
                   train_kwargs_override: Optional[Dict[str, Any]] = None) -> float:
         mod = importlib.import_module(train_module)
@@ -123,12 +119,6 @@ def _suggest_product(trial) -> dict:
 
 
 def _data_identity(data_dir: Path) -> str:
-    """Short fingerprint of the training log the study is scored on.
-
-    It is part of the study name, so a study can be resumed on the same log
-    but never continued on a different one: with a shared database the best
-    trial would otherwise be chosen across logs.
-    """
     meta = (Path(data_dir) / "run_metadata.json").read_bytes()
     return hashlib.sha256(meta).hexdigest()[:10]
 
@@ -182,13 +172,6 @@ def run_hpo(
     n_jobs:     int = 1,
     max_epochs_override: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Run HPO for a single DeepSim model.
-
-    Parameters
-    ----------
-    db_path   : SQLite path for study persistence
-    n_jobs    : parallel trials (1 = sequential, safe default)
-    """
     import optuna
 
     if model not in OBJECTIVES:
@@ -273,10 +256,6 @@ def run_hpo_all(
     db_path:   Union[str, Path] = REPO / "models/hpo/hpo_studies.db",
     max_epochs_override: Optional[int] = None,
 ) -> Dict[str, Any]:
-    """Run HPO for all five models sequentially.
-
-    If n_trials is None, uses per-model defaults from TRIAL_BUDGET.
-    """
     results = {}
     for model in OBJECTIVES:
         trials_for_model = n_trials if n_trials is not None else TRIAL_BUDGET[model]
@@ -309,7 +288,6 @@ def load_best_params(
     model:    str,
     hpo_dir:  Union[str, Path] = REPO / "models/hpo",
 ) -> Dict[str, Any]:
-    """Load the best HPO params as kwargs for the corresponding train() function."""
     path = Path(hpo_dir) / f"{model}_best_params.json"
     if not path.exists():
         raise FileNotFoundError(

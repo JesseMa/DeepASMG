@@ -1,9 +1,4 @@
-"""The arrival index as a routing key: counted by the kernel, resolved by the
-configuration, counted again by the preparation, and honoured by the truth
-vector the routing comparison scores against.
-
-    python -m pytest tests/ -q
-"""
+"""The arrival index as a routing key: counted by the kernel, resolved by the configuration, counted again by the preparation, and honoured by the truth vector the routing comparison scores against."""
 
 from __future__ import annotations
 
@@ -75,8 +70,6 @@ def test_preparation_counts_prior_rows_per_order_and_station():
 
 
 def test_sequential_rule_counts_under_the_resolved_key():
-    """The round-robin counter and the draw path must name the key alike, so a
-    visit-indexed row and a product row never split one counter in two."""
     cfg = StationConfig(
         id="S", capacity=1,
         transitions={"visit_2": {"X": 1.0}, "A": {"B1": 0.5, "B2": 0.5}},
@@ -91,7 +84,6 @@ def test_sequential_rule_counts_under_the_resolved_key():
 
 
 def test_cascade_enqueues_every_freed_station_once_per_event():
-    """The cascade runs iteratively; a station freed mid-cascade is picked up."""
     seen = []
     stations = {
         "S0": Station(StationConfig(id="S0", capacity=1, is_start_station=True)),

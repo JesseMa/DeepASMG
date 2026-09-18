@@ -1,10 +1,4 @@
-"""
-Training-data preparation for NN-based survival analysis (TTF).
-
-Target (y), two columns:
-    duration        → cumulative operating time (Σ net_process_time) per cycle
-    event           → 1 = breakdown, 0 = right-censored (cycle open at sim end)
-"""
+"""Training-data preparation for NN-based survival analysis (TTF)."""
 
 from __future__ import annotations
 
@@ -26,7 +20,6 @@ from src.fitting.deep_data_preparation.split_helpers import (
 
 @dataclass
 class SurvivalSample:
-    """One cycle as a survival data point."""
     station: str
     operating_time: float   # cumulative operating time (Σ net_process_time)
     event: bool             # True = breakdown
@@ -40,13 +33,10 @@ class SurvivalSample:
 
 @dataclass
 class SurvivalEncodingMaps:
-    """Categorical value → index mappings."""
     station: Dict[str, int] = field(default_factory=dict)
 
     @property
     def feature_dim(self) -> int:
-        """Station one-hot block size only; the authoritative model input dim
-        (station + 4 continuous features) is the top-level feature_dim from save()."""
         return len(self.station)
 
     def to_dict(self) -> dict:
@@ -59,14 +49,6 @@ class SurvivalEncodingMaps:
 def extract_survival_samples(
     events: List[RawEvent],
 ) -> List[SurvivalSample]:
-    """Extract survival data points from the event sequence.
-
-    Chronological per machine; duration = cumulative operating time
-    (Σ net_process_time). A breakdown closes a cycle as event=1; only cycles
-    still open at sim end are censored (event=0). The sample list is sorted
-    globally by cycle end (wall clock) — prerequisite for a meaningful temporal
-    cut in chronological_train_end_idx.
-    """
     machine_events = [e for e in events if e.station_type == "machine"]
 
     events_by_station: Dict[str, List[RawEvent]] = defaultdict(list)
@@ -198,14 +180,6 @@ def encode_samples(
     samples: List[SurvivalSample],
     maps: SurvivalEncodingMaps,
 ) -> Tuple[np.ndarray, np.ndarray]:
-    """Feature matrix X and target matrix y for survival training.
-
-    X: [station_onehot, prev_ttf, prev_n_jobs, mean_ttf, prev_repair_time]  (n, n_stations+4)
-    y: [operating_time, event]  (n, 2)
-
-    Continuous features stay unnormalized — normalization is derived after the
-    split from the training set (train_survival.py) to avoid data leakage.
-    """
     n = len(samples)
     n_stations = len(maps.station)
     total_dim = n_stations + 4  # station_onehot + prev_ttf + prev_n_jobs + mean_ttf + prev_repair_time
@@ -239,7 +213,6 @@ def save(
     n_train_vocab_fit: int,
     oov_stats: Dict[str, Dict[str, float]],
 ) -> None:
-    """Save all samples as data.npz + metadata.json (no split, no normalization)."""
     n_events = int(np.sum(y[:, 1] == 1))
     n_censored = int(np.sum(y[:, 1] == 0))
     n_stations = len(maps.station)
@@ -330,15 +303,6 @@ def prepare_survival_data(
     output_dir: Path,
     train_ratio: float = DEFAULT_TRAIN_RATIO,
 ) -> Tuple[np.ndarray, np.ndarray, SurvivalEncodingMaps]:
-    """Full pipeline: CSVs → training-ready survival arrays.
-
-    y[:, 0] = raw operating_time (seconds), y[:, 1] = event. Normalization
-    happens after the split (train_survival.py), not here.
-
-    The station vocabulary is fitted on the first train_ratio fraction
-    only; OOV stations in the val/test slice are reported via oov_stats in
-    metadata. Returns (X, y, encoding_maps).
-    """
     print("=" * 60)
     print("SURVIVAL-ANALYSIS DATA PREPARATION (operating time)")
     print("=" * 60)

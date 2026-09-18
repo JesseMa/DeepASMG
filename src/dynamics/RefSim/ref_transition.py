@@ -1,11 +1,4 @@
-"""Statistical routing: a fitted categorical table per station, optionally
-refined per product type and per full variant, drawn under the admissibility
-mask.
-
-RefSim-M uses the station-marginal table alone; RefSim-V adds the conditioned
-cells and falls back through (station, variant) → (station, product type) →
-station when a cell is missing. Either way one RNG draw per call.
-"""
+"""Statistical routing: a fitted categorical table per station, optionally refined per product type and per full variant, drawn under the admissibility mask."""
 
 from __future__ import annotations
 
@@ -30,13 +23,6 @@ Dist = Tuple[list, np.ndarray]
 
 
 class RefTransition(TransitionStrategy):
-    """Fitted routing table with cell fallback and admissibility mask.
-
-    The fitted table may put mass on targets the topology does not admit from
-    a station, so every draw is restricted to available_targets and
-    renormalized. The masked, renormalized table for a (cell, target set) is
-    built once and reused: both inputs are fixed for the run.
-    """
 
     def __init__(
         self,
@@ -77,7 +63,6 @@ class RefTransition(TransitionStrategy):
             )
 
     def _resolve(self, station_id: str, order: "Order") -> Tuple[str, Dist]:
-        """(cell key, distribution): the most specific fitted cell available."""
         feats = order.features
         key = full_variant_key(feats)
         dist = self._byv.get(station_id, {}).get(key)
@@ -132,6 +117,5 @@ class RefTransition(TransitionStrategy):
         available_targets: Set[str],
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
-        """Deployed categorical distribution (resolved cell, post-mask)."""
         prep = self._prepared_for(station_id, order, available_targets)
         return {"family": "categorical", "probs": masked_categorical_probs(prep)}

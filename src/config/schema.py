@@ -36,12 +36,6 @@ class StationConfig:
 
 @dataclass
 class ProcessConfig:
-    """Full production process definition.
-
-    temporal_modulation: per feature a period and an amplitude a, scaling that
-        feature's base weights by 1 +/- a over the cycle before renormalisation.
-        Features without an entry stay static.
-    """
 
     name: str
     description: str

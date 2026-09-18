@@ -1,11 +1,4 @@
-"""
-RefSimAnalyzer — extracts statistical parameters from simulation data.
-
-For parity with DeepSim, each run CSV keeps only the first ``train_ratio``
-fraction of events chronologically and restricts orders to ``timestamp_creation``
-within the training window; this prevents data leakage with the eval logs.
-``train_ratio=1.0`` disables the cut (full data).
-"""
+"""RefSimAnalyzer — extracts statistical parameters from simulation data."""
 
 from __future__ import annotations
 
@@ -30,24 +23,12 @@ from src.config.routing_keys import full_variant_key, product_type_key
 
 
 def _dequantized_normal(xs) -> tuple[float, float]:
-    """(mean, std) of the normal whose ceil reproduces the observed integers.
-
-    Sheppard's corrections for grouped data: the quantizer adds +0.5 to the
-    mean and +1/12 to the variance. Agrees with the exact interval MLE to
-    ~1e-5 at the station sigmas of this topology (0.74 upward).
-    """
     mean = float(np.mean(xs)) - 0.5
     var = float(np.var(xs)) - 1.0 / 12.0
     return mean, float(np.sqrt(max(var, 0.0)))
 
 
 def _dequantized_exponential(xs) -> float:
-    """Scale of the exponential whose ceil reproduces the observed integers.
-
-    ceil(Exp(beta)) is geometric with success probability p = 1-exp(-1/beta),
-    whose MLE is 1/mean. Inverting gives beta = -1/log(1 - 1/mean), exact
-    rather than approximate.
-    """
     m = float(np.mean(xs))
     if m <= 1.0:
         return 0.5
@@ -201,11 +182,6 @@ class RefSimAnalyzer:
         events: List[Dict],
         orders_features: Dict[str, Dict[str, str]],
     ) -> Dict[str, Tuple[float, float]]:
-        """Dequantized mean/std of net_process_time per machine (station-marginal).
-
-        Machine operations only, like the DeepSim preparation: buffers are
-        never asked for a duration.
-        """
         times: Dict[str, List[float]] = defaultdict(list)
         n_orphan = 0
         for e in events:
@@ -225,7 +201,6 @@ class RefSimAnalyzer:
         return {s: _dequantized_normal(v) for s, v in times.items()}
 
     def _extract_transitions(self, events: List[Dict], orders_features: Dict, orders_completions: Dict) -> Dict[str, Dict[str, float]]:
-        """P(target|station) per station, marginalized over model/feature."""
         productive = [
             e for e in events
             if not e["is_breakdown"]
@@ -266,10 +241,6 @@ class RefSimAnalyzer:
         events: List[Dict],
         orders_features: Dict[str, Dict[str, str]],
     ) -> Dict[str, Any]:
-        """Normal MLE per (station, variant) and per (station, product type).
-
-        Cells below _MIN_CELL_OBS fall back to the coarser level at runtime.
-        """
         vals_v: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
         vals_p: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
         for e in events:
@@ -313,12 +284,6 @@ class RefSimAnalyzer:
         orders_features: Dict,
         orders_completions: Dict,
     ) -> Dict[str, Any]:
-        """Categorical routing distribution per (station, variant) and (station, product type).
-
-        Mirrors the filter/END logic of _extract_transitions exactly, only
-        additionally grouped by variant/product type. Cells with <2 transitions
-        fall back.
-        """
         productive = [
             e for e in events
             if not e["is_breakdown"]
@@ -379,13 +344,6 @@ class RefSimAnalyzer:
     def _extract_ttf_spells(
         self, events: List[Dict]
     ) -> Dict[str, Dict[str, List[float]]]:
-        """Reconstruct TTF spells (operating seconds) per machine station.
-
-        Mirrors ``prepare_survival_data.extract_survival_samples``: per station,
-        chronologically; Σ net_process_time of productive jobs = spell duration; a
-        stoppage (is_breakdown or order_id=='BREAKDOWN') closes an uncensored
-        spell; the cycle still open at log end is right-censored.
-        """
         by_station: Dict[str, List[Dict]] = defaultdict(list)
         for e in events:
             if e["station_type"] == "machine":
@@ -414,12 +372,6 @@ class RefSimAnalyzer:
         return out
 
     def _extract_weibull_ttf(self, events: List[Dict]) -> Dict[str, Any]:
-        """Weibull MLE (shape, scale) per station with right-censoring.
-
-        A machine without enough training spells has no entry; the strategy
-        then simulates it from the fleet-pooled fit (``pooled``), the same
-        rule DeepSim applies through its all-zero station block.
-        """
         spells = self._extract_ttf_spells(events)
         params: Dict[str, Tuple[float, float]] = {}
         coverage: Dict[str, Dict[str, int]] = {}
@@ -444,10 +396,6 @@ class RefSimAnalyzer:
     def _fit_weibull_censored(
         uncensored: List[float], censored: List[float]
     ) -> Optional[Tuple[float, float]]:
-        """Weibull MLE (loc=0) on uncensored + right-censored spells.
-
-        Returns None for <2 uncensored spells.
-        """
         if len(uncensored) < 2:
             return None
         unc = np.asarray(uncensored, dtype=float)
@@ -485,12 +433,6 @@ class RefSimAnalyzer:
     def _extract_breakdowns_and_repairs(
         self, events: List[Dict]
     ) -> Tuple[Dict[str, float], Dict[str, float], float, float]:
-        """Per-station MTTF and repair scale, plus their fleet-pooled values.
-
-        Only machines with at least one training breakdown get an entry; the
-        pool (operating time and breakdowns summed over all machines, repairs
-        pooled) is what the strategy uses for a machine without one.
-        """
         operating_time = defaultdict(float)
         bd_count = defaultdict(int)
         repairs = defaultdict(list)
