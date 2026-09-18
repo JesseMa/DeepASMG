@@ -344,16 +344,20 @@ class RefSimAnalyzer:
             cen: List[float] = []
             op = 0.0
             jobs = 0
+            first_spell_truncated = True
             for e in evs:
                 if e["is_breakdown"] or e["order_id"] == "BREAKDOWN":
                     if jobs > 0 and op > 0:
-                        unc.append(op)
+                        if first_spell_truncated:
+                            first_spell_truncated = False
+                        else:
+                            unc.append(op)
                     op = 0.0
                     jobs = 0
                     continue
                 op += e["net_process_time"]
                 jobs += 1
-            if jobs > 0 and op > 0:
+            if jobs > 0 and op > 0 and not first_spell_truncated:
                 cen.append(op)
             out[station] = {"uncensored": unc, "censored": cen}
         return out
@@ -418,15 +422,18 @@ class RefSimAnalyzer:
         operating_time = defaultdict(float)
         bd_count = defaultdict(int)
         repairs = defaultdict(list)
+        first_breakdown_seen: Dict[str, bool] = defaultdict(bool)
 
         for e in events:
             if e["station_type"] != "machine":
                 continue
             s = e["station"]
             if e["is_breakdown"]:
-                bd_count[s] += 1
-                repairs[s].append(e["repair_time"])
-            elif e["order_id"] != "BREAKDOWN":
+                if first_breakdown_seen[s]:
+                    bd_count[s] += 1
+                    repairs[s].append(e["repair_time"])
+                first_breakdown_seen[s] = True
+            elif e["order_id"] != "BREAKDOWN" and first_breakdown_seen[s]:
                 operating_time[s] += e["net_process_time"]
 
         mttf_dict = {s: operating_time[s] / n for s, n in bd_count.items() if n > 0}

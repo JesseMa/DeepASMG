@@ -105,13 +105,12 @@ def extract_survival_samples(
                         ))
                         total_events += 1
                         total_cycles += 1
+                        hist_mean_ttf = (hist_mean_ttf * hist_n_cycles + cycle_operating) / (hist_n_cycles + 1)
+                        hist_n_cycles += 1
+                        hist_prev_ttf = cycle_operating
+                        hist_prev_n_jobs = float(cycle_jobs)
+                        hist_prev_repair = event.repair_time
                     first_cycle_truncated = False
-
-                    hist_mean_ttf = (hist_mean_ttf * hist_n_cycles + cycle_operating) / (hist_n_cycles + 1)
-                    hist_n_cycles += 1
-                    hist_prev_ttf = cycle_operating
-                    hist_prev_n_jobs = float(cycle_jobs)
-                    hist_prev_repair = event.repair_time
 
                 cycle_start_wall = event.timestamp_event_start + event.repair_time
                 cycle_operating = 0.0

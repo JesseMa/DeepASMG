@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import bisect
 from collections import defaultdict
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -64,6 +65,10 @@ def extract_repair_samples(
         cycle_operating: float = 0.0
         in_cycle: bool = False
         first_cycle_truncated: bool = True
+        breakdown_times = [
+            e.timestamp_event_start for e in station_events
+            if e.is_breakdown or e.order_id == "BREAKDOWN"
+        ]
 
         for event in station_events:
             is_downtime = (
@@ -120,6 +125,10 @@ def extract_repair_samples(
                 cycle_start_wall = event.timestamp_event_start
                 in_cycle = True
 
+            i = bisect.bisect_right(breakdown_times, event.timestamp_event_start)
+            if (i < len(breakdown_times)
+                    and event.timestamp_event_start + event.time_processing > breakdown_times[i]):
+                continue
             cycle_operating += event.net_process_time
 
     timed_samples.sort(key=lambda ts: ts[0])
