@@ -115,10 +115,10 @@
     }
   ],
   "conditioning_dim": 3,
-  "n_total": 478530,
+  "n_total": 477457,
   "vocab_fit_scope": "full_dataset",
   "vocab_fit_train_ratio": 0.7,
-  "vocab_fit_n_train": 334971,
+  "vocab_fit_n_train": 334219,
   "oov_stats": {
     "modell": {
       "count": 0,

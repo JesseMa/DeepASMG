@@ -19,154 +19,78 @@
       "b.4": 4
     },
     "station": {
-      "B1.1": 0,
-      "B1.2": 1,
-      "B2.1": 2,
-      "B2.2": 3,
-      "B3.1.1": 4,
-      "B3.1.2": 5,
-      "B3.2.1": 6,
-      "B3.2.2": 7,
-      "B4.1": 8,
-      "B4.2": 9,
-      "B5": 10,
-      "InputBuffer": 11,
-      "M1.1": 12,
-      "M1.2": 13,
-      "M2.1": 14,
-      "M2.2": 15,
-      "M3.1": 16,
-      "M3.2": 17,
-      "M4.1": 18,
-      "M4.2": 19,
-      "M5": 20
+      "M1.1": 0,
+      "M1.2": 1,
+      "M2.1": 2,
+      "M2.2": 3,
+      "M3.1": 4,
+      "M3.2": 5,
+      "M4.1": 6,
+      "M4.2": 7,
+      "M5": 8
     },
-    "feature_dim": 50
+    "feature_dim": 38
   },
   "feature_layout": [
     {
       "name": "modell",
       "offset": 0,
-      "size": 4,
-      "values": {
-        "<NONE>": 0,
-        "A": 1,
-        "B": 2,
-        "C": 3
-      }
+      "size": 4
     },
     {
       "name": "feature_a",
       "offset": 4,
-      "size": 3,
-      "values": {
-        "<NONE>": 4,
-        "a.1": 5,
-        "a.2": 6
-      }
+      "size": 3
     },
     {
       "name": "feature_b",
       "offset": 7,
-      "size": 5,
-      "values": {
-        "<NONE>": 7,
-        "b.1": 8,
-        "b.2": 9,
-        "b.3": 10,
-        "b.4": 11
-      }
+      "size": 5
     },
     {
       "name": "prev_modell",
       "offset": 12,
-      "size": 4,
-      "values": {
-        "<NONE>": 12,
-        "A": 13,
-        "B": 14,
-        "C": 15
-      }
+      "size": 4
     },
     {
       "name": "prev_feature_a",
       "offset": 16,
-      "size": 3,
-      "values": {
-        "<NONE>": 16,
-        "a.1": 17,
-        "a.2": 18
-      }
+      "size": 3
     },
     {
       "name": "prev_feature_b",
       "offset": 19,
-      "size": 5,
-      "values": {
-        "<NONE>": 19,
-        "b.1": 20,
-        "b.2": 21,
-        "b.3": 22,
-        "b.4": 23
-      }
+      "size": 5
     },
     {
       "name": "station",
       "offset": 24,
-      "size": 21,
-      "values": {
-        "B1.1": 24,
-        "B1.2": 25,
-        "B2.1": 26,
-        "B2.2": 27,
-        "B3.1.1": 28,
-        "B3.1.2": 29,
-        "B3.2.1": 30,
-        "B3.2.2": 31,
-        "B4.1": 32,
-        "B4.2": 33,
-        "B5": 34,
-        "InputBuffer": 35,
-        "M1.1": 36,
-        "M1.2": 37,
-        "M2.1": 38,
-        "M2.2": 39,
-        "M3.1": 40,
-        "M3.2": 41,
-        "M4.1": 42,
-        "M4.2": 43,
-        "M5": 44
-      }
+      "size": 9
     },
     {
       "name": "shift",
-      "offset": 45,
-      "size": 3,
-      "values": {
-        "Fruehschicht": 45,
-        "Spaetschicht": 46,
-        "Nachtschicht": 47
-      }
+      "offset": 33,
+      "size": 3
     },
     {
       "name": "sin_time_0",
-      "offset": 48,
+      "offset": 36,
       "size": 1
     },
     {
       "name": "cos_time_0",
-      "offset": 49,
+      "offset": 37,
       "size": 1
     }
   ],
-  "n_total": 5043466,
+  "n_total": 2037835,
   "none_token": "<NONE>",
   "time_periods_seconds": [
     86400.0
   ],
   "vocab_fit_scope": "train_only",
   "vocab_fit_train_ratio": 0.7,
-  "vocab_fit_n_train": 3530426,
+  "vocab_fit_n_train": 1426484,
   "oov_stats": {
     "modell": {
       "count": 0,

@@ -14,7 +14,6 @@
     "feature_dim": 12
   },
   "feature_dim": 12,
-  "features_normalized_in_prepare": false,
   "feature_layout": [
     {
       "name": "station",
@@ -42,34 +41,34 @@
     }
   ],
   "median_ttf_per_station": {
-    "M1.2": 150833.0,
-    "M1.1": 95860.0,
-    "M2.2": 257012.0,
-    "M3.1": 179303.0,
-    "M4.1": 171799.0,
-    "M3.2": 150921.0,
-    "M4.2": 202173.0,
-    "M5": 247268.0,
-    "M2.1": 250201.0
+    "M3.1": 170066.5,
+    "M1.1": 97260.0,
+    "M1.2": 150891.0,
+    "M4.1": 172253.0,
+    "M3.2": 148672.0,
+    "M2.2": 247362.0,
+    "M4.2": 200806.5,
+    "M5": 265384.0,
+    "M2.1": 250181.5
   },
-  "n_total": 1093,
-  "y_mean": 1859.4044189453125,
-  "y_std": 2271.876220703125,
+  "n_total": 1090,
+  "y_mean": 1884.7752685546875,
+  "y_std": 2499.581298828125,
   "y_min": 1.0,
-  "y_max": 30228.0,
+  "y_max": 37972.0,
   "vocab_fit_scope": "train_only",
   "vocab_fit_train_ratio": 0.7,
-  "vocab_fit_n_train": 765,
+  "vocab_fit_n_train": 763,
   "oov_stats": {
     "station": {
       "count": 0,
       "ratio": 0.0
     }
   },
-  "operating_time_mean": 160915.21875,
-  "operating_time_std": 63433.91015625,
-  "utilization_mean": 0.6537157893180847,
-  "utilization_std": 0.11488504707813263,
-  "wear_ratio_mean": 0.937445342540741,
-  "wear_ratio_std": 0.2332945615053177
+  "operating_time_mean": 160425.578125,
+  "operating_time_std": 62702.796875,
+  "utilization_mean": 0.6549089550971985,
+  "utilization_std": 0.11687474697828293,
+  "wear_ratio_mean": 0.9414273500442505,
+  "wear_ratio_std": 0.22939246892929077
 }

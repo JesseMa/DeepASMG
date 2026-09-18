@@ -14,8 +14,6 @@
     "feature_dim": 9
   },
   "feature_dim": 13,
-  "target_semantics": "raw_operating_time_seconds",
-  "features_normalized_in_prepare": false,
   "feature_layout": [
     {
       "name": "station",
@@ -48,20 +46,20 @@
       "type": "continuous"
     }
   ],
-  "n_total": 1102,
-  "n_events": 1093,
+  "n_total": 1099,
+  "n_events": 1090,
   "n_censored": 9,
-  "censoring_rate": 0.008166969147005444,
+  "censoring_rate": 0.00818926296633303,
   "vocab_fit_scope": "train_only",
   "vocab_fit_train_ratio": 0.7,
-  "vocab_fit_n_train": 771,
+  "vocab_fit_n_train": 769,
   "oov_stats": {
     "station": {
       "count": 0,
       "ratio": 0.0
     }
   },
-  "duration_scale": 160991.21875,
-  "n_jobs_scale": 1833.8095703125,
-  "repair_time_scale": 1898.321044921875
+  "duration_scale": 160671.140625,
+  "n_jobs_scale": 1842.0052490234375,
+  "repair_time_scale": 1959.3558349609375
 }
