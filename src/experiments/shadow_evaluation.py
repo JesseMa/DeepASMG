@@ -12,33 +12,28 @@ from __future__ import annotations
 import json
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 from src.experiments.sim_runner import SimFactorySet
 from src.simulation.engine import SimulationEngine
 from src.dynamics.foundation_dynamics import END_TOKEN
 from src.config.routing_keys import full_variant_key
-from src.config.simulation_config import SimulationConfig, SIM_START_TIMESTAMP
+from src.config.simulation_config import SimulationConfig
 
 SYSTEMS = ("GroundSim", "DeepSim", "RefSim-M", "RefSim-V", "RefSim-W")
 COMPONENTS = ("processing", "transition", "survival", "repair", "arrival")
 CSV_COLUMNS = ("seed", "context_id", "t_sim", "station", "component", "head",
                "family", "params", "realized", "censored")
 
-# Fallback survival family per system (used when a wrapper emits no params).
-SURVIVAL_FAMILY: Dict[str, str] = {
-    "GroundSim": "bathtub", "DeepSim": "weibull",
-    "RefSim-M": "exponential", "RefSim-V": "exponential", "RefSim-W": "weibull",
-}
-
 
 class ShadowLog:
-    def __init__(self, seed: int) -> None:
+    def __init__(self, seed: int, warmup_time: float) -> None:
         self.seed = seed
+        self.warmup_time = float(warmup_time)
         self.rows: Dict[tuple, List[dict]] = defaultdict(list)
         self._counter: Dict[str, int] = defaultdict(int)
-        # Sidecar context_id → variant; keeps the score CSVs feature-free.
-        self.context_variant: Dict[str, str] = {}
+        # Sidecar context_id → (variant, visit); keeps the score CSVs feature-free.
+        self.context_variant: Dict[str, Tuple[str, int]] = {}
 
     def next_ctx(self, component: str) -> str:
         idx = self._counter[component]
@@ -48,6 +43,8 @@ class ShadowLog:
     def record(self, system: str, component: str, ctx_id: str, station: str,
                t_sim: float, head: str, family: str, params: Optional[dict],
                realized: Any, censored: int) -> None:
+        if t_sim < self.warmup_time:
+            return  # the evaluation window starts after warm-up, as in the closed loop
         self.rows[(system, component)].append({
             "seed": self.seed, "context_id": ctx_id, "t_sim": float(t_sim),
             "station": station, "component": component, "head": head,
@@ -73,9 +70,9 @@ class ShadowLog:
             sidecar = out_dir / "_context_variant.csv"
             with sidecar.open("w", newline="") as f:
                 w = csv.writer(f)
-                w.writerow(["context_id", "variant"])
-                for ctx, var in self.context_variant.items():
-                    w.writerow([ctx, var])
+                w.writerow(["context_id", "variant", "visit"])
+                for ctx, (var, visit) in self.context_variant.items():
+                    w.writerow([ctx, var, visit])
             written.append(sidecar)
         return written
 
@@ -123,7 +120,8 @@ class _ShadowTR(_ShadowStations):
 
     def predict(self, station_id, order, available_targets=None, current_time=0.0):
         ctx = self._log.next_ctx("transition")
-        self._log.context_variant[ctx] = full_variant_key(order.features)
+        self._log.context_variant[ctx] = (
+            full_variant_key(order.features), order.visits.get(station_id, 1))
         # Collect params BEFORE the steering draw (deep buffer = pre-call state).
         pending = {}
         for name, strat in self._sys.items():
@@ -180,7 +178,12 @@ class _ShadowSV(_ShadowStations):
 
     def _emit(self, cyc, realized, censored):
         for name, p in cyc["params"].items():
-            fam = p["family"] if p else SURVIVAL_FAMILY[name]
+            if p is None:
+                raise RuntimeError(
+                    f"Fail fast: {name} returned no survival law for {cyc['station']} "
+                    "although GroundSim drew a TTF for it."
+                )
+            fam = p["family"]
             self._log.record(name, "survival", cyc["ctx"], cyc["station"],
                              cyc["t_sim"], "", fam, p, realized, censored)
 
@@ -206,13 +209,9 @@ class _ShadowRT(_ShadowStations):
             station_id, operating_time_since_last, utilization, current_time=current_time))
         for name, strat in self._sys.items():
             p = strat.distribution_params(station_id, operating_time_since_last, utilization, current_time)
-            fam = "exponential" if p is None else p["family"]
             self._log.record(name, "repair", ctx, station_id, current_time,
-                             "", fam, p, realized, 0)
+                             "", p["family"], p, realized, 0)
         return realized
-
-    def notify_cycle_end(self, station_id, ttf, n_jobs, repair_time):
-        self._g.notify_cycle_end(station_id=station_id, ttf=ttf, n_jobs=n_jobs, repair_time=repair_time)
 
 
 class _ShadowPR:
@@ -262,14 +261,12 @@ def _build_systems(fs: SimFactorySet, seed: int) -> Dict[str, SimulationConfig]:
 
 def run_shadow_pilot(
     seed: int, *, days: int, out_dir: Path, warmup_days: float = 1.0,
-) -> Dict[str, Any]:
-    """Run one shadow run for a seed, write the CSVs, and return metadata
-    (row counts, mask_calls) for invariant checks.
-    """
+) -> int:
+    """Run one shadow run for a seed, write the CSVs and return the row count."""
     fs = SimFactorySet(duration_days=days, warmup_days=warmup_days)
     pc = fs.process_config
     cfgs = _build_systems(fs, seed)
-    log = ShadowLog(seed)
+    log = ShadowLog(seed, warmup_time=warmup_days * 86400.0)
 
     systems_pt = {n: c.process_time_strategy for n, c in cfgs.items()}
     systems_tr = {n: c.transition_strategy for n, c in cfgs.items()}
@@ -285,19 +282,11 @@ def run_shadow_pilot(
         survival_strategy=sv_wrap,
         repair_strategy=_ShadowRT(g.repair_strategy, systems_rt, log, survival_wrapper=sv_wrap),
         product_strategy=_ShadowPR(g.product_strategy, systems_pr, log),
-        duration_days=days, warmup_days=warmup_days, seed=seed,
-        initial_orders=fs.initial_orders, run_id=1, start_timestamp=SIM_START_TIMESTAMP,
+        duration_days=days, warmup_days=warmup_days, seed=seed, run_id=1,
     )
     engine = SimulationEngine(pc, steer)
-    _process_log, _order_log = engine.run(label=f"verification-shadow seed={seed}")
-    final_accum = {sid: float(getattr(st, "accumulated_op_time", 0.0))
-                   for sid, st in engine._stations.items()}
-    sv_wrap.finalize(final_accum)
+    engine.run(label=f"verification-shadow seed={seed}")
+    sv_wrap.finalize({sid: float(st.accumulated_op_time) for sid, st in engine._stations.items()})
 
-    written = log.write(out_dir)
-    mask_calls = getattr(systems_tr["RefSim-M"], "mask_calls", None)
-    return {
-        "seed": seed, "written": [str(p) for p in written],
-        "row_counts": {f"{s}__{c}": len(log.rows[(s, c)]) for s in SYSTEMS for c in COMPONENTS},
-        "refm_mask_calls": mask_calls,
-    }
+    log.write(out_dir)
+    return sum(len(rows) for rows in log.rows.values())

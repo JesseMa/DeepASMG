@@ -9,7 +9,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional, Sequence
 
 import numpy as np
-from scipy.stats import ks_2samp, wasserstein_distance, wilcoxon
+from scipy.stats import ks_2samp, t, wasserstein_distance, wilcoxon
 
 from src.evaluation.paired_stats import assert_paired_seeds, fdr_correction
 
@@ -60,24 +60,42 @@ def system_distance_table(
     return out
 
 
-def w1_diff_wilcoxon(
+def w1_summary(
+    runs_by_sim: Dict[str, List[dict]], *, ref_name: str = REF_SYSTEM
+) -> List[dict]:
+    """Per-system W1 over seeds: mean, standard deviation and standard error."""
+    ref = runs_by_sim[ref_name]
+    out: List[dict] = []
+    for name, runs in runs_by_sim.items():
+        if name == ref_name:
+            continue
+        w = paired_w1(ref, runs)
+        out.append({"system": name, "ref": ref_name, "n": int(len(w)),
+                    "w1_mean": float(w.mean()), "w1_sd": float(w.std(ddof=1)),
+                    "w1_se": float(w.std(ddof=1) / np.sqrt(len(w)))})
+    return out
+
+
+def w1_paired_difference(
     runs_by_sim: Dict[str, List[dict]],
     *,
     a_name: str,
     b_name: str,
     ref_name: str = REF_SYSTEM,
 ) -> dict:
-    """Two-sided Wilcoxon over (W1_a,i − W1_b,i), both W1 against ref."""
+    """Paired difference d_i = W1_a,i - W1_b,i over seeds: mean, SD, t-based
+    95 % confidence interval and the two-sided Wilcoxon signed-rank p-value."""
     ref = runs_by_sim[ref_name]
-    wa = paired_w1(ref, runs_by_sim[a_name])
-    wb = paired_w1(ref, runs_by_sim[b_name])
-    diff = wa - wb
+    diff = paired_w1(ref, runs_by_sim[a_name]) - paired_w1(ref, runs_by_sim[b_name])
+    n = int(len(diff))
+    sd = float(diff.std(ddof=1))
+    half = float(t.ppf(0.975, n - 1) * sd / np.sqrt(n))
+    row = {"a": a_name, "b": b_name, "n": n, "d_mean": float(diff.mean()), "d_sd": sd,
+           "ci95_lo": float(diff.mean() - half), "ci95_hi": float(diff.mean() + half)}
     if not np.any(diff):
-        return {"a": a_name, "b": b_name, "n": int(len(diff)),
-                "statistic": float("nan"), "p_value": 1.0}
+        return {**row, "statistic": float("nan"), "p_value": 1.0}
     res = wilcoxon(diff, alternative="two-sided", zero_method="wilcox", method="auto")
-    return {"a": a_name, "b": b_name, "n": int(len(diff)),
-            "statistic": float(res.statistic), "p_value": float(res.pvalue)}
+    return {**row, "statistic": float(res.statistic), "p_value": float(res.pvalue)}
 
 
 def _kpi_keys(runs: Sequence[dict], kpis: Optional[Sequence[str]]) -> List[str]:

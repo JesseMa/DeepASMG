@@ -10,7 +10,7 @@ import json
 from collections import defaultdict
 from itertools import product
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 
@@ -37,12 +37,6 @@ def all_variants() -> List[Tuple[str, Dict[str, str]]]:
 def admissible_targets(process_config, station_id: str) -> set:
     sc = {s.id: s for s in process_config.stations}[station_id]
     return station_admissible_targets(sc)
-
-
-def decision_points(process_config) -> List[str]:
-    """Stations with more than one admissible target."""
-    return [s.id for s in process_config.stations
-            if len(admissible_targets(process_config, s.id)) > 1]
 
 
 def config_true_vector(
@@ -77,60 +71,73 @@ def _kl(true: Dict[str, float], sys: Dict[str, float]) -> float:
     return float(s)
 
 
-def deep_shadow_vectors(shadow_dir: Path, system: str) -> Dict[Tuple[str, str], Dict[str, float]]:
-    """Mean predicted vector per (station, variant) from the shadow calls."""
+Key = Tuple[str, str, int]   # (station, variant, visit)
+
+
+def deep_shadow_vectors(shadow_dir: Path, system: str) -> Dict[Key, Dict[str, float]]:
+    """Mean predicted vector per (station, variant, visit) from the shadow calls.
+
+    The visit index is part of the key because the configuration truth depends
+    on it: a repeat-visit row is a different conditional, and averaging the
+    calls over visits would compare a mixture against one of its parts.
+    """
     import pandas as pd
     tr = shadow_dir / f"{system}__transition.csv"
     sc = shadow_dir / "_context_variant.csv"
     if not tr.exists() or not sc.exists():
         return {}
-    dfv = pd.read_csv(sc, dtype={"context_id": str, "variant": str})
-    var_by_ctx = dict(zip(dfv["context_id"], dfv["variant"], strict=True))
+    dfv = pd.read_csv(sc, dtype={"context_id": str, "variant": str, "visit": int})
+    ctx_key = {c: (v, int(n)) for c, v, n in zip(dfv["context_id"], dfv["variant"], dfv["visit"], strict=True)}
     df = pd.read_csv(tr, dtype={"context_id": str})
-    acc: Dict[Tuple[str, str], Dict[str, float]] = defaultdict(lambda: defaultdict(float))
-    cnt: Dict[Tuple[str, str], int] = defaultdict(int)
+    acc: Dict[Key, Dict[str, float]] = defaultdict(lambda: defaultdict(float))
+    cnt: Dict[Key, int] = defaultdict(int)
     for _, r in df.iterrows():
         p = r["params"]
         if not isinstance(p, str) or not p.strip():
             continue
         probs = json.loads(p).get("probs", {})
-        key = (str(r["station"]), var_by_ctx.get(str(r["context_id"]), ""))
+        variant, visit = ctx_key[str(r["context_id"])]
+        key = (str(r["station"]), variant, visit)
         for t, v in probs.items():
             acc[key][t] += float(v)
         cnt[key] += 1
     return {k: {t: v / cnt[k] for t, v in d.items()} for k, d in acc.items() if cnt[k] > 0}
 
 
-def ref_fitted_vectors(ref_transition_strategy, process_config, points, variants
-                       ) -> Dict[Tuple[str, str], Dict[str, float]]:
-    """Ref vectors per (station, variant) from ``distribution_params``."""
+def ref_fitted_vectors(ref_transition_strategy, process_config, keys: Iterable[Key]
+                       ) -> Dict[Key, Dict[str, float]]:
+    """Ref vectors from ``distribution_params`` for exactly the given keys.
+
+    A probe order carries the variant and the visit index, so the row set is
+    the one realized in the shadow run for every system alike.
+    """
     strat = ref_transition_strategy
     strat.initialize({s.id: s for s in process_config.stations})
-    out: Dict[Tuple[str, str], Dict[str, float]] = {}
-    for station in points:
+    feats_of = dict(all_variants())
+    out: Dict[Key, Dict[str, float]] = {}
+    for station, variant, visit in keys:
         avail = admissible_targets(process_config, station)
-        for vkey, feats in variants:
-            order = Order(id="probe", features=feats, timestamp_creation=0.0)
-            dp = strat.distribution_params(station, order, available_targets=avail)
-            out[(station, vkey)] = dict(dp["probs"])
+        order = Order(id="probe", features=feats_of[variant], timestamp_creation=0.0,
+                      visits={station: visit})
+        dp = strat.distribution_params(station, order, available_targets=avail)
+        out[(station, variant, visit)] = dict(dp["probs"])
     return out
 
 
-def compare_rows(process_config, *, deep_vectors: Dict, ref_vectors: Dict,
-                 system_name: str, use_deep: bool) -> List[dict]:
-    """L1 + KL per (station, variant) against config truth for one system."""
-    points = decision_points(process_config)
+def compare_rows(process_config, vectors: Dict[Key, Dict[str, float]],
+                 system_name: str) -> List[dict]:
+    """L1 + KL per (station, variant, visit) against the configuration truth.
+
+    A key whose truth is a point mass (e.g. the forced exit on the last
+    admissible visit) carries no routing decision and is not scored.
+    """
+    feats_of = dict(all_variants())
     rows: List[dict] = []
-    for station in points:
-        for vkey, feats in all_variants():
-            true_v = config_true_vector(process_config, station, feats)
-            if len(true_v) <= 1:
-                continue
-            src = deep_vectors if use_deep else ref_vectors
-            sysv = src.get((station, vkey))
-            if not sysv:
-                continue
-            rows.append({"system": system_name, "station": station, "variant": vkey,
-                         "l1": _l1(true_v, sysv), "kl": _kl(true_v, sysv),
-                         "n_targets": len(true_v)})
+    for (station, variant, visit), sysv in sorted(vectors.items()):
+        true_v = config_true_vector(process_config, station, feats_of[variant], visit=visit)
+        if len(true_v) <= 1:
+            continue
+        rows.append({"system": system_name, "station": station, "variant": variant,
+                     "visit": visit, "l1": _l1(true_v, sysv), "kl": _kl(true_v, sysv),
+                     "n_targets": len(true_v)})
     return rows

@@ -27,9 +27,8 @@ from src.evaluation import routing_evaluation as routing  # noqa: E402
 from src.evaluation import score_aggregation as scores  # noqa: E402
 from src.evaluation import system_evaluation as system  # noqa: E402
 from src.evaluation import bathtub_hazard as hazard  # noqa: E402
-from src.experiments.sim_runner import get_process_config, load_stats_data  # noqa: E402
+from src.experiments.sim_runner import SimFactorySet, get_process_config, load_stats_data  # noqa: E402
 from src.experiments.shadow_evaluation import COMPONENTS, SYSTEMS  # noqa: E402
-from src.dynamics.RefSim.ref_transition import RefTransition, RefTransitionVariant  # noqa: E402
 
 TABLE_MANIFEST = {
     "T7": {
@@ -47,8 +46,8 @@ TABLE_MANIFEST = {
            "sources": ["system_distances.csv"]},
     "T12": {"desc": "Routing probability comparison — L1/KL per realized (point, variant) conditional, support-matched across systems",
             "sources": ["routing_compare.csv"]},
-    "T13": {"desc": "System-level throughput time — W1/KS + Wilcoxon",
-            "sources": ["system_distances.csv", "w1_wilcoxon.csv"]},
+    "T13": {"desc": "System-level throughput time — W1 mean/SD per system, paired difference with t-CI and Wilcoxon",
+            "sources": ["system_distances.csv", "w1_summary.csv", "w1_wilcoxon.csv"]},
     "T14": {"desc": "System-level KPI panel — relative delta + paired Wilcoxon/BH",
             "sources": ["kpi_panel.csv", "kpi_bh.csv"]},
 }
@@ -61,6 +60,7 @@ PAPER_OUTPUTS = {
     "routing_comparison": ["routing_compare.csv"],
     "system_comparison": [
         "system_distances.csv",
+        "w1_summary.csv",
         "w1_wilcoxon.csv",
         "kpi_panel.csv",
         "kpi_bh.csv",
@@ -99,8 +99,8 @@ def _produce_scores(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
 def _produce_routing(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
     """Compare learned and fitted routing probabilities on shared conditionals.
 
-    All systems are scored on the identical set of (decision point, variant)
-    conditionals: those realized during shadow replication. Reference vectors
+    All systems are scored on the identical set of (decision point, variant,
+    visit) conditionals: those realized during shadow replication. Reference vectors
     for configured combinations that never occur in the evaluated traces are
     excluded, so the per-system mean distances remain support-matched.
     """
@@ -110,53 +110,21 @@ def _produce_routing(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
         return {}
 
     process_config = get_process_config()
-    stats_data = load_stats_data()
-    points = routing.decision_points(process_config)
-    variants = routing.all_variants()
-    rows = routing.compare_rows(
-        process_config,
-        deep_vectors=routing.deep_shadow_vectors(shadow_dir, "DeepSim"),
-        ref_vectors={},
-        system_name="DeepSim",
-        use_deep=True,
-    )
-    realized = {(row["station"], row["variant"]) for row in rows}
+    deep_vectors = routing.deep_shadow_vectors(shadow_dir, "DeepSim")
+    rows = routing.compare_rows(process_config, deep_vectors, "DeepSim")
+    realized = set(deep_vectors)
 
-    transition_probs = stats_data["transition_probs"]
-    # RefSim-M and RefSim-W differ only in the failure model; their routing is
-    # the identical station-marginal fit, so both are scored on one router.
-    ref_marginal = RefTransition(
-        transition_probs,
-        np.random.default_rng(0),
-        apply_admissibility_mask=True,
-    )
-    conditioned = stats_data["transition_probs_variant"]
-    refv = RefTransitionVariant(
-        transition_probs,
-        conditioned["by_producttype"],
-        conditioned["by_variant"],
-        np.random.default_rng(0),
-        apply_admissibility_mask=True,
-    )
-    marginal_fitted = routing.ref_fitted_vectors(
-        ref_marginal, process_config, points, variants
-    )
+    # The routers exactly as the runner builds them; RefSim-M and RefSim-W
+    # share the station-marginal fit, so both are scored on one router.
+    fs = SimFactorySet()
+    rng = np.random.default_rng(0)
+    marginal_fitted = routing.ref_fitted_vectors(fs.module("stat", "tr", rng), process_config, realized)
     for name, fitted in (
         ("RefSim-M", marginal_fitted),
         ("RefSim-W", marginal_fitted),
-        ("RefSim-V", routing.ref_fitted_vectors(
-            refv, process_config, points, variants
-        )),
+        ("RefSim-V", routing.ref_fitted_vectors(fs.module("statv", "tr", rng), process_config, realized)),
     ):
-        rows += routing.compare_rows(
-            process_config,
-            deep_vectors={},
-            ref_vectors={
-                key: vec for key, vec in fitted.items() if key in realized
-            },
-            system_name=name,
-            use_deep=False,
-        )
+        rows += routing.compare_rows(process_config, fitted, name)
     return {
         "routing_compare.csv": _write(rows, output_dir / "routing_compare.csv")
     }
@@ -354,7 +322,7 @@ def _produce_system(
             continue
         panel += system.kpi_panel(runs, sys_name=name)
         bh += system.kpi_wilcoxon_bh(runs, sys_name=name)
-    w1 = system.w1_diff_wilcoxon(
+    w1 = system.w1_paired_difference(
         runs, a_name="DeepSim", b_name="GroundSim-DEC"
     )
     absolute = [
@@ -368,6 +336,9 @@ def _produce_system(
             "system_distances.csv": _write(
                 system.system_distance_table(runs),
                 output_dir / "system_distances.csv",
+            ),
+            "w1_summary.csv": _write(
+                system.w1_summary(runs), output_dir / "w1_summary.csv"
             ),
             "w1_wilcoxon.csv": _write([w1], output_dir / "w1_wilcoxon.csv"),
             "kpi_panel.csv": _write(panel, output_dir / "kpi_panel.csv"),

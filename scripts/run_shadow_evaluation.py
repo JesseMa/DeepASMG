@@ -60,11 +60,10 @@ def main() -> None:
     for seed in seeds:
         t0 = time.time()
         d = args.output_dir / f"_seed_{seed}"
-        meta = run_shadow_pilot(seed, days=args.days, out_dir=d)
+        rows = run_shadow_pilot(seed, days=args.days, out_dir=d)
         seed_dirs.append(d)
         _concat(args.output_dir, seed_dirs)  # Combined CSVs stay usable after each seed.
-        rc = sum(meta["row_counts"].values())
-        print(f"  seed {seed}: {rc:,} rows total ({time.time()-t0:.0f}s)")
+        print(f"  seed {seed}: {rows:,} rows total ({time.time()-t0:.0f}s)")
     print(f"\nDONE → {args.output_dir}")
 
 
