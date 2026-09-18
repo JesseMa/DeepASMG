@@ -93,8 +93,6 @@ class SimulationEngine:
         if self._is_done:
             raise RuntimeError("Simulation has ended. Please call reset().")
 
-        self._deadlock.reset_step_counter()
-
         while self._events and self._events.peek_time() <= self._current_time:
             event = self._events.pop()
             self._process_event(event)
@@ -299,9 +297,7 @@ class SimulationEngine:
         if start is None:
             raise RuntimeError("No start station configured!")
 
-        cap = start.config.capacity
-        capacity_limit = cap if cap > 0 else float("inf")
-        fill_count = int(min(capacity_limit, self._sim_config.initial_orders))
+        fill_count = min(start.config.capacity, self._sim_config.initial_orders)
 
         for _ in range(fill_count):
             self._replenish_start_station(start)

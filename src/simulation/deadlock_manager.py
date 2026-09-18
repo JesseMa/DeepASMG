@@ -19,18 +19,13 @@ if TYPE_CHECKING:
 class DeadlockManager:
     """Deadlock detection and overflow resolution."""
 
-    def __init__(self, max_resolutions_per_step: int = 50) -> None:
+    def __init__(self) -> None:
         self._overflow_orders: Dict[str, deque["Order"]] = defaultdict(deque)
-        self._max_resolutions_per_step = max_resolutions_per_step
         self.reset()
 
     def reset(self) -> None:
         self._overflow_orders.clear()
         self._deadlock_count: int = 0
-        self._resolutions_this_step: int = 0
-
-    def reset_step_counter(self) -> None:
-        self._resolutions_this_step = 0
 
     @property
     def deadlock_count(self) -> int:
@@ -94,18 +89,15 @@ class DeadlockManager:
         """Move the front departure entry to overflow, freeing its slot.
 
         The displaced order is delivered by drain_overflow() once its target
-        station becomes free. Returns False when the per-step resolution limit
-        is hit or the station has no departure entry.
+        station becomes free. Returns False when the station has no departure
+        entry.
         """
-        if self._resolutions_this_step >= self._max_resolutions_per_step:
-            return False
         if not source_station.has_departure:
             return False
 
         order, original_target = source_station.pop_departure()
         self._overflow_orders[original_target].append(order)
         self._deadlock_count += 1
-        self._resolutions_this_step += 1
 
         recorder.record_process_step(
             order_id=order.id,

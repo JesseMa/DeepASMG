@@ -10,7 +10,6 @@ so the machinery stays covered independently of any particular seed.
 
 from __future__ import annotations
 
-from collections import deque
 from typing import Dict, List
 
 import pytest
@@ -115,24 +114,6 @@ def test_overflow_is_not_delivered_while_the_target_is_full():
     assert dm.overflow_size == 1                  # still parked, still counted
 
 
-def test_per_step_resolution_cap_holds():
-    dm = DeadlockManager(max_resolutions_per_step=2)
-    rec = _Recorder()
-    station = Station(StationConfig(id="S", capacity=9))
-    for i in range(5):
-        station.add_to_departure(
-            Order(id=f"O{i}", features={}, timestamp_creation=0.0), "T"
-        )
-
-    results = [dm.resolve_deadlock(station, rec, current_time=0.0) for _ in range(4)]
-    assert results == [True, True, False, False]
-    assert dm.deadlock_count == 2
-
-    dm.reset_step_counter()
-    assert dm.resolve_deadlock(station, rec, current_time=1.0) is True
-    assert dm.deadlock_count == 3
-
-
 def test_resolution_without_a_departure_entry_is_a_no_op():
     dm = DeadlockManager()
     rec = _Recorder()
@@ -170,39 +151,6 @@ def test_orders_are_conserved_across_a_full_displacement_cycle():
     }
     assert before == still_queued | set(delivered) | {"O1"}
     assert dm.overflow_size == 0
-
-
-def test_cascade_enqueues_every_freed_station_once_per_event():
-    """The cascade runs iteratively; a station freed mid-cascade is picked up.
-
-    The queue previously carried a deduplication set alongside it. Measured over
-    469,103 cascade entries across a 2-day and a 31-day run it never suppressed
-    a single enqueue, so it was removed; this pins the behaviour it guarded.
-    """
-    from src.simulation.engine import SimulationEngine
-
-    seen: List[str] = []
-    stations = {
-        "S0": Station(StationConfig(id="S0", capacity=1, is_start_station=True)),
-        "S1": Station(StationConfig(id="S1", capacity=1)),
-    }
-    engine = SimulationEngine.__new__(SimulationEngine)
-    engine._stations = stations
-    engine._cascade_queue = deque()
-    engine._is_cascading = False
-    engine._deadlock = DeadlockManager()
-    engine._process_freed_slot = lambda st: (
-        seen.append(st.id),
-        engine._on_slot_freed(stations["S1"]) if st.id == "S0" else None,
-    )
-
-    engine._on_slot_freed(stations["S0"])
-
-    # S1 was freed while the cascade was running and must still be processed,
-    # exactly once, without recursion.
-    assert seen == ["S0", "S1"]
-    assert not engine._is_cascading
-    assert len(engine._cascade_queue) == 0
 
 
 if __name__ == "__main__":

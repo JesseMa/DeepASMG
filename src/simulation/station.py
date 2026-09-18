@@ -1,7 +1,6 @@
 """Station – unified runtime object for all station types.
 
-Capacity: occupied = len(processing_slots) + len(departure_queue) ≤ capacity;
-capacity = 0 means unlimited.
+Capacity: occupied = len(processing_slots) + len(departure_queue) ≤ capacity.
 
 TTF-decrement paradigm: ttf_remaining counts operating seconds to the next
 failure (None = cannot fail); the cycle accumulators are reset at repair end,
@@ -60,8 +59,7 @@ class Station:
     def is_available(self) -> bool:
         if self.is_down:
             return False
-        capacity = self.config.capacity   # 0 = unlimited
-        return capacity == 0 or self.occupied_slot_count < capacity
+        return self.occupied_slot_count < self.config.capacity
 
     def start_processing(self, order: "Order") -> None:
         if not self.is_available:

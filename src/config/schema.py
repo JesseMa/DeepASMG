@@ -30,6 +30,8 @@ class StationConfig:
                     f"Fail fast: {self.id}.{name} must be whole seconds "
                     f"(integer time contract), got {value}."
                 )
+        if self.capacity < 1:
+            raise ValueError(f"Fail fast: {self.id}.capacity must be at least 1, got {self.capacity}.")
 
 
 @dataclass
