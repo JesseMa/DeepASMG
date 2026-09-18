@@ -110,8 +110,9 @@ class _ShadowTR(_ShadowStations):
 
     def predict(self, station_id, order, available_targets=None, current_time=0.0):
         ctx = self._log.next_ctx("transition")
-        self._log.context_variant[ctx] = (
-            full_variant_key(order.features), order.visits.get(station_id, 1))
+        if current_time >= self._log.warmup_time:
+            self._log.context_variant[ctx] = (
+                full_variant_key(order.features), order.visits.get(station_id, 1))
         # Collect params BEFORE the steering draw (deep buffer = pre-call state).
         pending = {}
         for name, strat in self._sys.items():
