@@ -127,3 +127,35 @@ def test_weibull_interval_loss_matches_float64_reference_and_keeps_gradient():
 
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
+
+
+def test_warmup_keeps_a_wide_head_finite_at_the_top_of_the_search_range():
+    # The failing HPO corner: wide network, lr 7e-3. Without the warm-up Adam's
+    # first step collapses sigma and the gradients are NaN within ten steps.
+    pl = pytest.importorskip("pytorch_lightning")
+    from src.fitting.deep_training.foundation_training import WARMUP_STEPS
+    from src.fitting.deep_training.train_process_time import ProcessTimeLightningModule
+    from torch.utils.data import DataLoader, TensorDataset
+    rng = np.random.default_rng(1)
+    n = 4096
+    station = rng.integers(0, 3, size=n)
+    x = np.eye(3, dtype=np.float32)[station]
+    mu = np.array([36.0, 74.0, 134.0])[station]
+    y = np.ceil(rng.normal(mu, 2.0)).astype(np.float32)
+    pl.seed_everything(0, workers=True)
+    mod = ProcessTimeLightningModule(input_dim=3, hidden_dims=[2048, 1024, 512],
+                                     learning_rate=7.3e-3, dropout_rate=0.135)
+    init_output_at_marginal(mod.net, mod.marginal_bias(y))
+    data = TensorDataset(torch.from_numpy(x), torch.from_numpy(y))
+    train = DataLoader(data, batch_size=256, shuffle=True)
+    val = DataLoader(data, batch_size=1024)
+    trainer = pl.Trainer(max_steps=WARMUP_STEPS + 50, logger=False, enable_checkpointing=False,
+                         enable_progress_bar=False, enable_model_summary=False,
+                         accelerator="cpu", deterministic=True)
+    trainer.fit(mod, train, val)
+    with torch.no_grad():
+        out = mod(torch.eye(3))
+    assert torch.isfinite(out).all()
+    sigma = torch.exp(0.5 * out[:, 1])
+    assert (sigma > 0.5).all() and (sigma < 50.0).all(), f"sigma collapsed or exploded: {sigma.tolist()}"
+    assert (out[:, 0] > 20.0).all() and (out[:, 0] < 160.0).all(), f"means left the data range: {out[:, 0].tolist()}"

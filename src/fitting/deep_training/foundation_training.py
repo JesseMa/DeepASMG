@@ -12,6 +12,7 @@ from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 import numpy as np
 
 WEIGHT_DECAY = 1e-4
+WARMUP_STEPS = 200
 
 if TYPE_CHECKING:
     import torch.nn as nn
@@ -326,6 +327,16 @@ class BaseTrainingModule:
             opt, patience=self._scheduler_patience, factor=0.5,
         )
         return {"optimizer": opt, "lr_scheduler": {"scheduler": sched, "monitor": "val_loss"}}
+
+    def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_closure):
+        # Adam's first steps move every parameter by ~lr regardless of gradient
+        # scale; on a heteroscedastic head that can collapse sigma before the
+        # second-moment estimate exists. A linear warm-up bounds those steps.
+        if self.trainer.global_step < WARMUP_STEPS:
+            scale = (self.trainer.global_step + 1) / WARMUP_STEPS
+            for group in optimizer.param_groups:
+                group["lr"] = self.lr * scale
+        optimizer.step(closure=optimizer_closure)
 
 
 class GaussianNLLModule(BaseTrainingModule):
