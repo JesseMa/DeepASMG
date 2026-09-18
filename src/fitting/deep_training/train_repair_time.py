@@ -11,13 +11,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-import torch
 import pytorch_lightning as pl
 
 from src.config.simulation_config import TRAIN_SEED
 from src.fitting.deep_training.foundation_training import (
+    init_output_at_marginal,
     three_way_split, make_loaders, train_lightning_model, cached_prepare,
-    ExponentialNLLModule, save_eval_artifact,
+    ExponentialNLLModule,
 )
 
 
@@ -36,88 +36,34 @@ class RepairTimeRegressorModule(ExponentialNLLModule, pl.LightningModule):
         hidden_dims: List[int],
         learning_rate: float,
         dropout_rate: float,
-        weight_decay: float = 1e-4,
     ) -> None:
         super().__init__()
         self.save_hyperparameters()
         self._init_base(
             input_dim=input_dim, hidden_dims=hidden_dims, output_dim=1,
             learning_rate=learning_rate, dropout_rate=dropout_rate,
-            weight_decay=weight_decay,
             output_activation="none",  # log_scale in R
         )
 
 
-def prepare_data(
-    data_dir: Path,
-    output_dir: Path,
-) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
+def prepare_data(data_dir: Path, output_dir: Path) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
     """Prepare downtime-duration training data (cached)."""
     from src.fitting.deep_data_preparation.prepare_repair_time_data import (
         prepare_repair_time_data,
     )
-
-    def _validate_cache(metadata: Dict) -> bool:
-        return not metadata.get("features_normalized_in_prepare", True)
-
-    return cached_prepare(data_dir, output_dir, prepare_repair_time_data,
-                          csv_pattern="events_only", cache_validator=_validate_cache)
-
-
-def _evaluate_per_station(
-    model: pl.LightningModule,
-    test_loader,
-    station_map: Dict[str, int],
-) -> Dict[str, Dict[str, float]]:
-    """Evaluate MAE/RMSE per station."""
-    all_preds, all_targets, all_stations = [], [], []
-    model = model.cpu()
-    model.eval()
-    with torch.no_grad():
-        for x, y in test_loader:
-            pred = model(x)
-            # Exp: pred=log_scale. Mean = exp(log_scale).
-            pred_mean = torch.exp(pred[:, 0])
-            all_preds.append(pred_mean.numpy())
-            all_targets.append(y.numpy())
-            # Station one-hot occupies the first n_stations columns
-            all_stations.append(x[:, :len(station_map)].argmax(dim=1).numpy())
-
-    preds = np.concatenate(all_preds)
-    targets = np.concatenate(all_targets)
-    stations = np.concatenate(all_stations)
-
-    idx_to_name = {v: k for k, v in station_map.items()}
-    per_station = {}
-
-    for idx in sorted(idx_to_name.keys()):
-        mask = stations == idx
-        if mask.sum() == 0:
-            continue
-        name = idx_to_name[idx]
-        errors = preds[mask] - targets[mask]
-        per_station[name] = {
-            "mae": float(np.mean(np.abs(errors))),
-            "rmse": float(np.sqrt(np.mean(errors ** 2))),
-            "count": int(mask.sum()),
-            "mean_actual": float(np.mean(targets[mask])),
-            "mean_predicted": float(np.mean(preds[mask])),
-        }
-
-    return per_station
+    return cached_prepare(data_dir, output_dir, prepare_repair_time_data, csv_pattern="events_only")
 
 
 def train(
     *,
     data_dir: Union[str, Path],
     model_dir: Union[str, Path],
-    batch_size: int = 4,
-    max_epochs: int = 100,
-    learning_rate: float = 0.0023150938044562237,
-    hidden_dims: Union[Tuple[int, ...], List[int]] = (256, 128),
-    dropout_rate: float = 0.0011248523716306177,
-    test_size: float = 0.15,
-    weight_decay: float = 1e-4,
+    batch_size: int,
+    max_epochs: int,
+    learning_rate: float,
+    hidden_dims: Union[Tuple[int, ...], List[int]],
+    dropout_rate: float,
+    test_size: float,
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
@@ -129,7 +75,8 @@ def train(
             HPO trials (CSVs are loaded only once).
 
     Returns:
-        Dict with model_path, metadata_path, best_val_loss, evaluation, history.
+        Dict with best_val_loss, test_metrics, epochs_trained, model_path,
+        metadata_path.
     """
     # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
@@ -200,8 +147,8 @@ def train(
         hidden_dims=hidden_dims,
         learning_rate=learning_rate,
         dropout_rate=dropout_rate,
-        weight_decay=weight_decay,
     )
+    init_output_at_marginal(module.net, module.marginal_bias(splits["train"][1]))
 
     results = train_lightning_model(
         lightning_module=module,
@@ -212,40 +159,11 @@ def train(
         patience=patience,
     )
 
-    # module already holds the best weights from train_lightning_model
-    station_map = metadata["encoding_maps"]["station"]
-    module.eval()
-    per_station = _evaluate_per_station(module, loaders["test"], station_map)
-
     results["metadata_path"] = str(prep_dir / "metadata.json")
-    results["evaluation"] = {
-        "per_station": per_station,
-        **results.get("test_metrics", {}),
-    }
-    results["input_dim"] = input_dim
-    results["hidden_dims"] = hidden_dims
-
-    eval_artifact_path = save_eval_artifact(
-        model_name="repair_time",
-        model_dir=model_dir,
-        evaluation=results["evaluation"],
-        data_source=data_dir,
-        n_train=n_train, n_val=n_val, n_test=n_test,
-    )
-    results["eval_artifact_path"] = str(eval_artifact_path)
-
     print(f"\n{'─' * 40}")
     print(f"  Model: {results['model_path']}")
     print(f"  Best Val Loss (NLL): {results['best_val_loss']:.6f}")
-    if results.get("test_metrics"):
-        print(f"  Test Metrics: {results['test_metrics']}")
-    if per_station:
-        print("\n  Per Station:")
-        for name, stats in sorted(per_station.items()):
-            print(f"    {name:<12} MAE={stats['mae']:.2f}s  RMSE={stats['rmse']:.2f}s  "
-                  f"n={stats['count']}  actual={stats['mean_actual']:.2f}s  "
-                  f"pred={stats['mean_predicted']:.2f}s")
-    print(f"  Eval artifact: {eval_artifact_path}")
+    print(f"  Test Metrics: {results['test_metrics']}")
     print(f"{'─' * 40}")
 
     return results

@@ -11,6 +11,8 @@ from typing import Dict, Optional, TYPE_CHECKING
 
 import logging
 
+import math
+
 import numpy as np
 
 from src.dynamics.foundation_dynamics import (
@@ -104,14 +106,8 @@ class DeepSurvival(SurvivalStrategy):
 
         x = self._encode_input(station_id)
         output = infer_single(self._survival_model, x)
-        log_shape = output[0].item()
-        log_scale = output[1].item()
-
-        self._sg_ttf_nnclip_calls = getattr(self, "_sg_ttf_nnclip_calls", 0) + 1
-        if log_shape < -5.0 or log_shape > 5.0 or log_scale < -5.0 or log_scale > 15.0:
-            self._sg_ttf_nnclip = getattr(self, "_sg_ttf_nnclip", 0) + 1
-        shape = np.exp(np.clip(log_shape, -5.0, 5.0))
-        scale = np.exp(np.clip(log_scale, -5.0, 15.0))
+        shape = math.exp(output[0].item())
+        scale = math.exp(output[1].item())
 
         u_raw = self._rng.random()
         self._sg_ttf_logu_draws = getattr(self, "_sg_ttf_logu_draws", 0) + 1
@@ -138,9 +134,8 @@ class DeepSurvival(SurvivalStrategy):
         if station_id not in self._can_fail:
             return None
         output = infer_single(self._survival_model, self._encode_input(station_id))
-        shape = float(np.exp(np.clip(output[0].item(), -5.0, 5.0)))
-        scale = float(np.exp(np.clip(output[1].item(), -5.0, 15.0)) * self._surv_duration_scale)
-        return {"family": "weibull", "shape": shape, "scale": scale}
+        return {"family": "weibull", "shape": math.exp(output[0].item()),
+                "scale": math.exp(output[1].item()) * self._surv_duration_scale}
 
     def notify_cycle_end(
         self,

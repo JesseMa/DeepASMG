@@ -242,7 +242,6 @@ def save(
     save_prepared_data(X, y, {
         "encoding_maps": maps.to_dict(),
         "feature_dim": maps.feature_dim,
-        "features_normalized_in_prepare": False,
         "feature_layout": [
             {"name": "station",        "offset": 0,             "size": n_stations, "type": "one_hot"},
             {"name": "operating_time", "offset": n_stations,     "size": 1,          "type": "continuous"},

@@ -8,21 +8,22 @@ without the GPU packages installed.
 
 from __future__ import annotations
 
+import hashlib
+import inspect
 import json
-import math
 from abc import abstractmethod
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np
+
+WEIGHT_DECAY = 1e-4   # Adam L2 penalty, the same for every surrogate
 
 if TYPE_CHECKING:
     import torch.nn as nn
     from torch.utils.data import DataLoader
 
 # Bump when the eval-artifact fields change incompatibly.
-EVAL_ARTIFACT_SCHEMA_VERSION = 1
 
 
 def build_mlp_layers(
@@ -72,8 +73,6 @@ def build_mlp_layers(
                 f"got output_dim={output_dim}."
             )
         layers.append(_SoftplusFirst())
-    elif output_activation == "softplus":
-        layers.append(nn.Softplus())
     elif output_activation != "none":
         raise ValueError(
             f"Fail Fast: unknown output_activation='{output_activation}'. "
@@ -87,32 +86,25 @@ _CACHE_FILES = ("data.npz", "metadata.json")
 _CACHE_SOURCE_FILE = "_source.txt"
 
 
-def _cache_is_valid(output_dir: Path, source_data_dir: Path) -> bool:
-    """True if data.npz + metadata.json are both present and were produced from
-    source_data_dir."""
+def _cache_signature(prepare_fn: Any, source_data_dir: Path) -> str:
+    """What a prepared cache depends on: the log directory and the preparation
+    code that produced it. Either changing rebuilds the cache, so a stale
+    preparation can never be trained on by accident."""
+    source = Path(inspect.getsourcefile(prepare_fn)).read_bytes()
+    return f"{source_data_dir.resolve()}\n{hashlib.sha256(source).hexdigest()}"
+
+
+def _cache_is_valid(output_dir: Path, signature: str) -> bool:
     if not all(
         (output_dir / f).exists() and (output_dir / f).stat().st_size > 0
         for f in _CACHE_FILES
     ):
         return False
     source_file = output_dir / _CACHE_SOURCE_FILE
-    if not source_file.exists():
-        return False
-    cached_source = source_file.read_text().strip()
-    if cached_source != str(source_data_dir.resolve()):
-        print(
-            f"  [Cache] Invalid - data source changed:\n"
-            f"    Cache:   {cached_source}\n"
-            f"    Current: {source_data_dir.resolve()}\n"
-            f"    Rebuilding cache."
-        )
+    if not source_file.exists() or source_file.read_text().strip() != signature:
+        print(f"  [Cache] {output_dir.name}: data source or preparation changed, rebuilding.")
         return False
     return True
-
-
-def write_cache_source(output_dir: Path, source_data_dir: Path) -> None:
-    """Record the data source in _source.txt after successful preparation."""
-    (output_dir / _CACHE_SOURCE_FILE).write_text(str(source_data_dir.resolve()))
 
 
 def load_prepared_data(output_dir: Path) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
@@ -129,23 +121,19 @@ def cached_prepare(
     prepare_fn: Any,
     *,
     csv_pattern: str = "events",
-    cache_validator: Any = None,
-    **prepare_kwargs: Any,
 ) -> Tuple[np.ndarray, np.ndarray, Dict[str, Any]]:
     """
     Load cached data if present, otherwise call prepare_fn.
 
     csv_pattern selects which logs are globbed: 'events' (events+orders),
-    'orders', or 'events_only'. A cache_validator returning False discards
-    an otherwise valid cache.
+    'orders', or 'events_only'.
     """
     data_dir = Path(data_dir)
     output_dir = Path(output_dir)
+    signature = _cache_signature(prepare_fn, data_dir)
 
-    if _cache_is_valid(output_dir, source_data_dir=data_dir):
-        X, y, metadata = load_prepared_data(output_dir)
-        if cache_validator is None or cache_validator(metadata):
-            return X, y, metadata
+    if _cache_is_valid(output_dir, signature):
+        return load_prepared_data(output_dir)
 
     if csv_pattern == "events":
         events = sorted(data_dir.rglob("*_events_*.csv"))
@@ -154,138 +142,22 @@ def cached_prepare(
             raise FileNotFoundError(f"No *_events_*.csv in {data_dir}")
         if not orders:
             raise FileNotFoundError(f"No *_orders_*.csv in {data_dir}")
-        prepare_fn(events_paths=events, orders_paths=orders,
-                    output_dir=output_dir, **prepare_kwargs)
+        prepare_fn(events_paths=events, orders_paths=orders, output_dir=output_dir)
     elif csv_pattern == "orders":
         orders = sorted(data_dir.rglob("*orders*.csv"))
         if not orders:
             raise FileNotFoundError(f"No *orders*.csv in {data_dir}")
-        prepare_fn(orders_paths=orders, output_dir=output_dir, **prepare_kwargs)
+        prepare_fn(orders_paths=orders, output_dir=output_dir)
     elif csv_pattern == "events_only":
         events = sorted(data_dir.rglob("*_events_*.csv"))
         if not events:
             raise FileNotFoundError(f"No *_events_*.csv in {data_dir}")
-        prepare_fn(events_paths=events, output_dir=output_dir, **prepare_kwargs)
+        prepare_fn(events_paths=events, output_dir=output_dir)
     else:
         raise ValueError(f"Unknown csv_pattern: {csv_pattern}")
 
-    with open(output_dir / "metadata.json") as f:
-        metadata = json.load(f)
-
-    write_cache_source(output_dir, data_dir)
-    X_data = np.load(output_dir / "data.npz")
-    return X_data["X"], X_data["y"], metadata
-
-
-def _create_history_callback():
-    import pytorch_lightning as pl
-
-    class _HistoryCallback(pl.Callback):
-        def __init__(self):
-            super().__init__()
-            self.history: Dict[str, list] = {
-                "train_loss": [],
-                "val_loss": [],
-            }
-
-        def on_train_epoch_end(self, trainer, pl_module):
-            metrics = trainer.callback_metrics
-            # PL 2.x logs this as train_loss or train_loss_epoch
-            loss_val = metrics.get("train_loss") or metrics.get("train_loss_epoch")
-            if loss_val is not None:
-                self.history["train_loss"].append(float(loss_val))
-
-        def on_validation_epoch_end(self, trainer, pl_module):
-            metrics = trainer.callback_metrics
-            if "val_loss" in metrics:
-                self.history["val_loss"].append(float(metrics["val_loss"]))
-            for key, val in metrics.items():
-                if key.startswith("val_") and key != "val_loss":
-                    if key not in self.history:
-                        self.history[key] = []
-                    self.history[key].append(float(val))
-
-    return _HistoryCallback()
-
-
-def _has_finite_numbers(obj: Any) -> bool:
-    if isinstance(obj, dict):
-        return all(_has_finite_numbers(v) for v in obj.values())
-    if isinstance(obj, (list, tuple)):
-        return all(_has_finite_numbers(v) for v in obj)
-    if isinstance(obj, float):
-        return math.isfinite(obj)
-    return True
-
-
-def save_eval_artifact(
-    *,
-    model_name: str,
-    model_dir: Path,
-    evaluation: Dict[str, Any],
-    data_source: Path,
-    n_train: int,
-    n_val: int,
-    n_test: int,
-    split: str = "test",
-) -> Path:
-    """Persist the evaluation as `<model_dir>/evaluations/<model_name>_eval.json`."""
-    model_dir = Path(model_dir)
-    eval_dir = model_dir / "evaluations"
-    eval_dir.mkdir(parents=True, exist_ok=True)
-
-    artifact = {
-        "schema_version": EVAL_ARTIFACT_SCHEMA_VERSION,
-        "model_name": model_name,
-        "split": split,
-        "n_train": int(n_train),
-        "n_val": int(n_val),
-        "n_test": int(n_test),
-        "evaluation": evaluation,
-        "trained_at": datetime.now(timezone.utc).isoformat(timespec="seconds"),
-        "data_source": str(Path(data_source).resolve()),
-    }
-
-    out_path = eval_dir / f"{model_name}_eval.json"
-    with open(out_path, "w") as f:
-        json.dump(artifact, f, indent=2, default=str)
-    return out_path
-
-
-def validate_deployment_eligibility(
-    model_name: str,
-    model_dir: Path,
-) -> bool:
-    """
-    Load the eval artifact and run minimal checks.
-
-    Logs a warning on violation but does not block: the artifact backs the
-    deployment-gate statement; the final release is a reviewer decision.
-    """
-    artifact_path = Path(model_dir) / "evaluations" / f"{model_name}_eval.json"
-    if not artifact_path.exists():
-        print(f"  [Eligibility] WARN {model_name}: no artifact at {artifact_path}")
-        return False
-
-    with open(artifact_path) as f:
-        artifact = json.load(f)
-
-    issues: List[str] = []
-    schema_v = artifact.get("schema_version")
-    if schema_v != EVAL_ARTIFACT_SCHEMA_VERSION:
-        issues.append(f"schema_version={schema_v} (expected {EVAL_ARTIFACT_SCHEMA_VERSION})")
-    if int(artifact.get("n_test", 0)) <= 0:
-        issues.append(f"n_test={artifact.get('n_test')} <= 0")
-    if not artifact.get("evaluation"):
-        issues.append("evaluation empty")
-    if not _has_finite_numbers(artifact.get("evaluation", {})):
-        issues.append("evaluation contains NaN/Inf")
-
-    if issues:
-        print(f"  [Eligibility] WARN {model_name}: {'; '.join(issues)}")
-        return False
-    print(f"  [Eligibility] OK   {model_name}: artifact={artifact_path.name}")
-    return True
+    (output_dir / _CACHE_SOURCE_FILE).write_text(signature)
+    return load_prepared_data(output_dir)
 
 
 def three_way_split(
@@ -364,20 +236,12 @@ def train_lightning_model(
     import torch
     import pytorch_lightning as pl
     from pytorch_lightning.callbacks import EarlyStopping, ModelCheckpoint
-    from pytorch_lightning.loggers import TensorBoardLogger
 
     model_dir = Path(model_dir)
     model_dir.mkdir(parents=True, exist_ok=True)
 
-    history_cb = _create_history_callback()
     checkpoint_dir = model_dir / "checkpoints" / model_name
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
-
-    tb_logger = TensorBoardLogger(
-        save_dir=str(model_dir / "tensorboard"),
-        name=model_name,
-        default_hp_metric=False,
-    )
 
     callbacks = [
         EarlyStopping(monitor="val_loss", patience=patience, mode="min", verbose=True),
@@ -385,13 +249,12 @@ def train_lightning_model(
             dirpath=str(checkpoint_dir),
             monitor="val_loss", mode="min", save_top_k=1,
         ),
-        history_cb,
     ]
 
     trainer = pl.Trainer(
         max_epochs=max_epochs,
         callbacks=callbacks,
-        logger=tb_logger,
+        logger=False,
         enable_progress_bar=True,
         log_every_n_steps=max(1, len(loaders["train"]) // 4),
         deterministic=True,
@@ -405,19 +268,15 @@ def train_lightning_model(
     best_ckpt = trainer.checkpoint_callback.best_model_path
     best_val_loss = float(trainer.checkpoint_callback.best_model_score or float("inf"))
 
-    # Restore the best weights BEFORE testing, so test metrics, the exported
-    # TorchScript model and the eval artifact all describe the same weights.
+    # Restore the best weights BEFORE testing, so the test metrics and the
+    # exported TorchScript model describe the same weights.
     if best_ckpt:
         ckpt_data = torch.load(best_ckpt, map_location="cpu", weights_only=False)
         lightning_module.load_state_dict(ckpt_data["state_dict"])
     best_module = lightning_module
     best_module.eval()
 
-    test_metrics = {}
-    if "test" in loaders:
-        test_results = trainer.test(lightning_module, loaders["test"], verbose=False)
-        if test_results:
-            test_metrics = test_results[0]
+    test_metrics = trainer.test(lightning_module, loaders["test"], verbose=False)[0]
 
     model_path = model_dir / f"{model_name}_model.pt"
     # Trace-example input dim: full_input_dim takes precedence (autoregressive
@@ -443,17 +302,27 @@ def train_lightning_model(
     scripted.save(str(model_path))
 
     return {
-        "best_val_loss":   best_val_loss,
-        "best_ckpt_path":  best_ckpt,
-        "epochs_trained":  trainer.current_epoch,
-        "history":         history_cb.history,
-        "test_metrics":    test_metrics,
-        "model_path":      str(model_path),
-        "tb_log_dir":      tb_logger.log_dir,
-        "samples_trained": len(loaders["train"].dataset),
-        "samples_val":     len(loaders["val"].dataset),
-        "samples_test":    len(loaders.get("test", loaders["val"]).dataset),
+        "best_val_loss":  best_val_loss,
+        "test_metrics":   test_metrics,
+        "epochs_trained": trainer.current_epoch,
+        "model_path":     str(model_path),
     }
+
+
+def init_output_at_marginal(net, bias: List[float]) -> None:
+    """Start a regression head at the marginal law of its training targets.
+
+    From a default initialization every target sits many standard deviations
+    from the prediction; a heteroscedastic head then inflates its spread first
+    and brings the mean back through a gradient the inflated spread has
+    flattened. Starting at the marginal skips that detour without changing
+    the objective. ``bias`` is the module's ``marginal_bias(y_train)``.
+    """
+    import torch
+    import torch.nn as nn
+    last = [m for m in net if isinstance(m, nn.Linear)][-1]
+    with torch.no_grad():
+        last.bias.copy_(torch.tensor(bias, dtype=last.bias.dtype))
 
 
 class BaseTrainingModule:
@@ -468,7 +337,6 @@ class BaseTrainingModule:
         output_dim: int,
         learning_rate: float,
         dropout_rate: float,
-        weight_decay: float = 1e-4,
         scheduler_patience: int = 10,
         output_activation: str = "none",
     ) -> None:
@@ -477,7 +345,6 @@ class BaseTrainingModule:
             output_activation=output_activation,
         )
         self.lr = learning_rate
-        self.weight_decay = weight_decay
         self._scheduler_patience = scheduler_patience
 
     def forward(self, x):
@@ -498,7 +365,7 @@ class BaseTrainingModule:
 
     def configure_optimizers(self):
         import torch
-        opt = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=self.weight_decay)
+        opt = torch.optim.Adam(self.parameters(), lr=self.lr, weight_decay=WEIGHT_DECAY)
         sched = torch.optim.lr_scheduler.ReduceLROnPlateau(
             opt, patience=self._scheduler_patience, factor=0.5,
         )
@@ -510,36 +377,63 @@ class GaussianNLLModule(BaseTrainingModule):
 
     Targets are whole seconds (integer time contract): an observation k means
     the latent duration lay in (k-1, k]. The loss is the interval likelihood
-    -log(Phi((k-mu)/sigma) - Phi((k-1-mu)/sigma)), evaluated in log space via
-    log_ndtr, so the module learns the LATENT continuous density; sampling
-    N(mu, sigma) and ceiling once at inference then reproduces the observed
-    integer distribution without the +0.5 s double-discretization bias.
+    -log(Phi((k-mu)/sigma) - Phi((k-1-mu)/sigma)), so the module learns the
+    LATENT continuous density; sampling N(mu, sigma) and ceiling once at
+    inference then reproduces the observed integer distribution without the
+    +0.5 s double-discretization bias.
+
+    The probability is evaluated in log space via the scaled complementary
+    error function, which neither under- nor overflows, so the loss keeps a
+    gradient however far the prediction sits from the target. Taking the
+    probability first and its log second is not an option: in float32 the tail
+    probability is exactly zero beyond 14.5 standard deviations, and every
+    machine row starts there under a default initialization.
     """
 
-    @staticmethod
-    def _interval_prob(zl, zu):
-        """P(zl < Z <= zu) for standard normal Z, stable in both tails.
+    _LOG_HALF = -0.6931471805599453
+    _ROOT_TWO = 1.4142135623730951
 
-        Built from erfc rather than log_ndtr: the latter has no MPS kernel, and
-        the tail-aware form is needed anyway. Below the mean the lower tail is
-        differenced directly; above it the upper tail is, because Phi(zu) and
-        Phi(zl) are both 1.0 in float32 well before the probability underflows.
+    @classmethod
+    def _log_sf(cls, z):
+        """log P(Z > z) for standard normal Z and z >= 0."""
+        import torch
+        return cls._LOG_HALF + torch.log(torch.special.erfcx(z / cls._ROOT_TWO)) - 0.5 * z * z
+
+    @classmethod
+    def _log_interval_prob(cls, zl, zu):
+        """log P(zl < Z <= zu) for standard normal Z, exact in both tails.
+
+        An interval on one side of the mean is reflected onto the upper tail
+        and taken as a difference of survival functions in log space; an
+        interval containing the mean holds at least the mass of a unit-width
+        interval at the mode and is taken directly. Every branch is finite on
+        every input so that torch.where cannot leak a NaN gradient.
         """
         import torch
-        root_two = 1.4142135623730951
-        lower = 0.5 * (torch.erfc(-zu / root_two) - torch.erfc(-zl / root_two))
-        upper = 0.5 * (torch.erfc(zl / root_two) - torch.erfc(zu / root_two))
-        return torch.where(zu > 0.0, upper, lower)
+        near = torch.minimum(zl.abs(), zu.abs())
+        far = torch.maximum(zl.abs(), zu.abs())
+        log_near = cls._log_sf(near)
+        ratio = torch.exp(cls._log_sf(far) - log_near).clamp(max=0.999999)
+        one_sided = log_near + torch.log1p(-ratio)
+        p_center = 1.0 - torch.exp(cls._log_sf(zu.clamp(min=0.0))) \
+            - torch.exp(cls._log_sf((-zl).clamp(min=0.0)))
+        centered = torch.log(p_center.clamp(min=1e-30))
+        return torch.where((zl < 0.0) & (zu > 0.0), centered, one_sided)
+
+    @staticmethod
+    def marginal_bias(y_train: np.ndarray) -> List[float]:
+        """Output bias reproducing the marginal law: mean through softplus, log variance."""
+        y = np.asarray(y_train, dtype=float)
+        # channel 0 passes through softplus: softplus(b) = mean
+        return [float(np.log(np.expm1(y.mean()))), float(np.log(y.var()))]
 
     def _nll_loss(self, pred, y):
         import torch
         mean = pred[:, 0]
-        log_var = pred[:, 1].clamp(-6.0, 6.0)
-        sigma = torch.exp(0.5 * log_var)
+        sigma = torch.exp(0.5 * pred[:, 1])
         zu = (y - mean) / sigma          # upper edge k
         zl = (y - 1.0 - mean) / sigma    # lower edge k-1
-        p = self._interval_prob(zl, zu).clamp(min=1e-12)
-        return -torch.log(p).clamp(min=-30.0).mean()
+        return -self._log_interval_prob(zl, zu).mean()
 
     def _compute_loss(self, batch, stage: str):
         import torch
@@ -567,6 +461,11 @@ class ExponentialNLLModule(BaseTrainingModule):
 
     Inference (inversion sampling + one ceil): y = ceil(-log(u) * scale).
     """
+
+    @staticmethod
+    def marginal_bias(y_train: np.ndarray) -> List[float]:
+        """Output bias reproducing the marginal law: log of the mean."""
+        return [float(np.log(np.asarray(y_train, dtype=float).mean()))]
 
     def _compute_loss(self, batch, stage: str):
         import torch

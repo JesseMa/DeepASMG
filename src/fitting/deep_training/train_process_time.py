@@ -8,13 +8,13 @@ from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
 import numpy as np
-import torch
 import pytorch_lightning as pl
 
 from src.config.simulation_config import TRAIN_SEED
 from src.fitting.deep_training.foundation_training import (
+    init_output_at_marginal,
     three_way_split, make_loaders, train_lightning_model, cached_prepare,
-    GaussianNLLModule, save_eval_artifact,
+    GaussianNLLModule,
 )
 
 
@@ -34,14 +34,12 @@ class ProcessTimeLightningModule(GaussianNLLModule, pl.LightningModule):
         hidden_dims: List[int],
         learning_rate: float,
         dropout_rate: float,
-        weight_decay: float = 1e-4,
     ) -> None:
         super().__init__()
         self.save_hyperparameters()
         self._init_base(
             input_dim=input_dim, hidden_dims=hidden_dims, output_dim=2,
             learning_rate=learning_rate, dropout_rate=dropout_rate,
-            weight_decay=weight_decay,
             output_activation="softplus_first",  # structural mean > 0
         )
 
@@ -57,55 +55,6 @@ def prepare_data(
     return cached_prepare(data_dir, output_dir, prepare_training_data, csv_pattern="events")
 
 
-def _evaluate_per_station(
-    model: pl.LightningModule,
-    test_loader,
-    metadata: Dict,
-) -> Dict[str, Dict[str, float]]:
-    """Evaluate MAE/RMSE per station."""
-    station_map = metadata["encoding_maps"]["station"]
-    station_offset = None
-    for g in metadata["feature_layout"]:
-        if g["name"] == "station":
-            station_offset = g["offset"]
-            break
-
-    if station_offset is None:
-        return {}
-
-    all_preds, all_targets, all_stations = [], [], []
-    model = model.cpu()
-    model.eval()
-    with torch.no_grad():
-        for x, y in test_loader:
-            pred = model(x)
-            all_preds.append(pred[:, 0].numpy())  # mean channel only
-            all_targets.append(y.numpy())
-            st_oh = x[:, station_offset:station_offset + len(station_map)]
-            all_stations.append(st_oh.argmax(dim=1).numpy())
-
-    preds = np.concatenate(all_preds)
-    targets = np.concatenate(all_targets)
-    stations = np.concatenate(all_stations)
-
-    idx_to_name = {v: k for k, v in station_map.items()}
-    per_station = {}
-
-    for idx in sorted(idx_to_name.keys()):
-        mask = stations == idx
-        if mask.sum() == 0:
-            continue
-        name = idx_to_name[idx]
-        errors = preds[mask] - targets[mask]
-        per_station[name] = {
-            "mae": float(np.mean(np.abs(errors))),
-            "rmse": float(np.sqrt(np.mean(errors ** 2))),
-            "count": int(mask.sum()),
-        }
-
-    return per_station
-
-
 def train(
     *,
     data_dir: Union[str, Path],
@@ -116,7 +65,6 @@ def train(
     hidden_dims: Union[Tuple[int, ...], List[int]],
     dropout_rate: float,
     test_size: float,
-    weight_decay: float = 1e-4,
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
@@ -128,8 +76,8 @@ def train(
             HPO trials (CSVs are loaded only once).
 
     Returns:
-        Dict with samples_trained, best_val_loss, model_path, metadata_path,
-        history, test_metrics, evaluation, epochs_trained, input_dim.
+        Dict with best_val_loss, test_metrics, epochs_trained, model_path,
+        metadata_path.
     """
     # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
@@ -155,8 +103,8 @@ def train(
         hidden_dims=hidden_dims,
         learning_rate=learning_rate,
         dropout_rate=dropout_rate,
-        weight_decay=weight_decay,
     )
+    init_output_at_marginal(module.net, module.marginal_bias(splits["train"][1]))
 
     results = train_lightning_model(
         lightning_module=module,
@@ -167,33 +115,11 @@ def train(
         patience=patience,
     )
 
-    # module already holds the best weights from train_lightning_model
-    module.eval()
-    per_station = _evaluate_per_station(module, loaders["test"], metadata)
-
     results["metadata_path"] = str(prep_dir / "metadata.json")
-    results["evaluation"] = {
-        "per_station": per_station,
-        **results.get("test_metrics", {}),
-    }
-    results["input_dim"] = input_dim
-    results["hidden_dims"] = hidden_dims
-
-    eval_artifact_path = save_eval_artifact(
-        model_name="process_time",
-        model_dir=model_dir,
-        evaluation=results["evaluation"],
-        data_source=data_dir,
-        n_train=n_train, n_val=n_val, n_test=n_test,
-    )
-    results["eval_artifact_path"] = str(eval_artifact_path)
-
     print(f"\n{'─' * 40}")
     print(f"  Model: {results['model_path']}")
     print(f"  Best Val Loss (NLL): {results['best_val_loss']:.6f}")
-    if results.get("test_metrics"):
-        print(f"  Test Metrics: {results['test_metrics']}")
-    print(f"  Eval artifact: {eval_artifact_path}")
+    print(f"  Test Metrics: {results['test_metrics']}")
     print(f"{'─' * 40}")
 
     return results

@@ -5,7 +5,9 @@ Process-time strategy based on a trained neural network.
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, TYPE_CHECKING
+
+import math
 
 import numpy as np
 
@@ -28,14 +30,10 @@ class DeepProcessTime(ProcessTimeStrategy):
         self,
         model_path: str | Path,
         metadata_path: str | Path,
-        rng: Optional[np.random.Generator] = None,
+        rng: np.random.Generator,
     ) -> None:
         self._model_path = Path(model_path)
         self._metadata_path = Path(metadata_path)
-        if rng is None:
-            raise ValueError(
-                "DeepProcessTime requires an np.random.Generator (rng=None given)."
-            )
         self._rng = rng
 
         self._model = None
@@ -74,14 +72,7 @@ class DeepProcessTime(ProcessTimeStrategy):
         x = self._encode_single(station_id, order, current_time)
         output = infer_single(self._model, x)
         pred_mean = output[0].item()
-        raw_log_var = output[1].item()
-        self._sg_proc_nnclip_calls = getattr(self, "_sg_proc_nnclip_calls", 0) + 1
-        if raw_log_var < -6.0 or raw_log_var > 6.0:
-            self._sg_proc_nnclip = getattr(self, "_sg_proc_nnclip", 0) + 1
-        log_var = float(np.clip(raw_log_var, -6.0, 6.0))
-
-
-        sigma = np.exp(0.5 * log_var)
+        sigma = math.exp(0.5 * output[1].item())
         sample = self._rng.normal(pred_mean, sigma)
         self._sg_proc_draws = getattr(self, "_sg_proc_draws", 0) + 1
         if sample < 0.1:
@@ -99,9 +90,8 @@ class DeepProcessTime(ProcessTimeStrategy):
         """
         self._ensure_loaded()
         output = infer_single(self._model, self._encode_single(station_id, order, current_time))
-        mu = float(output[0].item())
-        log_var = float(np.clip(output[1].item(), -6.0, 6.0))
-        return {"family": "normal", "mu": mu, "sigma": float(np.exp(0.5 * log_var))}
+        return {"family": "normal", "mu": float(output[0].item()),
+                "sigma": math.exp(0.5 * output[1].item())}
 
     def _encode_single(self, station_id: str, order: "Order", current_time: float = 0.0) -> np.ndarray:
         x = np.zeros(self._feature_dim, dtype=np.float32)
