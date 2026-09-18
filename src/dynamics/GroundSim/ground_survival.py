@@ -28,6 +28,12 @@ def bathtub_cumulative_hazard(
     return h_at_p2 + (h_normal / gamma) * (np.exp(min(gamma * (w - p2), 700.0)) - 1.0)
 
 
+# Bathtub phases in normalized wear W (W = 1 at ttf_scale_seconds): early
+# failures decay linearly until p1, the hazard is flat until p2, then grows
+# exponentially with rate gamma.
+BATHTUB = {"p1": 0.10, "p2": 0.80, "h_early": 0.30, "h_normal": 0.08, "gamma": 8.0}
+
+
 class GroundSurvival(SurvivalStrategy):
     """
     Bathtub hazard model with TTF decrement.
@@ -40,35 +46,8 @@ class GroundSurvival(SurvivalStrategy):
     TTF = H⁻¹(E) × ttf_scale_seconds with E ~ Exp(1), inverted by bisection.
     """
 
-    def __init__(
-        self,
-        rng: np.random.Generator,
-        early_phase_end: float = 0.10,
-        wearout_phase_start: float = 0.80,
-        h_early: float = 0.30,
-        h_normal: float = 0.08,
-        gamma: float = 8.0,
-    ) -> None:
-        if not (0.0 < early_phase_end < wearout_phase_start):
-            raise ValueError(
-                "Fail fast: 0 < early_phase_end < wearout_phase_start must hold."
-            )
-        if wearout_phase_start >= 2.0:
-            raise ValueError("Fail fast: wearout_phase_start must be < 2.0.")
-        if h_early < 0 or h_normal <= 0:
-            raise ValueError("Fail fast: h_early >= 0 and h_normal > 0 required.")
-        if gamma <= 0:
-            raise ValueError("Fail fast: gamma must be > 0.")
-
+    def __init__(self, rng: np.random.Generator) -> None:
         self._rng = rng
-
-        self._p1 = early_phase_end
-        self._p2 = wearout_phase_start
-        self._h_early = h_early
-        self._h_normal = h_normal
-        self._gamma = gamma
-
-
         self._ttf_scales: Dict[str, float] = {}
 
     def initialize(self, stations: Dict[str, "StationConfig"]) -> None:
@@ -112,17 +91,11 @@ class GroundSurvival(SurvivalStrategy):
         scale = self._ttf_scales.get(station_id)
         if scale is None or scale <= 0:
             return None
-        return {
-            "family": "bathtub", "scale": float(scale),
-            "p1": float(self._p1), "p2": float(self._p2),
-            "h_early": float(self._h_early), "h_normal": float(self._h_normal),
-            "gamma": float(self._gamma),
-        }
+        return {"family": "bathtub", "scale": float(scale), **BATHTUB}
 
-    def _cumulative_hazard(self, W: float) -> float:
-        return bathtub_cumulative_hazard(
-            W, self._p1, self._p2, self._h_early, self._h_normal, self._gamma,
-        )
+    @staticmethod
+    def _cumulative_hazard(W: float) -> float:
+        return bathtub_cumulative_hazard(W, **BATHTUB)
 
     def _inverse_cumulative_hazard(
         self,

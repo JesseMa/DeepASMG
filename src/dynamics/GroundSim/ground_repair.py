@@ -8,6 +8,11 @@ if TYPE_CHECKING:
     from src.config.schema import StationConfig
 
 
+# Stress = weighted relative wear and utilization of the failing cycle.
+REPAIR_WEAR_WEIGHT = 0.7
+REPAIR_UTIL_WEIGHT = 0.3
+
+
 class GroundRepair(RepairStrategy):
     """
     Wear-dependent repair duration: the later the failure, the longer the mean repair.
@@ -17,15 +22,8 @@ class GroundRepair(RepairStrategy):
     exponential draws with small effective_mttr.
     """
 
-    def __init__(
-        self,
-        rng: np.random.Generator,
-        repair_wear_weight: float = 0.7,
-        repair_util_weight: float = 0.3,
-    ) -> None:
+    def __init__(self, rng: np.random.Generator) -> None:
         self._rng = rng
-        self._repair_wear_weight = repair_wear_weight
-        self._repair_util_weight = repair_util_weight
 
         self._mttr: Dict[str, float] = {}
         self._ttf_scales: Dict[str, float] = {}
@@ -92,4 +90,4 @@ class GroundRepair(RepairStrategy):
         scale = self._ttf_scales.get(station_id, 1.0)
         wear_ratio = operating_time_since_last / max(scale, 1.0)
         util = max(0.0, min(1.0, utilization))
-        return self._repair_wear_weight * wear_ratio + self._repair_util_weight * util
+        return REPAIR_WEAR_WEIGHT * wear_ratio + REPAIR_UTIL_WEIGHT * util

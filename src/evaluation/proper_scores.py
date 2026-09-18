@@ -1,119 +1,49 @@
-"""CRPS, NLL and ECE as pure functions, independent of the simulation."""
+"""Lattice NLL, lattice CRPS and ECE as pure functions, independent of the simulation.
+
+Under the integer time contract every strategy returns ceil(X), so the law a
+system actually deploys is the lattice law P(Y = k) = F(k) - F(k-1). The
+scores here take that law directly: the interval NLL is its log-likelihood and
+the lattice CRPS is the CRPS definition evaluated on the step CDF
+G(x) = F(floor(x)). Scoring a continuous density against whole-second
+observations instead would reward a forecast shifted by half a bin.
+"""
 
 from __future__ import annotations
 
 from typing import Dict, Sequence
 
 import numpy as np
-from scipy.special import gamma as gamma_fn, gammainc
-from scipy.stats import norm, weibull_min
 
-_MIN_PROB = 1e-300
+_LOG_HALF = -0.6931471805599453
 
 
+def interval_nll(log_cdf, log_sf, k: float, *, lo: float = 0.0) -> float:
+    """-log P(Y = k) for Y = ceil(X), i.e. -log(F(k) - F(k-1)).
 
-def crps_normal(mu: float, sigma: float, y: float) -> float:
-    """CRPS(N(μ,σ), y) in closed form.
-
-    CRPS = σ·[ z·(2Φ(z) − 1) + 2φ(z) − 1/√π ],  z = (y − μ)/σ.
+    Formed in log space from whichever side does not cancel: the cdf in the
+    lower half of the law, the survival function in the upper half. Far in a
+    tail both F(k) and F(k-1) (or both S values) agree to every stored digit
+    and their plain difference is zero; log(e^a - e^b) = a + log1p(-e^(b-a))
+    keeps the digits. These are exactly the rows on which a surrogate is
+    wrong, and the score has to say by how much rather than saturate.
     """
-    if sigma <= 0:
-        raise ValueError(f"sigma must be > 0 (got {sigma}).")
-    z = (y - mu) / sigma
-    return float(
-        sigma * (z * (2.0 * norm.cdf(z) - 1.0) + 2.0 * norm.pdf(z) - 1.0 / np.sqrt(np.pi))
-    )
-
-
-def crps_normal_vec(mu: np.ndarray, sigma: np.ndarray, y: np.ndarray) -> np.ndarray:
-    """Array form of ``crps_normal``, broadcasting over the inputs."""
-    if np.any(sigma <= 0):
-        raise ValueError(f"sigma must be > 0 (got min {np.min(sigma)}).")
-    z = (y - mu) / sigma
-    return sigma * (z * (2 * norm.cdf(z) - 1) + 2 * norm.pdf(z) - 1 / np.sqrt(np.pi))
-
-
-def crps_exponential(scale: float, y: float) -> float:
-    """CRPS(Exp(scale=β), y) in closed form, y ≥ 0.
-
-    With β = 1/λ: CRPS = y − 1.5β + 2β·e^{−y/β}. (At y=0: β/2.)
-    """
-    if scale <= 0:
-        raise ValueError(f"scale must be > 0 (got {scale}).")
-    yy = max(0.0, float(y))
-    return float(yy - 1.5 * scale + 2.0 * scale * np.exp(-yy / scale))
-
-
-def crps_weibull(shape: float, scale: float, y: float) -> float:
-    """CRPS(Weibull(k=shape, λ=scale), y) in closed form, y ≥ 0.
-
-        CRPS = y − 2λΓ(1+1/k)·P(1/k, (y/λ)^k) + λΓ(1+1/k)·2^{−1/k}
-
-    with P = scipy.special.gammainc (regularized lower incomplete gamma).
-    """
-    if shape <= 0 or scale <= 0:
-        raise ValueError(f"shape/scale must be > 0 (got {shape}, {scale}).")
-    yy = max(0.0, float(y))
-    mean = scale * float(gamma_fn(1.0 + 1.0 / shape))
-    z = (yy / scale) ** shape
-    return float(yy - 2.0 * mean * float(gammainc(1.0 / shape, z))
-                 + mean * 2.0 ** (-1.0 / shape))
-
-
-def nll_normal(mu: float, sigma: float, y: float) -> float:
-    if sigma <= 0:
-        raise ValueError(f"sigma must be > 0 (got {sigma}).")
-    return float(0.5 * np.log(2.0 * np.pi * sigma * sigma) + (y - mu) ** 2 / (2.0 * sigma * sigma))
-
-
-def nll_normal_vec(mu: np.ndarray, sigma: np.ndarray, y: np.ndarray) -> np.ndarray:
-    if np.any(sigma <= 0):
-        raise ValueError(f"sigma must be > 0 (got min {np.min(sigma)}).")
-    return 0.5 * np.log(2 * np.pi * sigma * sigma) + (y - mu) ** 2 / (2 * sigma * sigma)
-
-
-def nll_exponential(scale: float, y: float) -> float:
-    if scale <= 0:
-        raise ValueError(f"scale must be > 0 (got {scale}).")
-    return float(np.log(scale) + max(0.0, float(y)) / scale)
-
-
-def nll_weibull(shape: float, scale: float, y: float) -> float:
-    if shape <= 0 or scale <= 0:
-        raise ValueError(f"shape/scale must be > 0 (got {shape}, {scale}).")
-    logpdf = weibull_min.logpdf(max(1e-12, float(y)), shape, scale=scale)
-    return float(-logpdf)
-
-# --- Lattice scores -------------------------------------------------------
-#
-# Under the integer time contract every strategy returns ceil(X), so the law a
-# system actually deploys is the lattice law P(Y = k) = F(k) - F(k-1). These
-# functions score that law directly: the interval NLL is its log-likelihood and
-# the lattice CRPS is the CRPS definition evaluated on the step CDF
-# G(x) = F(floor(x)). Scoring a continuous density against whole-second
-# observations instead would reward a forecast shifted by half a bin.
-
-
-def interval_nll(cdf, k: float, *, lo: float = 0.0, sf=None) -> float:
-    """-log P(Y = k) for Y = ceil(X) with CDF F, i.e. -log(F(k) - F(k-1)).
-
-    Far above the predictive mean F(k) and F(k-1) are both 1.0 in double
-    precision and their difference cancels to zero, which would report a
-    saturated score for exactly the case a surrogate fails on. Where a survival
-    function is available the interval is taken as S(k-1) - S(k) instead, which
-    stays exact into the upper tail.
-    """
+    if k <= lo:
+        raise ValueError(f"Fail fast: a realized duration must exceed {lo}, got {k}.")
     left = max(k - 1.0, lo)
-    upper = float(cdf(k))
-    p = upper - float(cdf(left))
-    if p <= 0.0 and sf is not None and upper > 0.5:
-        p = float(sf(left)) - float(sf(k))
-    return float(-np.log(max(p, _MIN_PROB)))
+    if float(log_cdf(k)) > _LOG_HALF:
+        a, b = float(log_sf(left)), float(log_sf(k))
+    else:
+        a, b = float(log_cdf(k)), float(log_cdf(left))
+    return float(-(a + np.log1p(-np.exp(b - a))))
 
 
-def survival_nll(cdf, k: float) -> float:
+def survival_nll(log_sf, k: float) -> float:
     """-log S(k) for a right-censored whole-second observation."""
-    return float(-np.log(max(1.0 - float(cdf(k)), _MIN_PROB)))
+    return float(-log_sf(k))
+
+
+_MAX_SUPPORT = 10**8       # three years at one-second resolution
+_CHUNK = 2**20
 
 
 def lattice_crps(cdf, k: float, *, lo: int, hi: int) -> float:
@@ -121,11 +51,21 @@ def lattice_crps(cdf, k: float, *, lo: int, hi: int) -> float:
 
     sum_j (F(j) - 1{j >= k})^2 over the support where F is neither 0 nor 1;
     outside that range the summand vanishes, so the bounds only need to cover
-    the probability mass (see _support_bounds).
+    the probability mass (see _support_bounds). The grid is summed in chunks
+    of bounded memory; a law spanning more than _MAX_SUPPORT seconds is not a
+    forecast of anything this study measures and is refused.
     """
-    j = np.arange(lo, hi + 1, dtype=float)
-    F = np.asarray(cdf(j), dtype=float)
-    return float(np.sum((F - (j >= k)) ** 2))
+    if hi - lo > _MAX_SUPPORT:
+        raise ValueError(
+            f"Fail fast: predictive law spans {hi - lo:,} s around k={k}; "
+            f"a forecast this wide is a broken model, not a score."
+        )
+    total = 0.0
+    for start in range(lo, hi + 1, _CHUNK):
+        j = np.arange(start, min(start + _CHUNK, hi + 1), dtype=float)
+        F = np.asarray(cdf(j), dtype=float)
+        total += float(np.sum((F - (j >= k)) ** 2))
+    return total
 
 
 def _support_bounds(cdf, k: float, *, step: float, eps: float = 1e-9) -> tuple[int, int]:

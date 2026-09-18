@@ -17,7 +17,6 @@ from scipy.stats import norm
 from src.evaluation import proper_scores as ps
 from src.evaluation import bathtub_hazard as bathtub
 
-_BATHTUB = bathtub.ground_survival_params()
 
 
 def _parse(x) -> Optional[dict]:
@@ -29,35 +28,35 @@ def _parse(x) -> Optional[dict]:
         return None
 
 
-def _family_cdf(family: str, p: dict):
-    """CDF of the latent duration law; ceil() of it is what the system deploys."""
-    return _family_cdf_sf(family, p)[0]
+def _family_log_cdf_sf(family: str, p: dict):
+    """(log_cdf, log_sf) of the family's continuous law, each exact in its tail.
 
-
-def _family_cdf_sf(family: str, p: dict):
-    """(CDF, survival) of the latent duration law.
-
-    The survival function is kept alongside because the interval probability
-    cancels in the upper tail when taken from the CDF alone.
+    The families with a closed cumulative hazard H build log_sf = -H and
+    log_cdf = log(-expm1(-H)); the normal uses scipy's pair. Working in log
+    space is what lets the lattice scores stay exact however far out a
+    realization falls.
     """
     if family == "normal":
         mu, sigma = p["mu"], p["sigma"]
-        return (lambda x: norm.cdf(x, mu, sigma), lambda x: norm.sf(x, mu, sigma))
+        return (lambda x: norm.logcdf(x, mu, sigma), lambda x: norm.logsf(x, mu, sigma))
     if family == "exponential":
-        b = p["scale"]
-        sf = lambda x: np.exp(-np.maximum(np.asarray(x, float), 0.0) / b)
-        return (lambda x: 1.0 - sf(x), sf)
-    if family == "weibull":
-        k, lam = p["shape"], p["scale"]
-        sf = lambda x: np.exp(-(np.maximum(np.asarray(x, float), 0.0) / lam) ** k)
-        return (lambda x: 1.0 - sf(x), sf)
-    if family == "bathtub":
+        def H(x):
+            return np.maximum(np.asarray(x, float), 0.0) / p["scale"]
+    elif family == "weibull":
+        def H(x):
+            return (np.maximum(np.asarray(x, float), 0.0) / p["scale"]) ** p["shape"]
+    elif family == "bathtub":
         scale = p["scale"]
-        sf = np.vectorize(
-            lambda x: bathtub.bathtub_survival(float(x), scale, _BATHTUB), otypes=[float]
+        H = np.vectorize(
+            lambda x: bathtub.cumulative_hazard_w(max(float(x), 0.0) / scale, p),
+            otypes=[float],
         )
-        return (lambda x: 1.0 - sf(x), sf)
-    raise ValueError(f"Unknown family: {family}")
+    else:
+        raise ValueError(f"Unknown family: {family}")
+    def log_cdf(x):
+        with np.errstate(divide="ignore"):   # H(0) = 0: log F(0) = -inf is the value
+            return np.log(-np.expm1(-H(x)))
+    return (log_cdf, lambda x: -H(x))
 
 
 def _crps_step(family: str, p: dict) -> float:
@@ -84,27 +83,30 @@ def continuous_scores(family: str, p: dict, y: float, censored: bool
             "Fail fast: censoring is not defined for the normal family "
             "(processing and repair durations always complete)."
         )
-    cdf, sf = _family_cdf_sf(family, p)
+    log_cdf, log_sf = _family_log_cdf_sf(family, p)
     if censored:
-        return None, ps.survival_nll(cdf, y)
-    nll = ps.interval_nll(cdf, y, sf=sf)
+        return None, ps.survival_nll(log_sf, y)
+    nll = ps.interval_nll(log_cdf, log_sf, y)
+
+    def cdf(x):
+        return np.exp(log_cdf(x))
     lo, hi = ps._support_bounds(cdf, y, step=_crps_step(family, p))
     return ps.lattice_crps(cdf, y, lo=lo, hi=hi), nll
 
 
-def _seed_means(by_seed: Dict[int, List[float]]) -> Tuple[Dict[int, float], int]:
-    """Per-seed means and the total number of usable observations.
+def _seed_means(by_seed: Dict[int, List[float]]) -> Tuple[Dict[int, float], Dict[int, int]]:
+    """Per-seed means and per-seed counts of the usable observations.
 
-    A seed with no usable value is absent from the mapping rather than NaN.
+    A seed with no usable value is absent from both mappings rather than NaN.
     """
     means: Dict[int, float] = {}
-    n_obs = 0
+    counts: Dict[int, int] = {}
     for seed, vals in by_seed.items():
         a = np.asarray([v for v in vals if v is not None and np.isfinite(v)], dtype=float)
         if a.size:
             means[seed] = float(a.mean())
-            n_obs += int(a.size)
-    return means, n_obs
+            counts[seed] = int(a.size)
+    return means, counts
 
 
 def _mean_se(seed_means: Dict[int, float]) -> Tuple[float, float, int]:
@@ -125,18 +127,26 @@ def _mean_se(seed_means: Dict[int, float]) -> Tuple[float, float, int]:
 
 
 def _paired_mean_se(
-    seed_means: Dict[int, float], ref_means: Dict[int, float]
+    seed_means: Dict[int, float], counts: Dict[int, int],
+    ref_means: Dict[int, float], ref_counts: Dict[int, int],
 ) -> Tuple[float, float, int]:
     """Mean paired difference against the reference and its standard error.
 
     Under common random numbers the systems share a seed, so the per-seed
     difference removes the between-seed variation the two share. This is the
     comparison the design was built for, and it is much sharper than the
-    unpaired one.
+    unpaired one. Pairing is only meaningful over the same decisions, so a
+    seed on which the two systems scored different numbers of rows is refused.
     """
     shared = sorted(set(seed_means) & set(ref_means))
     if not shared:
         return float("nan"), float("nan"), 0
+    unequal = [s for s in shared if counts[s] != ref_counts[s]]
+    if unequal:
+        raise ValueError(
+            f"Fail fast: paired difference over unequal row sets on seeds {unequal} "
+            f"({[(counts[s], ref_counts[s]) for s in unequal]})."
+        )
     d = np.asarray([seed_means[s] - ref_means[s] for s in shared], dtype=float)
     k = len(d)
     se = float(d.std(ddof=1) / np.sqrt(k)) if k > 1 else 0.0
@@ -161,8 +171,9 @@ def aggregate_continuous(
 ) -> Tuple[List[dict], dict]:
     """CRPS/NLL per (station[, head]) plus pooled, for one continuous component.
 
-    Returns the rows and a {group: {metric: {seed: mean}}} map. Passing the
-    reference system's map back in adds the CRN-paired difference columns.
+    Returns the rows and a {(group, metric): ({seed: mean}, {seed: n})} map.
+    Passing the reference system's map back in adds the CRN-paired difference
+    columns.
     """
     by_group: Dict[tuple, dict] = defaultdict(
         lambda: {"crps": defaultdict(list), "nll": defaultdict(list), "n_cens": 0}
@@ -200,52 +211,22 @@ def aggregate_continuous(
         row = {"system": system, "component": component,
                "station": station, "head": head}
         for metric in ("crps", "nll"):
-            means, n_obs = _seed_means(g[metric])
+            means, counts = _seed_means(g[metric])
             m, se, k = _mean_se(means)
             row[f"{metric}_mean"] = m
             row[f"{metric}_se"] = se
-            row[f"n_{metric}"] = n_obs
+            row[f"n_{metric}"] = sum(counts.values())
             row[f"n_seeds_{metric}"] = k
-            seed_map[(station, head, metric)] = means
+            seed_map[(station, head, metric)] = (means, counts)
             if reference is not None:
-                ref = reference.get((station, head, metric), {})
-                dm, dse, dk = _paired_mean_se(means, ref)
+                ref_means, ref_counts = reference.get((station, head, metric), ({}, {}))
+                dm, dse, dk = _paired_mean_se(means, counts, ref_means, ref_counts)
                 row[f"{metric}_paired_diff"] = dm
                 row[f"{metric}_paired_se"] = dse
                 row[f"n_seeds_paired_{metric}"] = dk
         row["n_censored_excl_crps"] = g["n_cens"]
         rows.append(row)
     return rows, seed_map
-
-
-def pit_uniformity(df, *, seed: int = 0) -> dict:
-    """KS test of the randomized PIT against uniform, for a continuous component.
-
-    With whole-second realizations the plain PIT u = F(y) takes a handful of
-    values and its KS statistic converges to max_k P(Y = k), a property of the
-    quantization rather than of the model — it rejects a correct forecast with
-    certainty and is blind to sigma. Drawing u uniformly inside the observed
-    interval [F(k-1), F(k)] restores exact uniformity under a correct model.
-    """
-    from scipy.stats import kstest
-
-    rng = np.random.default_rng(seed)
-    us: List[float] = []
-    for _, r in df.iterrows():
-        p = _parse(r["params"])
-        if p is None or bool(int(r.get("censored", 0))):
-            continue
-        try:
-            k = float(r["realized"])
-        except (ValueError, TypeError):
-            continue
-        cdf = _family_cdf(p["family"], p)
-        lo, hi = float(cdf(max(k - 1.0, 0.0))), float(cdf(k))
-        us.append(lo + rng.random() * max(hi - lo, 0.0))
-    if len(us) < 2:
-        return {"n": len(us), "ks_d": float("nan"), "ks_p": float("nan")}
-    res = kstest(us, "uniform")
-    return {"n": len(us), "ks_d": float(res.statistic), "ks_p": float(res.pvalue)}
 
 
 def _row_brier(probs: Dict[str, float], realized: str) -> float:
@@ -259,8 +240,15 @@ def _row_brier(probs: Dict[str, float], realized: str) -> float:
 
 
 def aggregate_categorical(df, system: str, component: str, *, n_bins: int = 15) -> List[dict]:
-    """Brier + ECE per (station[, head]) plus pooled, for one categorical component."""
-    by_group: Dict[tuple, dict] = defaultdict(lambda: {"brier": [], "conf": [], "correct": []})
+    """Brier + ECE per (station[, head]) plus pooled, for one categorical component.
+
+    The Brier score is averaged per seed and reported with the seed-clustered
+    standard error like the continuous scores; the ECE is a property of the
+    whole set of decisions and is pooled over all rows of a group.
+    """
+    by_group: Dict[tuple, dict] = defaultdict(
+        lambda: {"brier": defaultdict(list), "conf": [], "correct": []}
+    )
     for _, r in df.iterrows():
         p = _parse(r["params"])
         if p is None or "probs" not in p:
@@ -269,29 +257,26 @@ def aggregate_categorical(df, system: str, component: str, *, n_bins: int = 15) 
         realized = str(r["realized"])
         key = (_label(r, "station"), _label(r, "head"))
         g = by_group[key]
-        g["brier"].append(_row_brier(probs, realized))
+        g["brier"][int(r["seed"])].append(_row_brier(probs, realized))
         if probs:
             top_label, top_p = max(probs.items(), key=lambda kv: kv[1])
             g["conf"].append(float(top_p))
             g["correct"].append(top_label == realized)
+    pooled: dict = {"brier": defaultdict(list), "conf": [], "correct": []}
+    for g in by_group.values():
+        for seed, vals in g["brier"].items():
+            pooled["brier"][seed].extend(vals)
+        pooled["conf"] += g["conf"]
+        pooled["correct"] += g["correct"]
+
     rows: List[dict] = []
-    all_brier: List[float] = []
-    all_conf: List[float] = []
-    all_corr: List[bool] = []
-    for (station, head), g in sorted(by_group.items()):
-        bm, bse, bn = _mean_se(g["brier"])
+    for (station, head), g in sorted(by_group.items()) + [(("POOLED", ""), pooled)]:
+        means, counts = _seed_means(g["brier"])
+        bm, bse, k = _mean_se(means)
         ece = ps.compute_ece(g["conf"], g["correct"], n_bins=n_bins)
         rows.append({"system": system, "component": component, "station": station,
-                     "head": head, "brier_mean": bm, "brier_se": bse, "n": bn,
-                     "ece": ece["ece"], "top_bin_gap": ece["top_bin_gap"]})
-        all_brier += g["brier"]
-        all_conf += g["conf"]
-        all_corr += g["correct"]
-    bm, bse, bn = _mean_se(all_brier)
-    ece = ps.compute_ece(all_conf, all_corr, n_bins=n_bins)
-    rows.append({"system": system, "component": component, "station": "POOLED",
-                 "head": "", "brier_mean": bm, "brier_se": bse, "n": bn,
-                 "ece": ece["ece"], "top_bin_gap": ece["top_bin_gap"]})
+                     "head": head, "brier_mean": bm, "brier_se": bse, "n": sum(counts.values()),
+                     "n_seeds": k, "ece": ece["ece"], "top_bin_gap": ece["top_bin_gap"]})
     return rows
 
 
@@ -307,32 +292,26 @@ def aggregate_all(
     The reference system is scored first so every other system can carry the
     CRN-paired difference against it.
     """
-    import warnings
-
     import pandas as pd
-    from scipy.integrate import IntegrationWarning
     cont: List[dict] = []
     cat: List[dict] = []
-    with warnings.catch_warnings():
-        # Fail loud: a non-converging quadrature would silently corrupt a score.
-        warnings.simplefilter("error", IntegrationWarning)
-        ordered = ([reference] + [s for s in systems if s != reference]
-                   if reference in systems else list(systems))
-        ref_maps: Dict[str, dict] = {}
-        for system in ordered:
-            for comp in components:
-                path = shadow_dir / f"{system}__{comp}.csv"
-                if not path.exists():
-                    continue
-                df = pd.read_csv(path, dtype={"context_id": str, "realized": str})
-                if comp in CONTINUOUS:
-                    rows, seed_map = aggregate_continuous(
-                        df, system, comp,
-                        reference=None if system == reference else ref_maps.get(comp),
-                    )
-                    cont += rows
-                    if system == reference:
-                        ref_maps[comp] = seed_map
-                elif comp in CATEGORICAL:
-                    cat += aggregate_categorical(df, system, comp)
+    ordered = ([reference] + [s for s in systems if s != reference]
+               if reference in systems else list(systems))
+    ref_maps: Dict[str, dict] = {}
+    for system in ordered:
+        for comp in components:
+            path = shadow_dir / f"{system}__{comp}.csv"
+            if not path.exists():
+                continue
+            df = pd.read_csv(path, dtype={"context_id": str, "realized": str})
+            if comp in CONTINUOUS:
+                rows, seed_map = aggregate_continuous(
+                    df, system, comp,
+                    reference=None if system == reference else ref_maps.get(comp),
+                )
+                cont += rows
+                if system == reference:
+                    ref_maps[comp] = seed_map
+            elif comp in CATEGORICAL:
+                cat += aggregate_categorical(df, system, comp)
     return {"continuous": cont, "categorical": cat}
