@@ -16,7 +16,6 @@ sys.path.insert(0, str(REPO))
 
 from src.experiments.sim_runner import get_process_config  # noqa: E402
 from src.config.simulation_config import (  # noqa: E402
-    INITIAL_ORDERS,
     SECONDS_PER_DAY,
     SIM_START_TIMESTAMP,
     SimulationConfig,
@@ -42,14 +41,8 @@ def generate(
     seed: int = DEFAULT_SEED,
     output_dir: str | Path = DEFAULT_OUTPUT,
     experiment_name: str = DEFAULT_EXPERIMENT,
-    order_id_prefix: str | None = None,
 ) -> Path:
-    """Run GroundSim and write process, order and run-metadata logs.
-
-    order_id_prefix prevents order_id collisions in prepare_transition_data
-    (which groups by order_id) when several seed runs share one parent
-    directory.
-    """
+    """Run GroundSim and write process, order and run-metadata logs."""
     output_dir = Path(output_dir)
 
     process_config = get_process_config()
@@ -58,7 +51,6 @@ def generate(
         base_dir=output_dir,
         experiment_name=experiment_name,
         process_name=process_config.name,
-        order_id_prefix=order_id_prefix,
     )
 
     # Training data ends exactly at the eval anchor (SIM_START_TIMESTAMP): the
@@ -82,9 +74,7 @@ def generate(
         duration_days=days,
         warmup_days=WARMUP_DAYS,
         seed=seed,
-        initial_orders=INITIAL_ORDERS,
         run_id=1,
-        start_timestamp=training_start_timestamp,
     )
 
     engine = SimulationEngine(process_config, sim_config)
@@ -127,21 +117,14 @@ def main():
                         help=f"Base output directory (default: {DEFAULT_OUTPUT})")
     parser.add_argument("--experiment", type=str, default=DEFAULT_EXPERIMENT,
                         help=f"Experiment name (default: {DEFAULT_EXPERIMENT})")
-    parser.add_argument("--order-id-prefix", type=str, default=None,
-                        help=("Prefix for all order_ids. Use for "
-                              "multi-seed HPO aggregation (e.g. 's101_'); "
-                              "prevents order_id collisions when multiple "
-                              "seed runs share one parent directory."))
     args = parser.parse_args()
 
-    print(f"Generating GroundSim data: {args.days} days, seed={args.seed}"
-          + (f", prefix='{args.order_id_prefix}'" if args.order_id_prefix else ""))
+    print(f"Generating GroundSim data: {args.days} days, seed={args.seed}")
     generate(
         days=args.days,
         seed=args.seed,
         output_dir=args.output_dir,
         experiment_name=args.experiment,
-        order_id_prefix=args.order_id_prefix,
     )
     print("Done.")
 

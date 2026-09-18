@@ -17,7 +17,7 @@ second discretization.
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
+from typing import NamedTuple, Any, Dict, List, Optional, Set, Tuple, TYPE_CHECKING
 
 import numpy as np
 
@@ -31,14 +31,25 @@ NAMED_PERIODS_HOURS = {
     "day":     24.0,
     "week":    168.0,
     "month":   730.0,
-    "quarter": 2190.0,
-    "year":    8760.0,
 }
 
 NONE_TOKEN: str = "<NONE>"
 """Sentinel for 'no predecessor' / 'unknown' in the feature encodings."""
 
 END_TOKEN: str = "End"
+
+# Arrivals at the same station by the same order, capped so the vocabulary
+# stays finite; VISIT_CAP means "this many or more". Preparation counts it from
+# the log (prior rows with the same order_id and station), the kernel counts
+# it on acceptance; both sides tokenize it here. A station whose transition
+# table carries a visit-indexed row routes differently on a repeat visit, and
+# this is what lets a surrogate see it.
+VISIT_CAP = 4
+
+
+def visit_token(n: int) -> str:
+    """Categorical token for the n-th arrival (1-based), capped at VISIT_CAP."""
+    return str(min(max(int(n), 1), VISIT_CAP))
 """Sentinel for 'order leaves the system' in the transition logic."""
 
 TWO_PI: float = 2.0 * np.pi
@@ -124,67 +135,59 @@ def weighted_draw(values, weights, rng: "np.random.Generator"):
     return values[min(idx, len(values) - 1)]
 
 
-def masked_categorical_draw(
-    rng: np.random.Generator,
+class MaskedTable(NamedTuple):
+    """A fitted categorical table restricted to the admissible targets.
+
+    With zero fitted mass on every admissible target the draw falls back to
+    uniform over ``targets`` (then ``available_targets`` itself, which may hold
+    labels absent from the fitted table) and ``weights`` is None.
+    """
+    targets: list
+    weights: Optional[np.ndarray]
+    removed_mass: float
+    fallback: bool
+
+
+def masked_categorical_prepare(
     targets: List[str],
     weights: np.ndarray,
     available_targets: Set[str],
     *,
     label: str = "",
-) -> Tuple[str, float, bool, float, np.ndarray]:
-    """Draw one target under an admissibility mask; exactly one RNG draw per call.
-
-    Inadmissible targets lose their mass and the rest is renormalized. With zero
-    fitted mass on all admissible targets the draw falls back to uniform over
-    ``available_targets``, which may contain labels absent from ``targets``.
-    Returns (chosen_target, removed_mass, used_fallback, kept_mass, admissible);
-    chosen_target is raw and may be END_TOKEN, which the caller maps to None.
-    """
+) -> MaskedTable:
+    """Apply the admissibility mask once: drop inadmissible mass, renormalize."""
     admissible = np.fromiter(
         (t in available_targets for t in targets), dtype=bool, count=len(targets)
     )
     kept_mass = float(weights[admissible].sum())
     removed_mass = float(weights[~admissible].sum())
-
     if kept_mass <= 0.0:
         avail = sorted(available_targets)
         if not avail:
             raise ValueError(
                 f"Routing mask empty for '{label}': available_targets={available_targets}."
             )
-        return str(rng.choice(avail)), removed_mass, True, kept_mass, admissible
-
+        return MaskedTable(avail, None, removed_mass, True)
     kept_targets = [t for t, ok in zip(targets, admissible, strict=True) if ok]
-    kept_weights = weights[admissible] / kept_mass
-    return (str(weighted_draw(kept_targets, kept_weights, rng)), removed_mass,
-            False, kept_mass, admissible)
+    return MaskedTable(kept_targets, weights[admissible] / kept_mass, removed_mass, False)
 
 
-def masked_categorical_probs(
-    targets: List[str],
-    weights: "np.ndarray",
-    available_targets: Optional[Set[str]],
-) -> Dict[str, float]:
-    """Post-mask renormalized {label: prob}; no RNG draw.
+def masked_categorical_draw(rng: np.random.Generator, table: MaskedTable) -> str:
+    """One target from a prepared table; exactly one RNG draw per call.
 
-    Without a mask every target is a key. With a mask only admissible targets
-    are keys; zero admissible mass falls back to uniform over
-    ``available_targets``, whose keys need not appear in ``targets``.
+    The result is raw and may be END_TOKEN, which the caller maps to None.
     """
-    if available_targets is None:
-        total = float(np.sum(weights))
-        return {t: float(w) / total for t, w in zip(targets, weights, strict=True)}
-    admissible = [t in available_targets for t in targets]
-    kept_mass = float(sum(float(w) for w, a in zip(weights, admissible, strict=True) if a))
-    if kept_mass <= 0.0:
-        avail = sorted(available_targets)
-        if not avail:
-            raise ValueError(f"Empty admissibility set: {available_targets}.")
-        return {t: 1.0 / len(avail) for t in avail}
-    return {
-        t: float(w) / kept_mass
-        for t, w, a in zip(targets, weights, admissible, strict=True) if a
-    }
+    if table.fallback:
+        return str(rng.choice(table.targets))
+    return str(weighted_draw(table.targets, table.weights, rng))
+
+
+def masked_categorical_probs(table: MaskedTable) -> Dict[str, float]:
+    """{label: prob} of a prepared table; no RNG draw."""
+    if table.fallback:
+        u = 1.0 / len(table.targets)
+        return {t: u for t in table.targets}
+    return {t: float(w) for t, w in zip(table.targets, table.weights, strict=True)}
 
 
 def compile_offsets(feature_layout: List[Dict[str, Any]]) -> Dict[str, int]:
@@ -225,10 +228,14 @@ def load_deep_model(
 
 
 def infer_single(model: Any, x: np.ndarray) -> "torch.Tensor":
-    """Run inference for a single feature vector; returns the 1D output tensor."""
+    """Run inference for one float32 feature vector; returns the 1D output tensor.
+
+    The scripted forward is called directly: nn.Module.__call__ only adds
+    hook bookkeeping this path never uses.
+    """
     import torch
     with torch.inference_mode():
-        return model(torch.from_numpy(x).unsqueeze(0).float()).squeeze(0)
+        return model.forward(torch.from_numpy(x).unsqueeze(0)).squeeze(0)
 
 
 class ProcessTimeStrategy(ABC):
@@ -244,15 +251,14 @@ class TransitionStrategy(ABC):
         self,
         station_id: str,
         order: "Order",
-        available_targets: Optional[Set[str]] = None,
+        available_targets: Set[str],
         current_time: float = 0.0,
     ) -> Optional[str]:
         """Returns next-station id, or None for End.
 
-        available_targets: reachable downstream stations (incl. End). DeepSim
-        renormalizes its softmax over this set; RefSim masks its fitted table
-        the same way when built with apply_admissibility_mask=True (as the
-        shipped runners do); GroundSim ignores it because its configured
+        available_targets: reachable downstream stations (incl. End), the
+        admissibility mask. DeepSim renormalizes its softmax over this set and
+        RefSim its fitted table; GroundSim ignores it because its configured
         transition map already encodes the topology. current_time is unused by
         the shipped strategies; the shadow logger records it as t_sim.
         """
@@ -313,15 +319,6 @@ class RepairStrategy(ABC):
 
     def initialize(self, stations: Dict[str, "StationConfig"]) -> None:
         ...
-
-    def notify_cycle_end(
-        self,
-        station_id: str,
-        ttf: float,
-        n_jobs: int,
-        repair_time: float,
-    ) -> None:
-        """Hook after a completed failure cycle (default: no-op)."""
 
 
 class ProductStrategy(ABC):

@@ -56,10 +56,8 @@ class SimulationConfig:
     duration_days: float = 1.0
     warmup_days: float = 0.0            # recording starts only after warmup
     seed: int = 42
-    initial_orders: int = 10            # orders pre-loaded at t=0
-    run_id: int = 0                     # order IDs become R{run_id}_J{counter:06d}
-
-    start_timestamp: int = SIM_START_TIMESTAMP  # absolute clock for shift/weekday/month effects
+    initial_orders: int = INITIAL_ORDERS    # orders pre-loaded at t=0
+    run_id: int = 0                         # order IDs become R{run_id}_J{counter:06d}
 
     @property
     def max_time(self) -> float:

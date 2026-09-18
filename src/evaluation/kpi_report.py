@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 import numpy as np
 
@@ -12,25 +12,22 @@ import numpy as np
 def analyze(
     process_log: np.ndarray,
     order_log: List[Dict],
-    label: str = "simulation",
-    sim_duration: Optional[float] = None,
-    num_machines: Optional[int] = None,
-    rework_station_id: Optional[str] = None,
     *,
-    report: bool = False,
+    sim_duration: float,
+    num_machines: int,
+    rework_station_id: str,
 ) -> Dict[str, float]:
-    """KPI panel for one run; prints a formatted report when report=True.
+    """KPI panel for one run.
 
     ``rework_station_id`` names the optional stage (e.g. M5, a class-specific
-    task or audit rather than classic rework). ``rework_rate`` is then the
+    task or audit rather than classic rework). ``rework_rate`` is the
     percentage of orders that visit it at least once and ``multi_rework_rate``
-    the percentage visiting it twice or more; None leaves both at 0.0.
+    the percentage visiting it twice or more.
     """
     completed = [o for o in order_log if o.get("timestamp_completion") is not None]
     n_valid = len(completed)
     if n_valid == 0:
-        print(f"Results Analysis for {label}: no completed orders.")
-        return {}
+        raise ValueError("Fail fast: no completed orders; the KPI panel is undefined.")
 
     events_by_order = _group_events_by_order(process_log)
     cycle_times, buffer_waits, system_times = [], [], []
@@ -63,14 +60,11 @@ def analyze(
         inline_waits.append(inline_wait)
         total_buffer_times.append(total_buffer_time)
 
-        if rework_station_id is not None:
-            n_rework_visits = sum(
-                1 for e in machine_events if e["station"] == rework_station_id
-            )
-            if n_rework_visits >= 1:
-                rework_count += 1
-            if n_rework_visits >= 2:
-                multi_rework_count += 1
+        n_rework_visits = sum(1 for e in machine_events if e["station"] == rework_station_id)
+        if n_rework_visits >= 1:
+            rework_count += 1
+        if n_rework_visits >= 2:
+            multi_rework_count += 1
 
     ct = np.array(cycle_times)
     bw = np.array(buffer_waits)
@@ -91,19 +85,7 @@ def analyze(
     avg_breakdown_repair = np.mean(breakdown_repair_times) if breakdown_repair_times else 0.0
     total_breakdown_time = sum(breakdown_repair_times)
     tech_availability = _compute_availability(total_breakdown_time, sim_duration, num_machines)
-    n_productive = len([r for r in machine_records if not r["is_breakdown"]])
-    bd_rate = (n_breakdowns / n_productive * 100) if n_productive > 0 else 0.0
     n_buffer_events = sum(1 for r in _iter_records(process_log) if r["station_type"] == "buffer")
-
-    if report:
-        _print_report(
-            label=label, n_valid=n_valid, ct=ct, bw=bw, st=st, pt=pt, iw=iw, bt=bt,
-            fe_cycle=fe_cycle, fe_system=fe_system,
-            rework_rate=rework_rate, multi_rework_rate=multi_rework_rate,
-            rework_station_id=rework_station_id,
-            n_breakdowns=n_breakdowns, bd_rate=bd_rate, avg_breakdown_repair=avg_breakdown_repair,
-            tech_availability=tech_availability, n_buffer_events=n_buffer_events,
-        )
 
     return {
         "n_valid": n_valid,
@@ -142,50 +124,12 @@ def _iter_records(process_log: np.ndarray):
         }
 
 
-def _compute_availability(
-    total_breakdown_time: float,
-    sim_duration: Optional[float],
-    num_machines: Optional[int],
-) -> float:
-    if sim_duration is None or num_machines is None or num_machines == 0:
-        return 100.0
+def _compute_availability(total_breakdown_time: float, sim_duration: float,
+                          num_machines: int) -> float:
     total_machine_time = sim_duration * num_machines
     if total_machine_time <= 0:
         return 100.0
     return (total_machine_time - total_breakdown_time) / total_machine_time * 100
-
-
-def _print_report(
-    label, n_valid, ct, bw, st, pt, iw, bt,
-    fe_cycle, fe_system,
-    rework_rate, multi_rework_rate, rework_station_id,
-    n_breakdowns, bd_rate, avg_breakdown_repair,
-    tech_availability, n_buffer_events,
-) -> None:
-    sep = "-" * 60
-    print(f"\nResults Analysis for {label} ({n_valid:,} valid jobs):")
-    print(sep)
-    print(f"{'Metric':<22}| {'Mean':>10} | {'Std Dev':>10}")
-    print(sep)
-    print(f"{'Cycle Time':<22}| {np.mean(ct):>10.2f} | {np.std(ct):>10.2f}   (FE: {fe_cycle:.1f}%)")
-    print(f"{'Buffer Wait':<22}| {np.mean(bw):>10.2f} | {np.std(bw):>10.2f}")
-    print(f"{'System Time':<22}| {np.mean(st):>10.2f} | {np.std(st):>10.2f}   (FE: {fe_system:.1f}%)")
-    print(f"{'Processing':<22}| {np.mean(pt):>10.2f} | {np.std(pt):>10.2f}")
-    print(f"{'Inline Wait':<22}| {np.mean(iw):>10.2f} | {np.std(iw):>10.2f}")
-    print(f"{'Buffer Time (total)':<22}| {np.mean(bt):>10.2f} | {np.std(bt):>10.2f}")
-    print(sep)
-    if rework_station_id is not None:
-        print(f"Rework Rate ({rework_station_id} ≥1×):  {rework_rate:.2f}%")
-        print(f"Multi-Rework Rate ({rework_station_id} ≥2×): {multi_rework_rate:.2f}%")
-    else:
-        print("Rework Rate: n/a (no rework_station_id provided)")
-    print(f"Buffer Events: {n_buffer_events:,}")
-    print(f"{'Reliability':<22}| {'Value':>10}")
-    print(sep)
-    print(f"{'Breakdowns':<22}| {n_breakdowns:>10}   (Rate: {bd_rate:.2f}%)")
-    print(f"{'Avg Repair Time':<22}| {avg_breakdown_repair:>10.2f}")
-    print(f"{'Tech. Availability':<22}| {tech_availability:>9.2f} %")
-    print(sep)
 
 
 def extract_cycle_times(

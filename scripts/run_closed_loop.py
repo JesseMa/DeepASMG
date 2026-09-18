@@ -58,7 +58,7 @@ def main() -> None:
     runs_by_sim: dict[str, list] = {}
     for name, fac in systems.items():
         t0 = time.time()
-        runs = run_replications(name, fac, seeds, return_kpis=True, return_ct=True)
+        runs = run_replications(name, fac, seeds)
         runs_by_sim[name] = runs
         cts = sum(len(r["ct"]) for r in runs)
         print(f"  {name:14} done: {len(runs)} runs, {cts:,} cycle-times ({time.time()-t0:.0f}s)")

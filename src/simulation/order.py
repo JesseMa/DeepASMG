@@ -18,10 +18,10 @@ class Order:
     # count is derivable from the log (prior rows with the same order_id).
     visits: Dict[str, int] = field(default_factory=dict)
 
-    def resolve_transition_key(self, transitions: dict, *, station_id: str | None = None) -> str:
+    def resolve_transition_key(self, transitions: dict, *, station_id: str) -> str:
         """Matching key in transitions; a visit-indexed entry wins if present."""
-        visit = self.visits.get(station_id) if station_id is not None else None
-        return resolve_key(self.features, transitions, wildcard=True, visit=visit)
+        return resolve_key(self.features, transitions, wildcard=True,
+                           visit=self.visits.get(station_id))
 
     def resolve_process_key(self, process_times: Dict[str, tuple]) -> str:
         """Find the matching key in process_times (no wildcard)."""

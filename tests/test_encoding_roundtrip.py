@@ -18,14 +18,12 @@ import json
 import numpy as np
 import pytest
 
-from src.dynamics.foundation_dynamics import NONE_TOKEN, compile_offsets
+from src.dynamics.foundation_dynamics import NONE_TOKEN, VISIT_CAP, compile_offsets, visit_token
 from src.fitting.deep_data_preparation.data_io import build_feature_layout
 from src.fitting.deep_data_preparation.prepare_transition_data import (
-    VISIT_CAP,
     TransitionSample,
     build_encoding_maps,
     encode_samples,
-    visit_token,
 )
 
 
@@ -114,15 +112,6 @@ def test_visit_block_is_one_hot_and_capped(maps):
     assert np.all(block.sum(axis=1) == 1.0)
 
     assert visit_token(VISIT_CAP) == visit_token(VISIT_CAP + 5)
-
-
-def test_preparation_and_strategy_tokenize_identically():
-    """Training and inference must agree on what the n-th arrival is called."""
-    from src.dynamics.DeepSim.deep_transition import _VISIT_CAP, _visit_token
-
-    assert VISIT_CAP == _VISIT_CAP
-    for n in range(1, VISIT_CAP + 6):
-        assert visit_token(n) == _visit_token(n), f"tokens diverge at arrival {n}"
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ from typing import Deque, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
-from src.dynamics.foundation_dynamics import NONE_TOKEN, END_TOKEN, set_onehot
+from src.dynamics.foundation_dynamics import NONE_TOKEN, END_TOKEN, VISIT_CAP, set_onehot, visit_token
 from src.fitting.deep_data_preparation.data_io import (
     find_csv_files,
     load_events, load_orders, build_feature_layout, save_prepared_data,
@@ -31,19 +31,6 @@ from src.fitting.deep_data_preparation.split_helpers import (
 # (e.g. InputBuffer cycle). Changing it requires retraining all DeepTransition
 # models (metadata incompatibility).
 MAX_HIST_SLOTS = 10
-
-
-# Arrivals at the same station by the same order, capped so the vocabulary
-# stays finite; VISIT_CAP means "this many or more". Derived from the log, not
-# from the generator: it is the count of prior rows with the same order_id and
-# station. A station whose transition table carries a visit-indexed row routes
-# differently on a repeat visit, and this is what lets a surrogate see it.
-VISIT_CAP = 4
-
-
-def visit_token(n: int) -> str:
-    """Categorical token for the n-th arrival (1-based), capped at VISIT_CAP."""
-    return str(min(max(n, 1), VISIT_CAP))
 
 
 @dataclass

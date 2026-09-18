@@ -33,16 +33,11 @@ class DeepProduct(ProductStrategy):
         model_path: str | Path,
         metadata_path: str | Path,
         rng: np.random.Generator,
-        temperature: float = 1.0,
         start_timestamp: float = 0.0,
     ) -> None:
-        if temperature <= 0:
-            raise ValueError("Fail fast: temperature must be > 0.")
-
         self._model_path = Path(model_path)
         self._metadata_path = Path(metadata_path)
         self._rng = rng
-        self._temperature = temperature
         self._start_timestamp = start_timestamp
 
         self._model = None
@@ -187,8 +182,6 @@ class DeepProduct(ProductStrategy):
     def _head_probs(self, logits_flat, offset: int, size: int) -> "np.ndarray":
         import torch
         hl = logits_flat[offset: offset + size]
-        if self._temperature != 1.0:
-            hl = hl / self._temperature
         p = torch.softmax(hl, dim=0).numpy().astype(np.float64)
         return p / p.sum()
 

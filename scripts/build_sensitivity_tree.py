@@ -34,11 +34,16 @@ def _find_data_dir(parent: Path) -> Path:
     return find_newest_data_dir(parent)
 
 
+def _models_trained(model_dir: Path) -> bool:
+    from src.experiments.sim_runner import models_trained
+    return models_trained(model_dir)
+
+
 def _build_config(
     label: str, seed: int, days: int, data_parent: Path, model_dir: Path,
     log_dir: Path, skip_existing: bool, hpo_dir: Path,
 ) -> None:
-    if skip_existing and (model_dir / "trained_model_paths.json").exists():
+    if skip_existing and _models_trained(model_dir):
         print(f"[{label}] exists — skipped")
         return
 

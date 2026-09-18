@@ -81,7 +81,12 @@ def filter_and_join(
     events: List[RawEvent],
     orders: Dict[str, Dict[str, str]],
 ) -> List[Tuple[RawEvent, Dict[str, str]]]:
-    """Filter to productive machine events and join with order features.
+    """Filter to productive machine operations and join with order features.
+
+    Only machine rows are samples: the surrogate is queried for machines alone
+    (buffers pass orders on in their fixed transit time), so a buffer row
+    would be a constant-target sample that never gets predicted. Breakdown
+    rows and deadlock displacements (zero duration) are not operations.
 
     Returns (event, features) tuples in chronological order.
     """
@@ -90,16 +95,7 @@ def filter_and_join(
     skipped_system = 0
 
     for event in events:
-        if event.is_breakdown:
-            skipped_system += 1
-            continue
-        if event.order_id == "BREAKDOWN":
-            skipped_system += 1
-            continue
-        if event.station_type == "overflow":
-            # Deadlock displacement rows carry a real order_id but a zero
-            # duration, which violates the integer contract's >= 1 s invariant
-            # and would become a zero-target training sample.
+        if event.station_type != "machine" or event.is_breakdown or event.order_id == "BREAKDOWN":
             skipped_system += 1
             continue
 
@@ -113,7 +109,7 @@ def filter_and_join(
     result.sort(key=lambda x: x[0].timestamp_event_start)
 
     print(f"  Events total: {len(events)}")
-    print(f"  System events skipped: {skipped_system}")
+    print(f"  Non-operation rows skipped (buffers, breakdowns, displacements): {skipped_system}")
     print(f"  Events without order skipped: {skipped_no_order}")
     print(f"  Productive events with features: {len(result)}")
 
@@ -247,16 +243,7 @@ def save(
     ])
 
     # Append shift + time-encoding entries manually (not part of build_feature_layout)
-    layout.append({
-        "name": "shift",
-        "offset": offset,
-        "size": N_SHIFTS,
-        "values": {
-            "Fruehschicht": offset + 0,
-            "Spaetschicht": offset + 1,
-            "Nachtschicht": offset + 2,
-        },
-    })
+    layout.append({"name": "shift", "offset": offset, "size": N_SHIFTS})
     offset += N_SHIFTS
 
     for j, period in enumerate(TIME_PERIODS_SECONDS):

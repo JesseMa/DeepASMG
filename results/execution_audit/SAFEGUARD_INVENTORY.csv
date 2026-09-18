@@ -1,11 +1,9 @@
-safeguard,runtime_function,category,counter_status
-routing-admissibility mask application,RefTransition._apply_mask_and_draw / foundation_dynamics.masked_categorical_draw; DeepTransition masked_fill+softmax,routine,"RefSim: mask_calls (persisted in run meta); DeepSim: native masked_fill, not separately counted"
-inadmissible probability-mass removal,masked_categorical_draw (removed_mass),routine,RefSim: mask_effective / mask_max_removed (persisted)
-renormalization after masking,masked_categorical_draw (weights/kept_mass),routine,RefSim: mask_effective = renormalization count (persisted)
-admissible-set sampling,rng.choice over renormalized admissible weights,routine,inherent contract operation; no separate counter
-zero-mass fallback (uniform over admissible),RefTransition (all admissible mass = 0 edge case),corrective,RefSim: mask_fallback (persisted) = 0 across all seeds/systems
-invalid target selected after masking,post-mask selected-target admissibility check,corrective,masked-rerun instrumentation = 0; not in main-run meta
-"duration clamp max(1.0, .)",GroundRepair/DeepRepair.predict_repair_time; processing draws,corrective,"NOT_PERSISTED (inline max, no counter)"
-"stress/parameter floor max(0.1, stress)",GroundRepair.predict_repair_time,corrective,NOT_PERSISTED
-deadlock detection and recovery,"DeadlockManager (_deadlock_count, _overflow_total_events)",corrective,counter EXISTS in DeadlockManager and engine run summary; NOT persisted to closed_loop_runs.pkl
-NaN/inf/negative probability sanitation,"positive-support heads (softplus/exp), masked_fill(-inf)+softmax",corrective,structurally prevented; no sanitation event counter
+safeguard,runtime_function,category,counter
+routing admissibility mask and renormalization,RefTransition via foundation_dynamics.masked_categorical_prepare; DeepTransition masked_fill(-inf) + softmax,routine,routing.mask_calls (every masked draw) and routing.mask_effective (draws in which the mask removed positive fitted mass); m6_routine_constraint_enforcement.csv
+"repair stress floor max(0.1, stress)",GroundRepair.predict_repair_time,routine,repair.stress_calls / repair.stress_floor; m6_routine_constraint_enforcement.csv
+zero-mass routing fallback (uniform over the admissible set),RefTransition when the fitted table has no mass on any admissible target; DeepTransition cannot reach it (softmax mass is positive everywhere) and raises instead,corrective,routing.mask_fallback; m6_corrective_safeguards.csv
+"processing draw below 0.1 s lifted to the whole-second floor ceil(max(0.1, draw))",GroundProcessTime / RefProcessTime / DeepProcessTime.predict,corrective,processing.proc_draws / processing.proc_clamp; m6_corrective_safeguards.csv
+repair draw below 1 s lifted by the whole-second rounding,GroundRepair / RefRepair / DeepRepair.predict_repair_time,corrective,repair.repair_draws / repair.repair_clamp; m6_corrective_safeguards.csv
+TTF draw below 1 s lifted by the whole-second rounding,GroundSurvival / RefSurvival / RefSurvivalWeibull / DeepSurvival.sample_time_to_failure,corrective,survival.ttf_draws / survival.ttf_clamp; m6_corrective_safeguards.csv
+"log(u) guard u >= 1e-10 in inversion sampling",DeepRepair.predict_repair_time; DeepSurvival.sample_time_to_failure,corrective,repair.repair_logu_draws / repair.repair_logu_guard; survival.ttf_logu_draws / survival.ttf_logu_guard; m6_corrective_safeguards.csv
+deadlock detection and recovery (displacement to overflow and later delivery),DeadlockManager.detect_cycle / resolve_deadlock / drain_overflow,corrective,deadlock.deadlock_count; m6_corrective_safeguards.csv

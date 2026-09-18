@@ -123,22 +123,13 @@ class DeepRepair(RepairStrategy):
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
         """Deployed Exponential params (scale = exp(log_scale) = mean)."""
-        if self._regressor_model is None or station_id not in self._reg_station_map:
-            raise RuntimeError(f"DeepRepair.distribution_params: station '{station_id}' missing.")
+        if self._regressor_model is None:
+            raise RuntimeError("DeepRepair.distribution_params: model not loaded.")
         output = infer_single(
             self._regressor_model,
             self._encode_input(station_id, operating_time_since_last, utilization),
         )
         return {"family": "exponential", "scale": float(np.exp(float(output[0].item())))}
-
-    def notify_cycle_end(
-        self,
-        station_id: str,
-        ttf: float,
-        n_jobs: int,
-        repair_time: float,
-    ) -> None:
-        """No-op: the feature set does not depend on TTF history."""
 
     def _encode_input(
         self,

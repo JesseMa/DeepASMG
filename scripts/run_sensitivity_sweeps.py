@@ -16,13 +16,8 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
 
-from src.experiments.sim_runner import SimFactorySet, load_model_paths, run_replications  # noqa: E402
-from src.config.simulation_config import (  # noqa: E402
-    TRAIN_RATIO,
-    SIM_START_TIMESTAMP,
-    SimulationConfig,
-    get_seeds, N_RUNS,
-)
+from src.experiments.sim_runner import SimFactorySet, models_trained, run_replications  # noqa: E402
+from src.config.simulation_config import TRAIN_RATIO, get_seeds, N_RUNS  # noqa: E402
 from src.fitting.ref_data_preparation.ref_analyzer import RefSimAnalyzer  # noqa: E402
 
 REFERENCE_FACTORIES = {
@@ -44,7 +39,7 @@ def _run_config(
     """
     print(f"\n[{name}] refit RefSim (extended analyzer) on {data_dir.name} …")
     stats = RefSimAnalyzer(data_dir=data_dir, train_ratio=TRAIN_RATIO).extract_all()
-    fs = SimFactorySet(model_paths=load_model_paths(model_dir), stats_data=stats)
+    fs = SimFactorySet(model_dir=model_dir, stats_data=stats)
     out: dict = {"provenance": {}}
     out["GroundSim"] = shared["GroundSim"]
     out["provenance"]["GroundSim"] = "shared across configurations (generator-only, CRN)"
@@ -52,15 +47,13 @@ def _run_config(
         out["GroundSim-DEC"] = shared["GroundSim-DEC"]
         out["provenance"]["GroundSim-DEC"] = "shared across configurations (generator-only, CRN)"
     t0 = time.time()
-    out["DeepSim"] = run_replications("DeepSim", fs.deep, seeds,
-                                      return_kpis=True, return_ct=True)
+    out["DeepSim"] = run_replications("DeepSim", fs.deep, seeds)
     out["provenance"]["DeepSim"] = "recomputed (this configuration's model set)"
     print(f"  DeepSim    recomputed ({time.time()-t0:.0f}s)")
     for rv in ref_variants:
         sysname = [k for k, v in REFERENCE_FACTORIES.items() if v == rv][0]
         t0 = time.time()
-        out[sysname] = run_replications(sysname, getattr(fs, rv), seeds,
-                                        return_kpis=True, return_ct=True)
+        out[sysname] = run_replications(sysname, getattr(fs, rv), seeds)
         out["provenance"][sysname] = "recomputed (RefSim refit)"
         print(f"  {sysname:10} recomputed ({time.time()-t0:.0f}s)")
     return out, fs
@@ -69,20 +62,8 @@ def _run_config(
 def _hybrid_factory(fs: SimFactorySet, *, stat_survival: bool):
     """Learned core with the statistical repair module (module selection), and
     optionally the statistical survival module as the exposure-only contrast."""
-    def make(seed: int, run_id: int) -> SimulationConfig:
-        deep = fs.deep(seed, run_id)
-        ref = fs.refm(seed, run_id)
-        return SimulationConfig(
-            process_time_strategy=deep.process_time_strategy,
-            transition_strategy=deep.transition_strategy,
-            survival_strategy=ref.survival_strategy if stat_survival else deep.survival_strategy,
-            repair_strategy=ref.repair_strategy,
-            product_strategy=deep.product_strategy,
-            duration_days=deep.duration_days, warmup_days=deep.warmup_days,
-            seed=seed, initial_orders=deep.initial_orders, run_id=run_id,
-            start_timestamp=SIM_START_TIMESTAMP,
-        )
-    return make
+    kinds = ("deep", "deep", "stat" if stat_survival else "deep", "stat", "deep")
+    return lambda seed, run_id: fs.compose(seed, run_id, kinds)
 
 
 def _first_data_dir(parent: Path) -> Path | None:
@@ -130,7 +111,7 @@ def _sweep_horizon(args: argparse.Namespace, seeds, shared: dict, result: dict) 
     for hd in sorted((args.sensitivity_root / "data").glob("days_*")):
         model_dir = args.sensitivity_root / "models" / hd.name
         data_dir = _first_data_dir(hd)
-        if data_dir is None or not (model_dir / "trained_model_paths.json").exists():
+        if data_dir is None or not models_trained(model_dir):
             print(f"[skip horizon {hd.name}] data/model missing")
             continue
         result["horizon"][hd.name], _ = _run_config(
@@ -147,7 +128,7 @@ def _sweep_draw365(args: argparse.Namespace, seeds, shared: dict, result: dict) 
     for sd in sorted((args.sensitivity_root / "data").glob("seed_*")):
         model_dir = args.sensitivity_root / "models" / sd.name
         data_dir = _first_data_dir(sd)
-        if data_dir is not None and (model_dir / "trained_model_paths.json").exists():
+        if data_dir is not None and models_trained(model_dir):
             draws.append((sd.name, data_dir, model_dir))
     for name, data_dir, model_dir in draws[:N_DRAW365_CONFIGS]:
         result["draw365"][name], _ = _run_config(
@@ -166,7 +147,7 @@ def _sweep_draw31(args: argparse.Namespace, seeds, shared: dict, result: dict) -
             args.sensitivity_root / "models" / "31d_seed_variance" / sub.name
         )
         data_dir = _first_data_dir(sub)
-        if data_dir is None or not (model_dir / "trained_model_paths.json").exists():
+        if data_dir is None or not models_trained(model_dir):
             continue
         cfg_runs, fs31 = _run_config(
             f"draw31/{sub.name}", data_dir, model_dir, ["refm"],
@@ -175,7 +156,7 @@ def _sweep_draw31(args: argparse.Namespace, seeds, shared: dict, result: dict) -
             t0 = time.time()
             cfg_runs[key] = run_replications(
                 f"{sub.name}/{key}", _hybrid_factory(fs31, stat_survival=sv),
-                seeds, return_kpis=True, return_ct=True)
+                seeds)
             cfg_runs["provenance"][key] = "recomputed (module selection)"
             print(f"  {key:32} recomputed ({time.time()-t0:.0f}s)")
         result["draw31"][sub.name] = cfg_runs
@@ -227,11 +208,11 @@ def main() -> None:
     shared = {}
     t0 = time.time()
     shared["GroundSim"] = run_replications(
-        "GroundSim", fs_shared.base, seeds, return_kpis=True, return_ct=True)
+        "GroundSim", fs_shared.base, seeds)
     print(f"[shared] GroundSim ({time.time()-t0:.0f}s)")
     t0 = time.time()
     shared["GroundSim-DEC"] = run_replications(
-        "GroundSim-DEC", fs_shared.floor, seeds, return_kpis=True, return_ct=True)
+        "GroundSim-DEC", fs_shared.floor, seeds)
     print(f"[shared] GroundSim-DEC ({time.time()-t0:.0f}s)")
 
     # (a) Horizon sweep — RefSim-M

@@ -1,4 +1,7 @@
-"""Statistical repair-duration strategy: Exponential from per-station repair means."""
+"""Statistical repair-duration strategy: Exponential from per-station repair means.
+
+A fallible machine without a training repair is simulated from the
+fleet-pooled scale, as in ref_survival."""
 
 from __future__ import annotations
 
@@ -7,6 +10,7 @@ from typing import Dict, TYPE_CHECKING
 import numpy as np
 
 from src.dynamics.foundation_dynamics import RepairStrategy
+from src.dynamics.RefSim.ref_survival import fill_pooled
 
 if TYPE_CHECKING:
     from src.config.schema import StationConfig
@@ -19,20 +23,14 @@ class RefRepair(RepairStrategy):
         self,
         repair_times: Dict[str, float],
         rng: np.random.Generator,
+        pooled_scale: float,
     ) -> None:
-        self._repair_scales = repair_times
+        self._repair_scales = dict(repair_times)
+        self._pooled = pooled_scale
         self._rng = rng
 
     def initialize(self, stations: Dict[str, "StationConfig"]) -> None:
-        missing = []
-        for sid, sc in stations.items():
-            if sc.is_machine and sc.mttr > 0 and sid not in self._repair_scales:
-                missing.append(sid)
-        if missing:
-            raise ValueError(
-                f"Fail fast: missing repair statistics for stations {missing}. "
-                f"Machines would be simulated with no repair time (0s downtime)."
-            )
+        fill_pooled("RefRepair", self._repair_scales, self._pooled, stations)
 
     def predict_repair_time(
         self,
@@ -41,12 +39,6 @@ class RefRepair(RepairStrategy):
         utilization: float,                # ignored
         current_time: float = 0.0,  # noqa: ARG002
     ) -> float:
-        if station_id not in self._repair_scales:
-            raise RuntimeError(
-                f"Fail fast: no repair statistics for station '{station_id}'. "
-                f"initialize() should have prevented this."
-            )
-
         scale = self._repair_scales[station_id]
         self._sg_repair_draws = getattr(self, "_sg_repair_draws", 0) + 1
         return float(np.ceil(self._rng.exponential(scale=scale)))  # integer time contract

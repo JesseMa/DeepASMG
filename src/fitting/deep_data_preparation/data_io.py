@@ -89,12 +89,7 @@ def build_feature_layout(
     offset = 0
 
     for name, mapping in groups:
-        layout.append({
-            "name": name,
-            "offset": offset,
-            "size": len(mapping),
-            "values": {v: i + offset for v, i in mapping.items()},
-        })
+        layout.append({"name": name, "offset": offset, "size": len(mapping)})
         offset += len(mapping)
 
     return layout, offset

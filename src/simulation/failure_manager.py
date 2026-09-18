@@ -85,13 +85,6 @@ class FailureManager:
             n_jobs=station.jobs_in_cycle,
             repair_time=event.data["repair_time"],
         )
-        self._repair.notify_cycle_end(
-            station_id=station.id,
-            ttf=station.accumulated_op_time,
-            n_jobs=station.jobs_in_cycle,
-            repair_time=event.data["repair_time"],
-        )
-
         self._start_new_cycle(station, current_time=current_time)
 
         on_slot_freed_fn(station)

@@ -7,7 +7,8 @@ from typing import Any, Dict, List, Optional, Set, TYPE_CHECKING
 import numpy as np
 
 from src.dynamics.foundation_dynamics import (
-    TransitionStrategy, normalize_distribution, masked_categorical_probs, END_TOKEN,
+    TransitionStrategy, normalize_distribution, masked_categorical_prepare,
+    masked_categorical_probs, END_TOKEN,
     weighted_draw,
 )
 from src.config.routing_keys import resolve_key
@@ -106,8 +107,8 @@ class GroundTransition(TransitionStrategy):
         if dist is None:
             return {"family": "categorical", "probs": {}}
         targets, weights = dist
-        return {"family": "categorical",
-                "probs": masked_categorical_probs(targets, weights, available_targets)}
+        return {"family": "categorical", "probs": masked_categorical_probs(
+            masked_categorical_prepare(targets, weights, available_targets, label=station_id))}
 
     def _resolve_sequential_rule(
         self, station_id: str, order: "Order"

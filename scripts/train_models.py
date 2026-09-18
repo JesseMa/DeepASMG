@@ -20,9 +20,6 @@ sys.path.insert(0, str(REPO))
 from src.config.simulation_config import (  # noqa: E402
     HPO_TEST_SIZE, MAX_EPOCHS, PATIENCE, TRAIN_RATIO, TRAIN_SEED,
 )
-from src.fitting.deep_training.foundation_training import (  # noqa: E402
-    validate_deployment_eligibility,
-)
 from src.fitting.deep_training.train_process_time import train as train_pt  # noqa: E402
 from src.fitting.deep_training.train_transition import train as train_tr  # noqa: E402
 from src.fitting.deep_training.train_survival import train as train_sv  # noqa: E402
@@ -31,9 +28,7 @@ from src.fitting.deep_training.train_product import train as train_pr  # noqa: E
 from src.fitting.ref_data_preparation.ref_analyzer import (  # noqa: E402
     RefSimAnalyzer,
 )
-
-# Fallback hyperparameters: used only when <hpo_dir>/<model>_best_params.json
-# is missing (HPO skipped); otherwise _get_params() loads the HPO bests.
+from src.experiments.sim_runner import MODULES, model_paths  # noqa: E402
 
 # Display name and train() entry point per model, in training order.
 TRAINERS = (
@@ -182,30 +177,16 @@ def train_all(
         )
         print(f"  val_loss={results[name]['best_val_loss']:.6f}  "
               f"epochs={results[name]['epochs_trained']}")
-        validate_deployment_eligibility(name, model_dir)
 
-    model_paths = {
-        "pt_model_path":     results["process_time"]["model_path"],
-        "pt_metadata_path":  results["process_time"]["metadata_path"],
-        "pt_ckpt_path":      results["process_time"]["best_ckpt_path"],
-        "tr_model_path":     results["transition"]["model_path"],
-        "tr_metadata_path":  results["transition"]["metadata_path"],
-        "tr_ckpt_path":      results["transition"]["best_ckpt_path"],
-        "sv_model_path":     results["survival"]["model_path"],
-        "sv_metadata_path":  results["survival"]["metadata_path"],
-        "sv_ckpt_path":      results["survival"]["best_ckpt_path"],
-        "rt_model_path":     results["repair_time"]["model_path"],
-        "rt_metadata_path":  results["repair_time"]["metadata_path"],
-        "rt_ckpt_path":      results["repair_time"]["best_ckpt_path"],
-        "pr_model_path":     results["product"]["model_path"],
-        "pr_metadata_path":  results["product"]["metadata_path"],
-        "pr_ckpt_path":      results["product"]["best_ckpt_path"],
-    }
-
-    paths_file = model_dir / "trained_model_paths.json"
-    with open(paths_file, "w") as f:
-        json.dump(model_paths, f, indent=2)
-    print(f"\nModel paths saved to: {paths_file}")
+    # The trainers write fixed file names; the runner derives its paths from
+    # the same names (sim_runner.MODEL_FILES). Refuse a set that drifted.
+    expected = model_paths(model_dir)
+    for slot, key in zip(MODULES, TRAINERS, strict=True):
+        got = {f"{slot}_model_path": str(Path(results[key[0]]["model_path"]).resolve()),
+               f"{slot}_metadata_path": str(Path(results[key[0]]["metadata_path"]).resolve())}
+        for k, v in got.items():
+            if v != expected[k]:
+                raise SystemExit(f"Fail fast: {key[0]} wrote {k}={v}, the runner expects {expected[k]}")
 
     manifest_file = _write_manifest(
         model_dir, data_dir, params, results, max_epochs, patience, test_size,

@@ -15,21 +15,14 @@ from typing import Any, Deque, Dict, Optional, Set, Tuple, TYPE_CHECKING
 
 import numpy as np
 
-_VISIT_CAP = 4
-
 from src.dynamics.foundation_dynamics import (
     TransitionStrategy, set_onehot, NONE_TOKEN, END_TOKEN, load_deep_model,
-    compile_offsets, infer_single, weighted_draw,
+    compile_offsets, infer_single, weighted_draw, visit_token,
 )
 
 if TYPE_CHECKING:
     from src.config.schema import StationConfig
     from src.simulation.order import Order
-
-
-def _visit_token(n: int) -> str:
-    """Arrival index token, mirroring prepare_transition_data.visit_token."""
-    return str(min(max(int(n), 1), _VISIT_CAP))
 
 
 class DeepTransition(TransitionStrategy):
@@ -44,15 +37,10 @@ class DeepTransition(TransitionStrategy):
         model_path: str | Path,
         metadata_path: str | Path,
         rng: np.random.Generator,
-        temperature: float = 1.0,
     ) -> None:
-        if temperature <= 0:
-            raise ValueError("Fail fast: temperature must be > 0.")
-
         self._model_path = Path(model_path)
         self._metadata_path = Path(metadata_path)
         self._rng = rng
-        self._temperature = temperature
 
         self._model = None
         self._metadata = None
@@ -124,7 +112,7 @@ class DeepTransition(TransitionStrategy):
         self,
         station_id: str,
         order: "Order",
-        available_targets: Optional[Set[str]] = None,
+        available_targets: Set[str],
     ) -> np.ndarray:
         """Classes outside available_targets are masked to -inf before the softmax."""
         import torch
@@ -132,27 +120,23 @@ class DeepTransition(TransitionStrategy):
         x = self._encode_single(station_id, order)
         logits = infer_single(self._model, x)
 
-        if self._temperature != 1.0:
-            logits = logits / self._temperature
-
-        if available_targets is not None:
-            # The mask depends only on the target set, which the engine builds
-            # once per station, so it is cached rather than rebuilt per event.
-            key = frozenset(available_targets)
-            inverse = self._mask_cache.get(key)
-            if inverse is None:
-                mask = torch.tensor(
-                    [name in available_targets for name in self._class_names],
-                    dtype=torch.bool,
+        # The mask depends only on the target set, which the engine builds
+        # once per station, so it is cached rather than rebuilt per event.
+        key = frozenset(available_targets)
+        inverse = self._mask_cache.get(key)
+        if inverse is None:
+            mask = torch.tensor(
+                [name in available_targets for name in self._class_names],
+                dtype=torch.bool,
+            )
+            if not mask.any():
+                raise ValueError(
+                    f"Routing mask empty for station '{station_id}': "
+                    f"no class_names ∈ available_targets={available_targets}."
                 )
-                if not mask.any():
-                    raise ValueError(
-                        f"Routing mask empty for station '{station_id}': "
-                        f"no class_names ∈ available_targets={available_targets}."
-                    )
-                inverse = ~mask
-                self._mask_cache[key] = inverse
-            logits = logits.masked_fill(inverse, float("-inf"))
+            inverse = ~mask
+            self._mask_cache[key] = inverse
+        logits = logits.masked_fill(inverse, float("-inf"))
 
         probs = torch.softmax(logits, dim=0).numpy()
         return probs / probs.sum()
@@ -161,18 +145,19 @@ class DeepTransition(TransitionStrategy):
         self,
         station_id: str,
         order: "Order",
-        available_targets: Optional[Set[str]] = None,
+        available_targets: Set[str],
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[str]:
         """Sample the next station; None if "End" was sampled. Order: encode with
         the CURRENT buffer, predict, then append (modell, chosen_station)."""
         self._ensure_loaded()
 
-        # Read-only instrumentation: no RNG draw, no control-flow effect.
-        if available_targets is not None:
-            self._sg_mask_calls = getattr(self, "_sg_mask_calls", 0) + 1
-            if not all(name in available_targets for name in self._class_names):
-                self._sg_mask_effective = getattr(self, "_sg_mask_effective", 0) + 1
+        # Read-only instrumentation: no RNG draw, no control-flow effect. The
+        # softmax puts positive mass on every class, so any inadmissible class
+        # means the mask removed mass.
+        self._sg_mask_calls = getattr(self, "_sg_mask_calls", 0) + 1
+        if not all(name in available_targets for name in self._class_names):
+            self._sg_mask_effective = getattr(self, "_sg_mask_effective", 0) + 1
 
         probs = self._compute_probs(station_id, order, available_targets)
         chosen_idx = weighted_draw(self._num_classes, probs, self._rng)
@@ -185,36 +170,20 @@ class DeepTransition(TransitionStrategy):
             return None
         return chosen_station
 
-    def predict_proba(
-        self,
-        station_id: str,
-        order: "Order",
-        available_targets: Optional[Set[str]] = None,
-    ) -> Dict[str, float]:
-        """Full probability distribution; does NOT update the slot buffer."""
-        self._ensure_loaded()
-
-        probs = self._compute_probs(station_id, order, available_targets)
-        return {
-            name: float(prob)
-            for name, prob in zip(self._class_names, probs, strict=True)
-        }
-
     def distribution_params(
         self,
         station_id: str,
         order: "Order",
-        available_targets: Optional[Set[str]] = None,
+        available_targets: Set[str],
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Dict[str, object]:
-        """Categorical distribution over admissible targets; no buffer update."""
-        proba = self.predict_proba(station_id, order, available_targets)
-        if available_targets is not None:
-            proba = {k: v for k, v in proba.items() if k in available_targets}
-        total = sum(proba.values())
-        if total > 0:
-            proba = {k: v / total for k, v in proba.items()}
-        return {"family": "categorical", "probs": proba}
+        """Categorical distribution over the admissible targets; no buffer update."""
+        self._ensure_loaded()
+        probs = self._compute_probs(station_id, order, available_targets)
+        return {"family": "categorical",
+                "probs": {name: float(p) for name, p in zip(self._class_names, probs, strict=True)
+                          if name in available_targets}}
+
     def _encode_single(self, station_id: str, order: "Order") -> np.ndarray:
         x = np.zeros(self._feature_dim, dtype=np.float32)
         none = self._none_token
@@ -231,7 +200,7 @@ class DeepTransition(TransitionStrategy):
         set_onehot(x, self._offsets["from_station"], maps["from_station"],
                    station_id)
         set_onehot(x, self._offsets["visit"], maps["visit"],
-                   _visit_token(order.visits.get(station_id, 1)))
+                   visit_token(order.visits.get(station_id, 1)))
 
         buf = self._slot_buffers.get(station_id)
         if buf is None:

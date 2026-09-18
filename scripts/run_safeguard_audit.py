@@ -19,7 +19,6 @@ import time
 from pathlib import Path
 
 import numpy as np
-from scipy.stats import wasserstein_distance
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO))
@@ -31,7 +30,6 @@ from src.config.simulation_config import (  # noqa: E402
 from scripts.run_closed_loop import build_systems  # noqa: E402
 
 AUTH_PKL = REPO / "results/verification/closed_loop_runs.pkl"
-AUTH_DIST = REPO / "results/verification/system_distances.csv"
 OUT_PKL = REPO / "results/verification/closed_loop_runs_safeguards.pkl"
 AUDIT_DIR = REPO / "results/execution_audit"
 
@@ -44,7 +42,7 @@ def run_instrumented(seeds, out_pkl=OUT_PKL):
     runs_by_sim = {}
     for name, fac in systems.items():
         t0 = time.time()
-        runs_by_sim[name] = run_replications(name, fac, seeds, return_kpis=True, return_ct=True)
+        runs_by_sim[name] = run_replications(name, fac, seeds)
         print(f"  {name:14} {len(runs_by_sim[name])} runs ({time.time()-t0:.0f}s)", flush=True)
     out_pkl.parent.mkdir(parents=True, exist_ok=True)
     with out_pkl.open("wb") as f:
@@ -53,14 +51,13 @@ def run_instrumented(seeds, out_pkl=OUT_PKL):
     return runs_by_sim
 
 
-def gate_no_behavior_change(runs_by_sim, auth_pkl=AUTH_PKL, auth_dist=AUTH_DIST,
-                            audit_dir=AUDIT_DIR):
+def gate_no_behavior_change(runs_by_sim, auth_pkl=AUTH_PKL, audit_dir=AUDIT_DIR):
+    """Every instrumented run must reproduce its authoritative run bit for bit.
+
+    Cycle-time series and KPIs are compared directly; anything derived from
+    them (W1 and its tables) is then identical by construction.
+    """
     auth = pickle.load(auth_pkl.open("rb"))["runs_by_sim"]
-    authw = {}
-    with auth_dist.open() as f:
-        for row in csv.DictReader(f):
-            authw[(row["system"], int(row["seed"]))] = float(row["w1"])
-    gnd = {r["seed"]: r["ct"] for r in runs_by_sim["GroundSim"]}
     rows, ok_all = [], True
     for sys_name, runs in runs_by_sim.items():
         for r in runs:
@@ -69,18 +66,14 @@ def gate_no_behavior_change(runs_by_sim, auth_pkl=AUTH_PKL, auth_dist=AUTH_DIST,
             nv_ok = r["kpis"]["n_valid"] == a["kpis"]["n_valid"]
             kpi_ok = all(abs(float(r["kpis"][k]) - float(a["kpis"][k])) == 0.0
                          for k in a["kpis"] if isinstance(a["kpis"][k], (int, float)))
-            w1_ok = True
-            if sys_name != "GroundSim" and (sys_name, r["seed"]) in authw:
-                w1 = float(wasserstein_distance(gnd[r["seed"]], r["ct"]))
-                w1_ok = abs(w1 - authw[(sys_name, r["seed"])]) < 1e-8
-            row_ok = ct_ok and nv_ok and kpi_ok and w1_ok
+            row_ok = ct_ok and nv_ok and kpi_ok
             ok_all = ok_all and row_ok
             rows.append({"system": sys_name, "seed": r["seed"],
                          "ct_bit_identical": int(ct_ok), "n_valid_match": int(nv_ok),
-                         "kpi_exact": int(kpi_ok), "w1_lt_1e-8": int(w1_ok), "pass": int(row_ok)})
+                         "kpi_exact": int(kpi_ok), "pass": int(row_ok)})
     with (audit_dir / "m6_no_behavior_change.csv").open("w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["system", "seed", "ct_bit_identical",
-                                          "n_valid_match", "kpi_exact", "w1_lt_1e-8", "pass"])
+                                          "n_valid_match", "kpi_exact", "pass"])
         w.writeheader()
         w.writerows(rows)
     return ok_all, rows
@@ -91,15 +84,10 @@ def aggregate(runs_by_sim, audit_dir=AUDIT_DIR):
     by_seed = []
     for sys_name, runs in runs_by_sim.items():
         for r in runs:
-            sg = r["meta"].get("safeguards", {})
-            rm = r["meta"].get("routing_mask")
             row = {"system": sys_name, "seed": r["seed"]}
-            for mod, d in sg.items():
+            for mod, d in r["meta"]["safeguards"].items():
                 for k, v in d.items():
                     row[f"{mod}.{k}"] = v
-            row["ref_mask_calls"] = int(rm["mask_calls"]) if rm else 0
-            row["ref_mask_effective"] = int(rm["mask_effective"]) if rm else 0
-            row["ref_mask_fallback"] = int(rm["mask_fallback"]) if rm else 0
             by_seed.append(row)
 
     cols = ["system", "seed"] + sorted({k for r in by_seed for k in r if k not in ("system", "seed")})
@@ -115,26 +103,18 @@ def aggregate(runs_by_sim, audit_dir=AUDIT_DIR):
 
     systems = list(runs_by_sim.keys())
 
-    # Renorm counts mix two definitions: Ref removed_mass>0, Deep any-inadmissible.
+    # A renormalization is a masked draw that removed positive fitted mass:
+    # always for a softmax (DeepSim), only where the fitted table puts mass on
+    # an inadmissible target (RefSim).
     routine_rows = []
     for sysn in systems:
-        ref_calls, ref_eff = s(sysn, "ref_mask_calls"), s(sysn, "ref_mask_effective")
-        deep_calls, deep_eff = s(sysn, "routing.mask_calls"), s(sysn, "routing.mask_effective")
-        mask_calls = ref_calls + deep_calls
-        mask_eff = ref_eff + deep_eff
-        proc_clip = s(sysn, "processing.proc_nnclip")
-        proc_clip_calls = s(sysn, "processing.proc_nnclip_calls")
-        ttf_clip = s(sysn, "survival.ttf_nnclip")
-        ttf_clip_calls = s(sysn, "survival.ttf_nnclip_calls")
-        stress_floor = s(sysn, "repair.stress_floor")
-        stress_calls = s(sysn, "repair.stress_calls")
+        mask_calls, mask_eff = s(sysn, "routing.mask_calls"), s(sysn, "routing.mask_effective")
         routine_rows.append({
             "system": sysn,
             "routing_mask_calls": mask_calls, "routing_renormalizations": mask_eff,
             "routing_renorm_rate": (mask_eff / mask_calls) if mask_calls else "NOT_APPLICABLE",
-            "nn_param_clip_processing": proc_clip, "nn_param_clip_processing_calls": proc_clip_calls,
-            "nn_param_clip_survival": ttf_clip, "nn_param_clip_survival_calls": ttf_clip_calls,
-            "repair_stress_floor_binds": stress_floor, "repair_stress_calls": stress_calls,
+            "repair_stress_floor_binds": s(sysn, "repair.stress_floor"),
+            "repair_stress_calls": s(sysn, "repair.stress_calls"),
         })
     if not routine_rows:
         raise SystemExit("No systems in the instrumented rerun: routine-constraint "
@@ -156,7 +136,7 @@ def aggregate(runs_by_sim, audit_dir=AUDIT_DIR):
             "ttf_draws": s(sysn, "survival.ttf_draws"),
             "repair_log0_guard": s(sysn, "repair.repair_logu_guard"),
             "ttf_log0_guard": s(sysn, "survival.ttf_logu_guard"),
-            "zero_mass_routing_fallback": s(sysn, "ref_mask_fallback"),
+            "zero_mass_routing_fallback": s(sysn, "routing.mask_fallback"),
             "deadlock_detections_recoveries": s(sysn, "deadlock.deadlock_count"),
         })
     if not corr_rows:
@@ -174,7 +154,6 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--num-seeds", type=int, default=N_RUNS)
     ap.add_argument("--closed-loop-file", type=Path, default=AUTH_PKL)
-    ap.add_argument("--system-distances", type=Path, default=AUTH_DIST)
     ap.add_argument("--output-dir", type=Path, default=AUDIT_DIR)
     args = ap.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
@@ -191,7 +170,7 @@ def main():
     print(f"[safeguards] instrumented rerun: {len(seeds)} seeds x {EVAL_DAYS}d")
     runs_by_sim = run_instrumented(seeds, out_pkl)
     ok, nbc_rows = gate_no_behavior_change(
-        runs_by_sim, args.closed_loop_file, args.system_distances, args.output_dir,
+        runs_by_sim, args.closed_loop_file, args.output_dir,
     )
     routine_rows, corr_rows = aggregate(runs_by_sim, args.output_dir)
 

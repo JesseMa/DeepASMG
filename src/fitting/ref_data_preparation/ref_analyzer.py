@@ -85,7 +85,9 @@ class RefSimAnalyzer:
             orders_features_all.update(run_features)
             orders_completions_all.update(run_completions)
 
-        mttf_data, repair_times = self._extract_breakdowns_and_repairs(events_all)
+        mttf_data, repair_times, mttf_pooled, repair_pooled = (
+            self._extract_breakdowns_and_repairs(events_all)
+        )
 
         return {
             "process_times": self._extract_process_times(events_all, orders_features_all),
@@ -100,7 +102,9 @@ class RefSimAnalyzer:
             ),
             "weibull_ttf": self._extract_weibull_ttf(events_all),
             "mttf_data": mttf_data,
+            "mttf_pooled": mttf_pooled,
             "repair_times": repair_times,
+            "repair_pooled": repair_pooled,
             "product_features": self._extract_product_features(orders_features_all),
             "train_cut_metadata": list(self._cut_metadata),
         }
@@ -197,11 +201,15 @@ class RefSimAnalyzer:
         events: List[Dict],
         orders_features: Dict[str, Dict[str, str]],
     ) -> Dict[str, Tuple[float, float]]:
-        """Sample mean/std of net_process_time per station (station-marginal)."""
+        """Dequantized mean/std of net_process_time per machine (station-marginal).
+
+        Machine operations only, like the DeepSim preparation: buffers are
+        never asked for a duration.
+        """
         times: Dict[str, List[float]] = defaultdict(list)
         n_orphan = 0
         for e in events:
-            if e["is_breakdown"] or e["net_process_time"] <= 0:
+            if e["station_type"] != "machine" or e["is_breakdown"] or e["net_process_time"] <= 0:
                 continue
             feats = orders_features.get(e["order_id"])
             if feats is None:
@@ -265,7 +273,7 @@ class RefSimAnalyzer:
         vals_v: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
         vals_p: Dict[str, Dict[str, List[float]]] = defaultdict(lambda: defaultdict(list))
         for e in events:
-            if e["is_breakdown"] or e["net_process_time"] <= 0:
+            if e["station_type"] != "machine" or e["is_breakdown"] or e["net_process_time"] <= 0:
                 continue
             feats = orders_features.get(e["order_id"])
             if feats is None:
@@ -406,12 +414,21 @@ class RefSimAnalyzer:
         return out
 
     def _extract_weibull_ttf(self, events: List[Dict]) -> Dict[str, Any]:
-        """Weibull MLE (shape, scale) per station with right-censoring."""
+        """Weibull MLE (shape, scale) per station with right-censoring.
+
+        A machine without enough training spells has no entry; the strategy
+        then simulates it from the fleet-pooled fit (``pooled``), the same
+        rule DeepSim applies through its all-zero station block.
+        """
         spells = self._extract_ttf_spells(events)
         params: Dict[str, Tuple[float, float]] = {}
         coverage: Dict[str, Dict[str, int]] = {}
+        all_unc: List[float] = []
+        all_cen: List[float] = []
         for station, d in spells.items():
             unc, cen = d["uncensored"], d["censored"]
+            all_unc += unc
+            all_cen += cen
             coverage[station] = {
                 "n_spells": len(unc) + len(cen),
                 "n_uncensored": len(unc),
@@ -420,7 +437,8 @@ class RefSimAnalyzer:
             fit = self._fit_weibull_censored(unc, cen)
             if fit is not None:
                 params[station] = fit
-        return {"params": params, "coverage": coverage}
+        return {"params": params, "coverage": coverage,
+                "pooled": self._fit_weibull_censored(all_unc, all_cen)}
 
     @staticmethod
     def _fit_weibull_censored(
@@ -448,11 +466,14 @@ class RefSimAnalyzer:
             k, lam = abs(float(p[0])), abs(float(p[1]))
             if k <= 0 or lam <= 0:
                 return 1e18
-            surv = lambda x: np.exp(-np.power(np.maximum(x, 0.0) / lam, k))
-            p_int = surv(unc - 1.0) - surv(unc)
-            total = float(np.sum(np.log(np.maximum(p_int, 1e-300))))
+            def hazard(x):
+                return np.power(np.maximum(x, 0.0) / lam, k)
+            u_lo, u_hi = hazard(unc - 1.0), hazard(unc)
+            # log(S(k-1) - S(k)) = -u_lo + log(1 - exp(-(u_hi - u_lo))), which
+            # stays exact for early failures where both S values round to 1.
+            total = float(np.sum(-u_lo + np.log(-np.expm1(-(u_hi - u_lo)))))
             if cen.size:
-                total += float(np.sum(-np.power(np.maximum(cen, 0.0) / lam, k)))
+                total += float(np.sum(-hazard(cen)))
             return -total
 
         res = minimize(_neg_loglik, np.array([k0, lam0]), method="Nelder-Mead")
@@ -461,12 +482,22 @@ class RefSimAnalyzer:
             return (float(k0), float(lam0))
         return (k_hat, lam_hat)
 
-    def _extract_breakdowns_and_repairs(self, events: List[Dict]) -> Tuple[Dict[str, float], Dict[str, float]]:
+    def _extract_breakdowns_and_repairs(
+        self, events: List[Dict]
+    ) -> Tuple[Dict[str, float], Dict[str, float], float, float]:
+        """Per-station MTTF and repair scale, plus their fleet-pooled values.
+
+        Only machines with at least one training breakdown get an entry; the
+        pool (operating time and breakdowns summed over all machines, repairs
+        pooled) is what the strategy uses for a machine without one.
+        """
         operating_time = defaultdict(float)
         bd_count = defaultdict(int)
         repairs = defaultdict(list)
 
         for e in events:
+            if e["station_type"] != "machine":
+                continue
             s = e["station"]
             if e["is_breakdown"]:
                 bd_count[s] += 1
@@ -475,16 +506,14 @@ class RefSimAnalyzer:
                 # Sum actual processing time for the MTTF.
                 operating_time[s] += e["net_process_time"]
 
-        mttf_dict = {}
-        repair_scales: Dict[str, float] = {}
-        for s in set(operating_time.keys()) | set(bd_count.keys()):
-            count = bd_count.get(s, 0)
-            mttf_dict[s] = operating_time[s] / count if count > 0 else float('inf')
-
-            reps = repairs.get(s, [])
-            repair_scales[s] = _dequantized_exponential(reps) if reps else 0.0
-
-        return mttf_dict, repair_scales
+        mttf_dict = {s: operating_time[s] / n for s, n in bd_count.items() if n > 0}
+        repair_scales = {s: _dequantized_exponential(r) for s, r in repairs.items() if r}
+        total_breakdowns = sum(bd_count.values())
+        pooled_mttf = (sum(operating_time.values()) / total_breakdowns
+                       if total_breakdowns > 0 else float("nan"))
+        all_repairs = [r for rs in repairs.values() for r in rs]
+        pooled_repair = _dequantized_exponential(all_repairs) if all_repairs else float("nan")
+        return mttf_dict, repair_scales, pooled_mttf, pooled_repair
 
     def _extract_product_features(self, orders_features: Dict) -> Dict[str, Dict[str, float]]:
         counts = defaultdict(lambda: defaultdict(int))
