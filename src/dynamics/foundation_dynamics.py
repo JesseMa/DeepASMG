@@ -37,6 +37,7 @@ NONE_TOKEN: str = "<NONE>"
 """Sentinel for 'no predecessor' / 'unknown' in the feature encodings."""
 
 END_TOKEN: str = "End"
+"""Sentinel for 'order leaves the system' in the transition logic."""
 
 # Arrivals at the same station by the same order, capped so the vocabulary
 # stays finite; VISIT_CAP means "this many or more". Preparation counts it from
@@ -50,7 +51,6 @@ VISIT_CAP = 4
 def visit_token(n: int) -> str:
     """Categorical token for the n-th arrival (1-based), capped at VISIT_CAP."""
     return str(min(max(int(n), 1), VISIT_CAP))
-"""Sentinel for 'order leaves the system' in the transition logic."""
 
 TWO_PI: float = 2.0 * np.pi
 

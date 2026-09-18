@@ -179,11 +179,12 @@ inspecting individual preparation steps; `train_models` runs them implicitly.
 Hyperparameters come from one place: `train_models` reads the best parameters
 written by `scripts.optimize_hyperparameters` into `--hpo-dir` (default
 `models/hpo/`) and fails if they are absent. The `*_best_params.json` files
-behind the released models are tracked under `models/hpo/` and listed in
-`checksums.sha256`; reproducing the released models from them needs no search.
-A study is named after the model and a fingerprint of the training log, so a
-search resumes on the same log and never continues on a different one. To
-explore a different search, point both scripts at the same separate directory:
+are release artifacts: the ignore rules admit them and `write_checksums`
+lists them, so a model set ships together with the search result it was
+trained from and can be retrained without repeating the search. A study is
+named after the model and a fingerprint of the training log, so a search
+resumes on the same log and never continues on a different one. To explore a
+different search, point both scripts at the same separate directory:
 
 ```bash
 python -m scripts.optimize_hyperparameters --data-dir "$TRAINING_DATA_DIR" --hpo-dir models/hpo_explore
