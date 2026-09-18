@@ -164,8 +164,9 @@ Step 2 is not optional: `train_models` reads the search result and fails if it
 is absent, so that the production models and the sensitivity tree cannot end up
 on different hyperparameters.
 
-`train_models` contains the frozen production hyperparameters; the same settings
-and their provenance are recorded in `models/production_training_manifest.json`.
+The settings that produced a model set and their provenance are recorded in
+`models/production_training_manifest.json`, which `train_models` emits from the
+run itself.
 The five data-preparation modules under
 `src/fitting/deep_data_preparation/` also expose standalone CLIs for
 inspecting individual preparation steps; `train_models` runs them implicitly.

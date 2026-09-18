@@ -103,6 +103,7 @@ class TransitionEncodingMaps:
             "feature_a": self.feature_a,
             "feature_b": self.feature_b,
             "from_station": self.from_station,
+            "visit": self.visit,
             "slot_target": self.slot_target,
             "to_station": self.to_station,
             "n_hist_slots": self.n_hist_slots,

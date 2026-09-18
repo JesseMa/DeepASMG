@@ -111,5 +111,29 @@ def test_far_tail_stays_finite():
     assert np.isfinite(nll) and nll > 100
 
 
+@pytest.mark.parametrize("family,params", [
+    ("normal", {"mu": 74.0, "sigma": 1.0}),
+    ("exponential", {"scale": 1800.0}),
+    ("weibull", {"shape": 1.8, "scale": 73000.0}),
+])
+def test_the_upper_tail_does_not_saturate(family, params):
+    """Worse forecasts must keep scoring worse, far above the predictive mean.
+
+    Taken from the CDF alone the interval probability cancels to zero once
+    F(k) and F(k-1) are both 1.0 in double precision, which would clamp every
+    gross overshoot to the same value — exactly where a surrogate fails.
+    """
+    base = params.get("mu", params.get("scale"))
+    points = [base * m for m in (2.0, 4.0, 8.0)] if family != "normal" else [
+        74.0 + d for d in (10.0, 20.0, 30.0)
+    ]
+    scores = [continuous_scores(family, params, k, False)[1] for k in points]
+    assert all(np.isfinite(s) for s in scores)
+    assert scores[0] < scores[1] < scores[2], (
+        f"{family}: the tail saturates instead of penalising worse overshoots "
+        f"({scores})"
+    )
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))

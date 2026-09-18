@@ -94,11 +94,21 @@ def nll_weibull(shape: float, scale: float, y: float) -> float:
 # observations instead would reward a forecast shifted by half a bin.
 
 
-def interval_nll(cdf, k: float, *, lo: float = 0.0) -> float:
-    """-log P(Y = k) for Y = ceil(X) with CDF F, i.e. -log(F(k) - F(k-1))."""
+def interval_nll(cdf, k: float, *, lo: float = 0.0, sf=None) -> float:
+    """-log P(Y = k) for Y = ceil(X) with CDF F, i.e. -log(F(k) - F(k-1)).
+
+    Far above the predictive mean F(k) and F(k-1) are both 1.0 in double
+    precision and their difference cancels to zero, which would report a
+    saturated score for exactly the case a surrogate fails on. Where a survival
+    function is available the interval is taken as S(k-1) - S(k) instead, which
+    stays exact into the upper tail.
+    """
+    left = max(k - 1.0, lo)
     upper = float(cdf(k))
-    lower = float(cdf(max(k - 1.0, lo)))
-    return float(-np.log(max(upper - lower, _MIN_PROB)))
+    p = upper - float(cdf(left))
+    if p <= 0.0 and sf is not None and upper > 0.5:
+        p = float(sf(left)) - float(sf(k))
+    return float(-np.log(max(p, _MIN_PROB)))
 
 
 def survival_nll(cdf, k: float) -> float:

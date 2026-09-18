@@ -31,21 +31,32 @@ def _parse(x) -> Optional[dict]:
 
 def _family_cdf(family: str, p: dict):
     """CDF of the latent duration law; ceil() of it is what the system deploys."""
+    return _family_cdf_sf(family, p)[0]
+
+
+def _family_cdf_sf(family: str, p: dict):
+    """(CDF, survival) of the latent duration law.
+
+    The survival function is kept alongside because the interval probability
+    cancels in the upper tail when taken from the CDF alone.
+    """
     if family == "normal":
         mu, sigma = p["mu"], p["sigma"]
-        return lambda x: norm.cdf(x, mu, sigma)
+        return (lambda x: norm.cdf(x, mu, sigma), lambda x: norm.sf(x, mu, sigma))
     if family == "exponential":
         b = p["scale"]
-        return lambda x: 1.0 - np.exp(-np.maximum(np.asarray(x, float), 0.0) / b)
+        sf = lambda x: np.exp(-np.maximum(np.asarray(x, float), 0.0) / b)
+        return (lambda x: 1.0 - sf(x), sf)
     if family == "weibull":
         k, lam = p["shape"], p["scale"]
-        return lambda x: 1.0 - np.exp(-(np.maximum(np.asarray(x, float), 0.0) / lam) ** k)
+        sf = lambda x: np.exp(-(np.maximum(np.asarray(x, float), 0.0) / lam) ** k)
+        return (lambda x: 1.0 - sf(x), sf)
     if family == "bathtub":
         scale = p["scale"]
-        surv = np.vectorize(
+        sf = np.vectorize(
             lambda x: bathtub.bathtub_survival(float(x), scale, _BATHTUB), otypes=[float]
         )
-        return lambda x: 1.0 - surv(x)
+        return (lambda x: 1.0 - sf(x), sf)
     raise ValueError(f"Unknown family: {family}")
 
 
@@ -73,10 +84,10 @@ def continuous_scores(family: str, p: dict, y: float, censored: bool
             "Fail fast: censoring is not defined for the normal family "
             "(processing and repair durations always complete)."
         )
-    cdf = _family_cdf(family, p)
+    cdf, sf = _family_cdf_sf(family, p)
     if censored:
         return None, ps.survival_nll(cdf, y)
-    nll = ps.interval_nll(cdf, y)
+    nll = ps.interval_nll(cdf, y, sf=sf)
     lo, hi = ps._support_bounds(cdf, y, step=_crps_step(family, p))
     return ps.lattice_crps(cdf, y, lo=lo, hi=hi), nll
 
