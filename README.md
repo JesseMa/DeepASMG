@@ -150,7 +150,7 @@ python -m scripts.optimize_hyperparameters --data-dir "$TRAINING_DATA_DIR"
 # 3. models + RefSim parameters + training manifest
 python -m scripts.train_models --data-dir "$TRAINING_DATA_DIR"
 
-# 4. experiments (any order among these four)
+# 4. experiments (run_closed_loop first; the audit reruns against its bundle)
 python -m scripts.run_closed_loop
 python -m scripts.run_shadow_evaluation
 python -m scripts.run_substitutions
