@@ -20,20 +20,13 @@ if TYPE_CHECKING:
 
 class GroundTransition(TransitionStrategy):
 
-    # Visit cap for M5: the configured return probabilities (largest at C_b.4)
-    # would otherwise give a geometric tail with rare, very high visit counts.
-    # The cap lives in the strategy, not in the config probabilities, so the
-    # per-visit probabilities keep their domain meaning.
 
     def __init__(self, rng: np.random.Generator) -> None:
         self._rng = rng
         self._stations: Dict[str, "StationConfig"] = {}
         self._distributions: Dict[str, Dict[str, tuple[List[str], np.ndarray]]] = {}
-        # {station_id: {resolved_key: {'cycle': n, 'targets': [...]}}}
         self._seq_configs: Dict[str, Dict[str, Dict[str, Any]]] = {}
-        # {station_id: {resolved_key: order_count_so_far}}
         self._seq_counters: Dict[str, Dict[str, int]] = {}
-        # {order_id: M5 visits so far}
 
     def initialize(self, stations: Dict[str, "StationConfig"]) -> None:
         self._stations = stations

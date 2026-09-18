@@ -30,7 +30,6 @@ def test_weighted_draw_matches_numpy_choice_and_its_generator_state():
         ref = r2.choice(values, p=p)
         assert got == ref, seed
         assert r1.bit_generator.state == r2.bit_generator.state, "RNG consumption differs"
-    # integer form returns the index
     rng = np.random.default_rng(7)
     idx = weighted_draw(4, p, rng)
     assert idx == values.index(weighted_draw(values, p, np.random.default_rng(7)))

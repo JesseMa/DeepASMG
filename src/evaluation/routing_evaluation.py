@@ -59,7 +59,7 @@ def _kl(true: Dict[str, float], sys: Dict[str, float]) -> float:
     return float(s)
 
 
-Key = Tuple[str, str, int]   # (station, variant, visit)
+Key = Tuple[str, str, int]
 
 
 def deep_shadow_vectors(shadow_dir: Path, system: str) -> Dict[Key, Dict[str, float]]:

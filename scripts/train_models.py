@@ -28,7 +28,6 @@ from src.fitting.ref_data_preparation.ref_analyzer import (  # noqa: E402
 )
 from src.experiments.sim_runner import MODULES, model_paths  # noqa: E402
 
-# Display name and train() entry point per model, in training order.
 TRAINERS = (
     ("process_time", "Process Time", train_pt),
     ("transition",   "Transition",   train_tr),
@@ -38,7 +37,6 @@ TRAINERS = (
 )
 
 
-# Prose fields of the training manifest: the only part a machine cannot derive.
 MANIFEST_PROSE = {
     "schema_version": 2,
     "description": "Training configuration of the DeepASMG release model set, "

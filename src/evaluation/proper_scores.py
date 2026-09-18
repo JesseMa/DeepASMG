@@ -24,7 +24,7 @@ def survival_nll(log_sf, k: float) -> float:
     return float(-log_sf(k))
 
 
-_MAX_SUPPORT = 10**8       # three years at one-second resolution
+_MAX_SUPPORT = 10**8
 _CHUNK = 2**20
 
 
@@ -67,7 +67,7 @@ def compute_ece(
         return {"ece": float("nan"), "top_bin_gap": float("nan"), "n": 0}
     edges = np.linspace(lo, hi, n_bins + 1)
     ece = 0.0
-    top_gap = float('nan')  # distinguishes 'no data in top bin' from a zero gap
+    top_gap = float('nan')
     for i in range(n_bins):
         if i < n_bins - 1:
             in_bin = (conf >= edges[i]) & (conf < edges[i + 1])

@@ -26,7 +26,6 @@ class ShadowLog:
         self.warmup_time = float(warmup_time)
         self.rows: Dict[tuple, List[dict]] = defaultdict(list)
         self._counter: Dict[str, int] = defaultdict(int)
-        # Sidecar context_id → (variant, visit); keeps the score CSVs feature-free.
         self.context_variant: Dict[str, Tuple[str, int]] = {}
 
     def next_ctx(self, component: str) -> str:
@@ -38,7 +37,7 @@ class ShadowLog:
                t_sim: float, head: str, family: str, params: Optional[dict],
                realized: Any, censored: int) -> None:
         if t_sim < self.warmup_time:
-            return  # the evaluation window starts after warm-up, as in the closed loop
+            return
         self.rows[(system, component)].append({
             "seed": self.seed, "context_id": ctx_id, "t_sim": float(t_sim),
             "station": station, "component": component, "head": head,
@@ -75,7 +74,7 @@ def _fmt(v: Any) -> Any:
     if v is None:
         return ""
     if isinstance(v, float):
-        return repr(v)  # full float precision
+        return repr(v)
     return v
 
 
@@ -125,7 +124,7 @@ class _ShadowTR(_ShadowStations):
         for name, strat in self._sys.items():
             self._log.record(name, "transition", ctx, station_id, current_time,
                              "", pending[name]["family"], pending[name], realized, 0)
-            if _is_deep(name):  # teacher forcing: push the Ground target into the slot buffer
+            if _is_deep(name):
                 modell = order.features.get("modell", strat._none_token)
                 strat._get_or_init_buffer(station_id).appendleft((modell, realized))
         return target
@@ -134,14 +133,13 @@ class _ShadowTR(_ShadowStations):
 class _ShadowSV(_ShadowStations):
     def __init__(self, ground, systems, log):
         self._g, self._sys, self._log = ground, systems, log
-        self._open: Dict[str, List[dict]] = defaultdict(list)  # station → open cycles (FIFO)
-        # Breakdown happened but repair outlives the horizon → observed, not censored.
+        self._open: Dict[str, List[dict]] = defaultdict(list)
         self._breakdown_pending: set = set()
 
     def sample_time_to_failure(self, station_id, current_time=0.0):
         ttf = self._g.sample_time_to_failure(station_id, current_time=current_time)
         if ttf is None:
-            return None  # non-failing station (buffer): no survival log
+            return None
         ctx = self._log.next_ctx("survival")
         cyc = {"ctx": ctx, "station": station_id, "t_sim": float(current_time),
                "params": {n: s.distribution_params(station_id, current_time)

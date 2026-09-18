@@ -21,10 +21,10 @@ from src.fitting.deep_data_preparation.split_helpers import (
 @dataclass
 class RepairTimeSample:
     station: str
-    operating_time_since_last: float   # Σ net_process_time in the cycle before failure
-    utilization: float                 # op_time / wall_clock within the cycle
-    wear_ratio: float                  # op_time / median_TTF[station]
-    repair_time: float                 # target: downtime duration
+    operating_time_since_last: float
+    utilization: float
+    wear_ratio: float
+    repair_time: float
 
 
 @dataclass
@@ -63,10 +63,6 @@ def extract_repair_samples(
         cycle_start_wall: float = 0.0
         cycle_operating: float = 0.0
         in_cycle: bool = False
-        # First observed cycle per station is left-truncated at the warmup
-        # cutoff: its operating_time/utilization features are understated, so
-        # the first repair sample per station is dropped (mirrors
-        # prepare_survival_data).
         first_cycle_truncated: bool = True
 
         for event in station_events:
@@ -110,18 +106,16 @@ def extract_repair_samples(
                         station=station,
                         operating_time_since_last=cycle_operating,
                         utilization=utilization,
-                        wear_ratio=0.0,   # backfilled by apply_wear_ratio()
+                        wear_ratio=0.0,
                         repair_time=event.repair_time,
                     ),
                 ))
 
-                # Start new cycle (after downtime + repair)
                 cycle_start_wall = event.timestamp_event_start + event.repair_time
                 cycle_operating = 0.0
                 in_cycle = True
                 continue
 
-            # Productive job
             if not in_cycle:
                 cycle_start_wall = event.timestamp_event_start
                 in_cycle = True

@@ -73,7 +73,6 @@ def test_dequantized_exponential_is_the_geometric_mle():
     rng = np.random.default_rng(1)
     xs = np.ceil(rng.exponential(800.0, size=400_000))
     assert _dequantized_exponential(xs) == pytest.approx(800.0, rel=0.01)
-    # tiny scales: the closed form, not the naive mean - 0.5
     xs = np.ceil(rng.exponential(1.3, size=400_000))
     assert _dequantized_exponential(xs) == pytest.approx(1.3, rel=0.03)
 

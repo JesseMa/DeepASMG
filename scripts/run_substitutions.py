@@ -18,7 +18,6 @@ from src.config.simulation_config import N_RUNS, get_seeds  # noqa: E402
 
 TARGET = "Target (GroundSim)"
 
-# Component label per mechanism slot.
 COMPONENTS = {
     "Orders": "arrival",
     "Process": "processing",

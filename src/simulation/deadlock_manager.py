@@ -41,7 +41,7 @@ class DeadlockManager:
 
         target = stations.get(target_id)
         if target is None or not target.is_full:
-            return None  # a free or merely down target admits the order itself
+            return None
 
         visited = [source_id, target_id]
         current_id = target_id
@@ -57,16 +57,16 @@ class DeadlockManager:
             if next_target is None:
                 return None
             if next_target not in stations:
-                return None  # end token or unknown station
+                return None
             if next_target == source_id:
                 return visited
 
             next_station = stations[next_target]
             if not next_station.is_full:
-                return None  # a free or merely down station resolves on its own
+                return None
 
             if next_target in visited:
-                return None  # sub-cycle not involving source – irrelevant
+                return None
 
             visited.append(next_target)
             current_id = next_target

@@ -96,7 +96,6 @@ class ProductEncodingMaps:
 
     def to_dict(self, ewma_alpha: float = 0.3) -> dict:
         head_layout = self.head_layout()
-        # conditioning_dim = number of classes of the first feature (modell)
         conditioning_dim = head_layout[0]["size"] if head_layout else 0
         return {
             "feature_names": self.feature_names,
@@ -254,7 +253,7 @@ def encode_samples(
             if f not in ewma_state:
                 continue
             enc = maps.maps[f]
-            val_idx = enc.get(val, 0) - 1  # NONE → 0 (idx -1 = invalid)
+            val_idx = enc.get(val, 0) - 1
             if val_idx < 0:
                 continue
             freq = ewma_state[f]
@@ -279,10 +278,9 @@ def encode_samples(
 
         for j, feat_name in enumerate(maps.feature_names):
             enc = maps.maps[feat_name]
-            raw_idx = enc[sample.curr_features[feat_name]]  # 1-based
-            y[i, j] = raw_idx - 1                           # 0-based for CrossEntropy
+            raw_idx = enc[sample.curr_features[feat_name]]
+            y[i, j] = raw_idx - 1
 
-        # Update EWMA with the current order AFTER encoding the sample
         _update_ewma(sample.curr_features)
 
     return X, y
@@ -455,11 +453,6 @@ def prepare_product_data(
             "Check that the order-log CSVs contain feature columns."
         )
 
-    # In DeepProduct the encoder (EWMA block) and decoder (classification
-    # heads) share one vocabulary — modell/feature_a/feature_b are context AND
-    # target classes. A train-only fit would deny the heads val/test targets
-    # (KeyError). Hence full-dataset vocabulary; OOV diagnostics against a
-    # hypothetical train-only vocabulary go to metadata (oov_stats).
     print("\n3. Building encoding maps + time encoding + EWMA...")
     maps = build_encoding_maps(samples, feature_names, time_periods)
     X, y = encode_samples(samples, maps, ewma_alpha=ewma_alpha)

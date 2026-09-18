@@ -21,7 +21,6 @@ from src.fitting.deep_data_preparation.data_io import (
     RawEvent, load_events, load_orders, build_feature_layout, save_prepared_data,
 )
 
-# Time-encoding period: 24 h (daily rhythm)
 TIME_PERIODS_SECONDS: list = [86400.0]
 
 
@@ -31,7 +30,6 @@ class TrainingSample:
     feature_a: str
     feature_b: str
 
-    # Predecessor product features on the same machine
     prev_modell: str
     prev_feature_a: str
     prev_feature_b: str
@@ -51,15 +49,15 @@ class EncodingMaps:
     @property
     def feature_dim(self) -> int:
         return (
-            len(self.modell)       # current modell
-            + len(self.feature_a)  # current feature_a
-            + len(self.feature_b)  # current feature_b
-            + len(self.modell)     # prev modell
-            + len(self.feature_a)  # prev feature_a
-            + len(self.feature_b)  # prev feature_b
-            + len(self.station)    # station
-            + N_SHIFTS            # shift one-hot (early/late/night)
-            + 2 * len(TIME_PERIODS_SECONDS)  # sin/cos per period
+            len(self.modell)
+            + len(self.feature_a)
+            + len(self.feature_b)
+            + len(self.modell)
+            + len(self.feature_a)
+            + len(self.feature_b)
+            + len(self.station)
+            + N_SHIFTS
+            + 2 * len(TIME_PERIODS_SECONDS)
         )
 
     def to_dict(self) -> dict:
@@ -213,7 +211,6 @@ def save(
         ("station", maps.station),
     ])
 
-    # Append shift + time-encoding entries manually (not part of build_feature_layout)
     layout.append({"name": "shift", "offset": offset, "size": N_SHIFTS})
     offset += N_SHIFTS
 

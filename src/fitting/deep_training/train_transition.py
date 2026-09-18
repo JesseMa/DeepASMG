@@ -64,7 +64,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
 
     data_dir = Path(data_dir)

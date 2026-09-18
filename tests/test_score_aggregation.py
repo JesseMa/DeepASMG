@@ -53,7 +53,7 @@ def test_reference_scored_first_yields_paired_columns():
     rows, _ = aggregate_continuous(cand, "DeepSim", "processing", reference=ref_map)
     pooled = next(r for r in rows if r["station"] == "POOLED")
     assert pooled["n_seeds_paired_nll"] == 2
-    assert pooled["nll_paired_diff"] > 0.0   # the noisier forecast loses
+    assert pooled["nll_paired_diff"] > 0.0
 
 
 def test_categorical_aggregation_is_seed_clustered():
@@ -90,7 +90,7 @@ def test_routing_comparison_scores_each_visit_against_its_own_truth(tmp_path):
     vectors = routing.deep_shadow_vectors(tmp_path, "DeepSim")
     scored = routing.compare_rows(pc, vectors, "DeepSim")
     assert len(vectors) == 72 and len(scored) == 48
-    assert sorted({r["visit"] for r in scored}) == [1, 2]   # visit 3 is a point mass
+    assert sorted({r["visit"] for r in scored}) == [1, 2]
     assert max(r["l1"] for r in scored) == 0.0
 
 

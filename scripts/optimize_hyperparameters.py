@@ -58,9 +58,6 @@ def _make_objective(train_module: str, suggest_fn, *, train_kwargs: Dict[str, An
     return objective
 
 
-# Broad bounds: minimal a-priori restriction so Optuna locates the optimal
-# region itself.
-
 def _suggest_process_time(trial) -> dict:
     return dict(
         hidden_dims   = trial.suggest_categorical("hidden_dims",
@@ -73,7 +70,6 @@ def _suggest_process_time(trial) -> dict:
 
 
 def _suggest_transition(trial) -> dict:
-    # Softmax saturation can occur even with the K=10 slot-history features.
     return dict(
         hidden_dims     = trial.suggest_categorical("hidden_dims",
                               ["(256, 128)", "(512, 256, 128)", "(512, 256, 128, 64)",
@@ -123,8 +119,6 @@ def _data_identity(data_dir: Path) -> str:
     return hashlib.sha256(meta).hexdigest()[:10]
 
 
-# Same chronological split as production training so the train-only vocabulary
-# fit stays consistent.
 OBJECTIVES = {
     "process_time": _make_objective(
         "src.fitting.deep_training.train_process_time",

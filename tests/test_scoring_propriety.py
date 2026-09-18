@@ -98,7 +98,6 @@ def _reference_nll(family, params, k, censored=False):
         F = lambda t: 1 - S(t)  # noqa: E731
     if censored:
         return float(-mp.log(S(k)))
-    # form the interval from the side that keeps its digits, as the scorer does
     p = F(k) - F(k - 1) if F(k) < mp.mpf("0.5") else S(k - 1) - S(k)
     return float(-mp.log(p))
 

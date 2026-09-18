@@ -44,7 +44,6 @@ class DeepTransition(TransitionStrategy):
 
         self._mask_cache: Dict[frozenset, Any] = {}
 
-        # Slot 0 = most recent entry (appendleft), slot K-1 = oldest.
         self._slot_buffers: Dict[str, Deque[Tuple[str, str]]] = {}
 
     def _ensure_loaded(self) -> None:
@@ -107,8 +106,6 @@ class DeepTransition(TransitionStrategy):
         x = self._encode_single(station_id, order)
         logits = infer_single(self._model, x)
 
-        # The mask depends only on the target set, which the engine builds
-        # once per station, so it is cached rather than rebuilt per event.
         key = frozenset(available_targets)
         inverse = self._mask_cache.get(key)
         if inverse is None:
@@ -137,9 +134,6 @@ class DeepTransition(TransitionStrategy):
     ) -> Optional[str]:
         self._ensure_loaded()
 
-        # Read-only instrumentation: no RNG draw, no control-flow effect. The
-        # softmax puts positive mass on every class, so any inadmissible class
-        # means the mask removed mass.
         self._sg_mask_calls = getattr(self, "_sg_mask_calls", 0) + 1
         if not all(name in available_targets for name in self._class_names):
             self._sg_mask_effective = getattr(self, "_sg_mask_effective", 0) + 1

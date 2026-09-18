@@ -76,7 +76,7 @@ class DeepProcessTime(ProcessTimeStrategy):
 
         self._prev_on_machine[station_id] = dict(order.features)
 
-        return float(np.ceil(max(0.1, float(sample))))  # integer time contract
+        return float(np.ceil(max(0.1, float(sample))))
 
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,
@@ -116,7 +116,6 @@ class DeepProcessTime(ProcessTimeStrategy):
 
         x[self._offsets["shift"] + detect_shift(current_time)] = 1.0
 
-        # sin/cos time encodings occupy the tail of the vector
         if self._time_periods_seconds:
             off_time = self._feature_dim - self._n_time_features
             time_enc = encode_time_features(current_time, self._time_periods_seconds)

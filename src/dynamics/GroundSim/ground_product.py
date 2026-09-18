@@ -14,11 +14,9 @@ from src.dynamics.foundation_dynamics import (
     weighted_draw,
 )
 
-# Unconditional: (values, probs)
-# Conditional:   {modell_key: (values, probs)}
 _FlatDist = Tuple[List[str], np.ndarray]
 _CondDist = Dict[str, _FlatDist]
-_Modulation = Tuple[float, float, np.ndarray]  # (period_s, amplitude, phase_offsets)
+_Modulation = Tuple[float, float, np.ndarray]
 
 
 def _is_conditional(feature_config: Dict) -> bool:
@@ -301,7 +299,7 @@ class GroundProduct(ProductStrategy):
         try:
             idx = list(values).index(prev_value)
         except ValueError:
-            return probs  # previous value not in current value space (e.g. condition switch)
+            return probs
 
         mixed = (1.0 - alpha) * probs
         mixed[idx] += alpha

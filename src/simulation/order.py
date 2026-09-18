@@ -9,7 +9,7 @@ from src.config.routing_keys import resolve_key
 @dataclass
 class Order:
     id: str
-    features: Dict[str, str]  # e.g. {'modell': 'A', 'feature_a': 'a.1', 'feature_b': 'b.1'}
+    features: Dict[str, str]
     timestamp_creation: float
     timestamp_completion: Optional[float] = None
 

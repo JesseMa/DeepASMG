@@ -30,7 +30,7 @@ class ProcessTimeLightningModule(GaussianNLLModule, pl.LightningModule):
         self._init_base(
             input_dim=input_dim, hidden_dims=hidden_dims, output_dim=2,
             learning_rate=learning_rate, dropout_rate=dropout_rate,
-            output_activation="softplus_first",  # structural mean > 0
+            output_activation="softplus_first",
         )
 
 
@@ -57,7 +57,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
 
     data_dir = Path(data_dir)

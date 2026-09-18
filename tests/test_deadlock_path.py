@@ -42,7 +42,6 @@ def test_ring_closes_a_cycle():
 
 def test_chain_that_ends_is_not_a_cycle():
     stations = _ring()
-    # Break the ring: the last station routes to a free station instead.
     stations["S2"].pop_departure()
     stations["S3"] = Station(StationConfig(id="S3", capacity=1))
     stations["S2"].add_to_departure(
@@ -55,7 +54,7 @@ def test_chain_that_ends_is_not_a_cycle():
 def test_self_edge_and_unknown_target_are_not_cycles():
     stations = _ring()
     dm = DeadlockManager()
-    assert dm.detect_cycle(stations, "S0", "S0") is not None  # degenerate ring
+    assert dm.detect_cycle(stations, "S0", "S0") is not None
     assert dm.detect_cycle(stations, "S0", "does-not-exist") is None
 
 
@@ -68,13 +67,13 @@ def test_resolution_displaces_one_order_and_frees_the_slot():
 
     assert dm.resolve_deadlock(source, rec, current_time=10.0) is True
 
-    assert source.has_departure is False          # slot freed
+    assert source.has_departure is False
     assert dm.deadlock_count == 1
-    assert dm.overflow_size == 1                  # order parked, not lost
+    assert dm.overflow_size == 1
     assert len(rec.rows) == 1
     row = rec.rows[0]
     assert row["station_type"] == "overflow"
-    assert row["process_time"] == 0.0             # occupies no time
+    assert row["process_time"] == 0.0
     assert row["order_id"] == "O0"
 
 
@@ -84,7 +83,7 @@ def test_displaced_order_is_delivered_once_the_target_frees():
     dm.resolve_deadlock(stations["S0"], _Recorder(), current_time=10.0)
 
     target = stations["S1"]
-    target.pop_departure()                        # target becomes available
+    target.pop_departure()
     delivered: List[str] = []
     dm.drain_overflow(target, lambda st, o: delivered.append(o.id))
 
@@ -101,7 +100,7 @@ def test_overflow_is_not_delivered_while_the_target_is_full():
     dm.drain_overflow(stations["S1"], lambda st, o: delivered.append(o.id))
 
     assert delivered == []
-    assert dm.overflow_size == 1                  # still parked, still counted
+    assert dm.overflow_size == 1
 
 
 def test_resolution_without_a_departure_entry_is_a_no_op():
@@ -156,7 +155,6 @@ def test_down_station_with_a_free_slot_is_not_a_cycle_member():
     stations = {"B5": feeder, "M5": machine}
     assert not machine.is_available and not machine.is_full
     assert DeadlockManager().detect_cycle(stations, "B5", "M5") is None
-    # Once the machine is genuinely full the same edge is a cycle.
     for i in range(2):
         machine.add_to_departure(Order(id=f"O{i}", features={}, timestamp_creation=0.0), "B5")
     assert machine.is_full

@@ -32,8 +32,6 @@ def weibull_nll_loss(
     log_u_hi = k * torch.log(t_hi / lam)
     u_lo = torch.exp(k * torch.log(t_lo / lam))
 
-    # log(u(t) - u(t - w)) formed in log space: the two hazards agree to
-    # ~1e-5 relative at TTF scales and their float32 difference would not.
     log_d = log_u_hi + torch.log(-torch.expm1(k * torch.log(t_lo / t_hi)))
     d = torch.exp(log_d).clamp(min=1e-38)
 
@@ -81,7 +79,6 @@ class WeibullSurvivalModule(BaseTrainingModule, pl.LightningModule):
         with torch.no_grad():
             shape = torch.exp(log_shape)
             scale = torch.exp(log_scale)
-            # Weibull mean (normalized units)
             mean_ttf = scale * torch.exp(torch.lgamma(1.0 + 1.0 / shape))
 
         self.log(f"{stage}_loss", loss, prog_bar=True)
@@ -113,7 +110,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
 
     data_dir = Path(data_dir)
@@ -121,7 +117,6 @@ def train(
     prep_dir = Path(_prep_dir) if _prep_dir is not None else model_dir / "survival_data"
     hidden_dims = list(hidden_dims)
 
-    # Prepare raw (unnormalized) data
     X, y, metadata = prepare_data(data_dir, prep_dir)
 
     splits = three_way_split(X, y, test_size=test_size)
@@ -131,7 +126,6 @@ def train(
     n_test = len(splits["test"][0])
     print(f"\n  Split: Train={n_train:,} / Val={n_val:,} / Test={n_test:,}")
 
-    # Compute normalization parameters from training data only (no test leakage)
     n_stations = len(metadata["encoding_maps"]["station"])
     X_tr, y_tr = splits["train"]
 
@@ -164,7 +158,6 @@ def train(
 
     splits = {name: _normalize(Xs, ys) for name, (Xs, ys) in splits.items()}
 
-    # Store scaling parameters in metadata.json for inference
     import json as _json
     metadata["duration_scale"]    = duration_scale
     metadata["n_jobs_scale"]      = n_jobs_scale

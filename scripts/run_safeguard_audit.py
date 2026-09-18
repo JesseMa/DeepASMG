@@ -82,15 +82,11 @@ def aggregate(runs_by_sim, audit_dir=AUDIT_DIR):
         for r in by_seed:
             w.writerow({c: r.get(c, 0) for c in cols})
 
-    # ---- category tables (summed over seeds, per system) ----
     def s(system, key):
         return sum(r.get(key, 0) for r in by_seed if r["system"] == system)
 
     systems = list(runs_by_sim.keys())
 
-    # A renormalization is a masked draw that removed positive fitted mass:
-    # always for a softmax (DeepSim), only where the fitted table puts mass on
-    # an inadmissible target (RefSim).
     routine_rows = []
     for sysn in systems:
         mask_calls, mask_eff = s(sysn, "routing.mask_calls"), s(sysn, "routing.mask_effective")
@@ -142,7 +138,6 @@ def main():
     ap.add_argument("--output-dir", type=Path, default=AUDIT_DIR)
     args = ap.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
-    # The default leaves the bulky intermediate next to the bundle it is diffed against.
     out_pkl = (OUT_PKL if args.output_dir == AUDIT_DIR
                else args.output_dir / OUT_PKL.name)
 

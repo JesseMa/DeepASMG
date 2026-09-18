@@ -15,7 +15,7 @@ PROCESS_LOG_DTYPE = np.dtype([
     ("order_id", "U32"),
     ("timestamp_event_start", "f8"),
     ("station", "U16"),
-    ("station_type", "U8"),            # "machine" or "buffer"
+    ("station_type", "U8"),
     ("time_processing", "f8"),
     ("is_breakdown", "?"),
     ("net_process_time", "f8"),

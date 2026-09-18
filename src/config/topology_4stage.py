@@ -465,9 +465,6 @@ PROCESS_STATIONS = [
             'C_a.2_b.4': (134.0, 37.52),
         },
         transitions={
-            # Third arrival ends the route. Declared as a visit-indexed entry
-            # rather than a kernel override, so the rule stays a lookup and
-            # remains representable, learnable and scoreable like every other.
             'visit_3':   {'End': 1.0},
             'A_b.1':     {'End': 0.97, 'B5': 0.03},
             'A_b.3':     {'End': 0.88, 'B5': 0.12},
@@ -490,7 +487,6 @@ NUM_MACHINES = sum(1 for s in PROCESS_STATIONS if s.is_machine)
 PRODUCT_FEATURES = {
     'modell': {'A': 0.4, 'B': 0.3, 'C': 0.3},
 
-    # Conditional on modell (nested dicts are detected automatically)
     'feature_a': {
         'A': {'a.1': 0.9, 'a.2': 0.1},
         'B': {'a.1': 0.5, 'a.2': 0.5},

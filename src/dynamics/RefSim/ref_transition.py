@@ -96,7 +96,6 @@ class RefTransition(TransitionStrategy):
         current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[str]:
         prep = self._prepared_for(station_id, order, available_targets)
-        # Read-only instrumentation: no RNG draw, no control-flow effect.
         self._sg_mask_calls = getattr(self, "_sg_mask_calls", 0) + 1
         if prep.removed_mass > 0.0:
             self._sg_mask_effective = getattr(self, "_sg_mask_effective", 0) + 1

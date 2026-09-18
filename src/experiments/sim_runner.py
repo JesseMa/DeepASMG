@@ -153,7 +153,6 @@ class SimFactorySet:
             }[slot]()
         raise ValueError(f"Unknown module kind '{kind}'.")
 
-    # ---- composition -------------------------------------------------------
 
     @staticmethod
     def _module_rngs(seed: int, decorrelated: FrozenSet[str]) -> Dict[str, np.random.Generator]:
@@ -176,7 +175,6 @@ class SimFactorySet:
             seed=seed, run_id=run_id,
         )
 
-    # ---- the named systems --------------------------------------------------
 
     def base(self, seed: int, run_id: int) -> SimulationConfig:
         return self.compose(seed, run_id, ("ground",) * 5)
@@ -197,8 +195,6 @@ class SimFactorySet:
         return self.compose(seed, run_id, ("stat", "stat", "statw", "stat", "stat"))
 
 
-# Counters set lazily by the dynamics (`_sg_*`): reading them post-run consumes no
-# RNG; a strategy that never triggered a given path simply lacks the attribute → 0.
 _SG_ATTRS = {
     "repair": ("_sg_stress_calls", "_sg_stress_floor", "_sg_repair_draws",
                "_sg_repair_clamp", "_sg_repair_logu_draws", "_sg_repair_logu_guard"),

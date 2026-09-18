@@ -32,7 +32,6 @@ class MultiHeadProductNet(nn.Module):
         self._conditioning_dim = conditioning_dim
         self._base_dim = input_dim - conditioning_dim
 
-        # Full input dimension for the TorchScript trace example.
         self.full_input_dim = input_dim
 
         self.trunk = build_mlp_layers(self._base_dim, hidden_dims, dropout_rate=dropout_rate)
@@ -82,7 +81,6 @@ class ProductMLPModule(BaseTrainingModule, pl.LightningModule):
         learning_rate: float,
         dropout_rate: float,
     ) -> None:
-        # pl.LightningModule.__init__ directly; the net is built differently than _init_base
         pl.LightningModule.__init__(self)
         self.save_hyperparameters()
 
@@ -111,9 +109,8 @@ class ProductMLPModule(BaseTrainingModule, pl.LightningModule):
     ) -> torch.Tensor:
         x, y = batch
 
-        # Teacher forcing: append the ground-truth modell one-hot to the input.
         if self._conditioning_dim > 0:
-            modell_targets = y[:, 0]  # first feature is always 'modell'
+            modell_targets = y[:, 0]
             modell_onehot = nn.functional.one_hot(
                 modell_targets, num_classes=self._conditioning_dim,
             ).float()
@@ -174,10 +171,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    # Reproducibility seed before anything else (model init, shuffling,
-    # DataLoader workers). Together with Trainer(deterministic=True) in
-    # foundation_training this yields bit-identical models for an identical
-    # training dataset.
     pl.seed_everything(TRAIN_SEED, workers=True)
 
     data_dir = Path(data_dir)
@@ -203,7 +196,6 @@ def train(
     print(f"  Heads:     {list(zip(feature_names_loaded, head_sizes, strict=True))}")
     print(f"  Conditioning: modell -> {feature_names_loaded[1:]} (dim={head_sizes[0]})")
 
-    # Condition on the first feature (modell).
     input_dim = X.shape[1]
     conditioning_dim = head_sizes[0]
     module = ProductMLPModule(

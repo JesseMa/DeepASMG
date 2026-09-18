@@ -22,7 +22,7 @@ SECONDS_PER_DAY = 86400
 
 # Eval anchor. Training data is generated backwards from this point so that
 # training and evaluation join without a time gap.
-SIM_START_TIMESTAMP = 1775001600  # 2026-04-01 00:00:00 UTC (Wednesday)
+SIM_START_TIMESTAMP = 1775001600
 if SIM_START_TIMESTAMP % SECONDS_PER_DAY != 0:
     raise ValueError(
         "Fail fast: SIM_START_TIMESTAMP must be midnight UTC. Shift and daily-phase "
@@ -30,18 +30,17 @@ if SIM_START_TIMESTAMP % SECONDS_PER_DAY != 0:
         "clock when the anchor is midnight; the training log inherits the anchor."
     )
 
-# Pipeline constants. Scripts import these instead of defining local literals.
 
-TRAINING_DAYS    = 365    # GroundSim data-gen + train horizon
-SIMULATION_DAYS  = 31     # eval horizon
-WARMUP_DAYS      = 1      # Eval warmup before recording
-N_RUNS           = 10     # CRN replications per simulator
+TRAINING_DAYS    = 365
+SIMULATION_DAYS  = 31
+WARMUP_DAYS      = 1
+N_RUNS           = 10
 SEED_BASE        = 1000
-SEED_OFFSET_FLOOR = 10_000  # Offset for the decorrelated floor configurations
-TRAIN_SEED = 42            # torch/lightning seed for every model training run
+SEED_OFFSET_FLOOR = 10_000
+TRAIN_SEED = 42
 INITIAL_ORDERS   = 10
 MAX_EPOCHS       = 100
-PATIENCE         = 15     # Early-stopping patience
+PATIENCE         = 15
 
 
 def get_seeds(n: int = N_RUNS) -> list[int]:
@@ -58,10 +57,10 @@ class SimulationConfig:
     product_strategy: ProductStrategy
 
     duration_days: float = 1.0
-    warmup_days: float = 0.0            # recording starts only after warmup
+    warmup_days: float = 0.0
     seed: int = 42
-    initial_orders: int = INITIAL_ORDERS    # orders pre-loaded at t=0
-    run_id: int = 0                         # order IDs become R{run_id}_J{counter:06d}
+    initial_orders: int = INITIAL_ORDERS
+    run_id: int = 0
 
     @property
     def max_time(self) -> float:

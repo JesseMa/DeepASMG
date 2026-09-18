@@ -42,7 +42,7 @@ def _family_log_cdf_sf(family: str, p: dict):
     else:
         raise ValueError(f"Unknown family: {family}")
     def log_cdf(x):
-        with np.errstate(divide="ignore"):   # H(0) = 0: log F(0) = -inf is the value
+        with np.errstate(divide="ignore"):
             return np.log(-np.expm1(-H(x)))
     return (log_cdf, lambda x: -H(x))
 

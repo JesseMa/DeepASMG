@@ -67,7 +67,7 @@ class RefProcessTime(ProcessTimeStrategy):
         self._sg_proc_draws = getattr(self, "_sg_proc_draws", 0) + 1
         if draw < 0.1:
             self._sg_proc_clamp = getattr(self, "_sg_proc_clamp", 0) + 1
-        return float(np.ceil(max(0.1, float(draw))))  # integer time contract
+        return float(np.ceil(max(0.1, float(draw))))
 
     def distribution_params(
         self, station_id: str, order: "Order", current_time: float = 0.0,  # noqa: ARG002

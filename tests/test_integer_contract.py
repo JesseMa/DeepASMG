@@ -47,9 +47,8 @@ def test_ground_process_time_adds_setup_before_the_single_rounding():
     rng = np.random.default_rng(0)
     pt = GroundProcessTime(rng)
     pt.initialize(STATIONS)
-    noon = 12 * 3600.0   # day shift: no night-shift factor on the latent law
+    noon = 12 * 3600.0
     draws = np.array([pt.predict("M1", ORDER, noon) for _ in range(2000)])
-    # latent net ~ N(12.7, 0.83) + setup 7.3 = 20.0 -> ceil'd values centre on 20.5
     assert draws.mean() == pytest.approx(20.5, abs=0.15)
     params = pt.distribution_params("M1", ORDER, noon)
     assert params["mu"] == pytest.approx(20.0)

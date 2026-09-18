@@ -31,13 +31,13 @@ class RefRepair(RepairStrategy):
     def predict_repair_time(
         self,
         station_id: str,
-        operating_time_since_last: float,  # ignored
-        utilization: float,                # ignored
+        operating_time_since_last: float,
+        utilization: float,
         current_time: float = 0.0,  # noqa: ARG002
     ) -> float:
         scale = self._repair_scales[station_id]
         self._sg_repair_draws = getattr(self, "_sg_repair_draws", 0) + 1
-        return float(np.ceil(self._rng.exponential(scale=scale)))  # integer time contract
+        return float(np.ceil(self._rng.exponential(scale=scale)))
 
     def distribution_params(
         self,

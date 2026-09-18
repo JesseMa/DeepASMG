@@ -58,8 +58,6 @@ class GroundProcessTime(ProcessTimeStrategy):
         if draw < 0.1:
             self._sg_proc_clamp = getattr(self, "_sg_proc_clamp", 0) + 1
         net = max(0.1, draw)
-        # Integer time contract: durations are whole seconds, rounded exactly
-        # once at the module boundary (the kernel clock ticks in 1-s steps).
         return float(np.ceil(net + self._setup_times.get(station_id, 0.0)))
 
     def distribution_params(

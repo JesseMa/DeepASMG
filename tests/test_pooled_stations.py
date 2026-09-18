@@ -44,7 +44,6 @@ def test_deep_survival_pools_an_unobserved_fallible_station(monkeypatch, caplog)
     assert ttf is not None and ttf >= 1.0 and ttf == int(ttf)
     assert sv.distribution_params("M2")["family"] == "weibull"
     assert sv.sample_time_to_failure("B1") is None and sv.distribution_params("B1") is None
-    # the station block is all zero for the pooled station, one-hot otherwise
     assert sv._encode_input("M2")[0] == 0.0 and sv._encode_input("M1")[0] == 1.0
 
 

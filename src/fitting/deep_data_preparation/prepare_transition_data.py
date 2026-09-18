@@ -34,14 +34,12 @@ class TransitionSample:
 
     from_station: str
 
-    # Arrival index of this order at from_station (see visit_token).
     visit: str
 
-    # K-slot history per from_station; slot 0 = most recent, K-1 = oldest.
     hist_modells: Tuple[str, ...]
     hist_targets: Tuple[str, ...]
 
-    to_station: str  # station ID or "End"
+    to_station: str
 
 
 @dataclass
@@ -51,8 +49,6 @@ class TransitionEncodingMaps:
     feature_b: Dict[str, int] = field(default_factory=dict)
     from_station: Dict[str, int] = field(default_factory=dict)
     visit: Dict[str, int] = field(default_factory=dict)
-    # Slot-target vocabulary: NONE_TOKEN + the targets seen in the train slice.
-    # Separate from to_station, which has no NONE and is fit on the full dataset.
     slot_target: Dict[str, int] = field(default_factory=dict)
 
     to_station: Dict[str, int] = field(default_factory=dict)
@@ -374,7 +370,6 @@ def prepare_transition_data(
     maps = build_encoding_maps(train_samples, samples, n_hist_slots=n_hist_slots)
     X, y = encode_samples(samples, maps)
 
-    # OOV reporting: current features plus slot-aggregated (avoids K*2 separate reports).
     train_vocabs = {
         "modell":       set(maps.modell.keys()),
         "feature_a":    set(maps.feature_a.keys()),
@@ -388,8 +383,6 @@ def prepare_transition_data(
         "feature_a":    lambda s: s.feature_a,
         "feature_b":    lambda s: s.feature_b,
         "from_station": lambda s: s.from_station,
-        # Slot-aggregated: a sample counts as OOV if ANY of its K slots holds an
-        # unknown modell/target.
         "slot_modell_any": lambda s: next(
             (m for m in s.hist_modells if m not in maps.modell), s.hist_modells[0]
         ),

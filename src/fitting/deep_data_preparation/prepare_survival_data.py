@@ -21,14 +21,14 @@ from src.fitting.deep_data_preparation.split_helpers import (
 @dataclass
 class SurvivalSample:
     station: str
-    operating_time: float   # cumulative operating time (Σ net_process_time)
-    event: bool             # True = breakdown
-    n_jobs: int             # productive jobs in this cycle
-    wall_clock_time: float  # elapsed wall-clock time
-    prev_ttf: float = 0.0           # TTF of the previous cycle (operating seconds)
-    prev_n_jobs: float = 0.0        # n_jobs of the previous cycle
-    mean_ttf: float = 0.0           # running mean TTF over all previous cycles
-    prev_repair_time: float = 0.0   # repair duration of the last failure
+    operating_time: float
+    event: bool
+    n_jobs: int
+    wall_clock_time: float
+    prev_ttf: float = 0.0
+    prev_n_jobs: float = 0.0
+    mean_ttf: float = 0.0
+    prev_repair_time: float = 0.0
 
 
 @dataclass
@@ -69,10 +69,6 @@ def extract_survival_samples(
         cycle_operating: float = 0.0
         cycle_jobs: int = 0
         in_cycle: bool = False
-        # The first observed cycle per station began BEFORE the warmup cutoff:
-        # its operating time is left-truncated, so it must not become a sample
-        # (emitting it as event=True biases lifetimes short). It still seeds
-        # the history features once it closes.
         first_cycle_truncated: bool = True
 
         hist_prev_ttf: float = 0.0
@@ -117,7 +113,6 @@ def extract_survival_samples(
                     hist_prev_n_jobs = float(cycle_jobs)
                     hist_prev_repair = event.repair_time
 
-                # Start new cycle (after downtime + repair)
                 cycle_start_wall = event.timestamp_event_start + event.repair_time
                 cycle_operating = 0.0
                 cycle_jobs = 0
@@ -131,7 +126,6 @@ def extract_survival_samples(
             cycle_operating += event.net_process_time
             cycle_jobs += 1
 
-        # Censor the cycle still open at sim end
         if (in_cycle and cycle_jobs > 0 and cycle_operating > 0
                 and not first_cycle_truncated):
             last_event = station_events[-1]
@@ -182,7 +176,7 @@ def encode_samples(
 ) -> Tuple[np.ndarray, np.ndarray]:
     n = len(samples)
     n_stations = len(maps.station)
-    total_dim = n_stations + 4  # station_onehot + prev_ttf + prev_n_jobs + mean_ttf + prev_repair_time
+    total_dim = n_stations + 4
     X = np.zeros((n, total_dim), dtype=np.float32)
     y = np.zeros((n, 2), dtype=np.float32)
 
@@ -196,7 +190,6 @@ def encode_samples(
         X[i, n_stations + 2] = s.mean_ttf
         X[i, n_stations + 3] = s.prev_repair_time
 
-        # Target (raw, seconds)
         y[i, 0] = s.operating_time
         y[i, 1] = 1.0 if s.event else 0.0
 

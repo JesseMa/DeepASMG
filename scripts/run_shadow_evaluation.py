@@ -58,7 +58,7 @@ def main() -> None:
         d = args.output_dir / f"_seed_{seed}"
         rows = run_shadow_pilot(seed, days=args.days, out_dir=d)
         seed_dirs.append(d)
-        _concat(args.output_dir, seed_dirs)  # Combined CSVs stay usable after each seed.
+        _concat(args.output_dir, seed_dirs)
         print(f"  seed {seed}: {rows:,} rows total ({time.time()-t0:.0f}s)")
     print(f"\nDONE → {args.output_dir}")
 

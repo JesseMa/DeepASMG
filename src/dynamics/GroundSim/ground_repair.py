@@ -8,7 +8,6 @@ if TYPE_CHECKING:
     from src.config.schema import StationConfig
 
 
-# Stress = weighted relative wear and utilization of the failing cycle.
 REPAIR_WEAR_WEIGHT = 0.7
 REPAIR_UTIL_WEIGHT = 0.3
 
@@ -58,7 +57,7 @@ class GroundRepair(RepairStrategy):
         self._sg_repair_draws = getattr(self, "_sg_repair_draws", 0) + 1
         if draw < 1.0:
             self._sg_repair_clamp = getattr(self, "_sg_repair_clamp", 0) + 1
-        return float(np.ceil(draw))  # integer time contract; ceil(x>0) >= 1
+        return float(np.ceil(draw))
 
     def distribution_params(
         self,

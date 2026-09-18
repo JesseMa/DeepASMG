@@ -30,7 +30,7 @@ class RepairTimeRegressorModule(ExponentialNLLModule, pl.LightningModule):
         self._init_base(
             input_dim=input_dim, hidden_dims=hidden_dims, output_dim=1,
             learning_rate=learning_rate, dropout_rate=dropout_rate,
-            output_activation="none",  # log_scale in R
+            output_activation="none",
         )
 
 
@@ -54,7 +54,6 @@ def train(
     patience: int = 15,
     _prep_dir: Union[str, Path, None] = None,
 ) -> Dict[str, Any]:
-    # Must run before model init and loader construction.
     pl.seed_everything(TRAIN_SEED, workers=True)
 
     data_dir = Path(data_dir)
@@ -62,7 +61,6 @@ def train(
     prep_dir = Path(_prep_dir) if _prep_dir is not None else model_dir / "repair_time_data"
     hidden_dims = list(hidden_dims)
 
-    # Prepare raw (unnormalized) data
     X, y, metadata = prepare_data(data_dir, prep_dir)
 
     splits = three_way_split(X, y, test_size=test_size)
@@ -76,7 +74,6 @@ def train(
           f"({metadata['feature_layout'][0]['size']} station + 3 continuous: "
           f"op_time, utilization, wear_ratio)")
 
-    # Compute normalization parameters from training data only (no test leakage)
     n_stations = len(metadata["encoding_maps"]["station"])
     X_tr, _ = splits["train"]
 
@@ -104,7 +101,6 @@ def train(
 
     splits = {name: _normalize(Xs, ys) for name, (Xs, ys) in splits.items()}
 
-    # Store normalization parameters in metadata.json for inference
     import json as _json
     metadata["operating_time_mean"] = op_mean
     metadata["operating_time_std"]  = op_std

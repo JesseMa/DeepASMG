@@ -87,7 +87,6 @@ def _observation_counts(section: str, config: str, model_dir: Path) -> list[dict
     return rows
 
 
-# Number of 365-day derivation draws the data-regime analysis uses.
 N_DRAW365_CONFIGS = 5
 
 
@@ -185,9 +184,6 @@ def main() -> None:
             if section != args.only:
                 result[section] = previous.get(section, {})
 
-    # Paired GroundSim + decorrelated reference: generator-only, independent of
-    # any training data, therefore computed once and shared across configs
-    # (common random numbers make them bit-identical per seed either way).
     fs_shared = SimFactorySet()
     shared = {}
     t0 = time.time()

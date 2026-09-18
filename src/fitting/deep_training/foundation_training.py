@@ -11,13 +11,11 @@ from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 import numpy as np
 
-WEIGHT_DECAY = 1e-4   # Adam L2 penalty, the same for every surrogate
+WEIGHT_DECAY = 1e-4
 
 if TYPE_CHECKING:
     import torch.nn as nn
     from torch.utils.data import DataLoader
-
-# Bump when the eval-artifact fields change incompatibly.
 
 
 def build_mlp_layers(
@@ -250,9 +248,6 @@ def train_lightning_model(
     test_metrics = trainer.test(lightning_module, loaders["test"], verbose=False)[0]
 
     model_path = model_dir / f"{model_name}_model.pt"
-    # Trace-example input dim: full_input_dim takes precedence (autoregressive
-    # models whose trunk sees only base_dim but whose forward() expects the
-    # full input including conditioning).
     if hasattr(best_module.net, "full_input_dim"):
         input_dim = best_module.net.full_input_dim
     else:
@@ -359,15 +354,14 @@ class GaussianNLLModule(BaseTrainingModule):
     @staticmethod
     def marginal_bias(y_train: np.ndarray) -> List[float]:
         y = np.asarray(y_train, dtype=float)
-        # channel 0 passes through softplus: softplus(b) = mean
         return [float(np.log(np.expm1(y.mean()))), float(np.log(y.var()))]
 
     def _nll_loss(self, pred, y):
         import torch
         mean = pred[:, 0]
         sigma = torch.exp(0.5 * pred[:, 1])
-        zu = (y - mean) / sigma          # upper edge k
-        zl = (y - 1.0 - mean) / sigma    # lower edge k-1
+        zu = (y - mean) / sigma
+        zl = (y - 1.0 - mean) / sigma
         return -self._log_interval_prob(zl, zu).mean()
 
     def _compute_loss(self, batch, stage: str):
@@ -397,11 +391,9 @@ class ExponentialNLLModule(BaseTrainingModule):
         pred = self(x)
         log_scale = pred[:, 0]
         inv_s = torch.exp(-log_scale)
-        # -log(1 - e^{-1/s}) via expm1 for stability at large s
         loss = torch.mean((y - 1.0) * inv_s - torch.log(-torch.expm1(-inv_s)))
         self.log(f"{stage}_loss", loss, prog_bar=True)
         if stage in ("val", "test"):
-            # mean(Exp(scale)) = scale = exp(log_scale)
             pred_mean = torch.exp(log_scale)
             mae = nn.functional.l1_loss(pred_mean, y)
             self.log(f"{stage}_mae", mae, prog_bar=(stage == "val"))

@@ -36,8 +36,6 @@ class ResultsSaver:
             writer = csv.writer(f)
             writer.writerow(PROCESS_LOG_DTYPE.names)
             for row in process_log:
-                # Integer time contract: every duration is rounded exactly once,
-                # at the emitting module's boundary — logged ≡ executed, raw.
                 # The value order must match PROCESS_LOG_DTYPE, which also
                 # supplies the header above.
                 writer.writerow([

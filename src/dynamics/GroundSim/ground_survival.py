@@ -23,9 +23,6 @@ def bathtub_cumulative_hazard(
     return h_at_p2 + (h_normal / gamma) * (np.exp(min(gamma * (w - p2), 700.0)) - 1.0)
 
 
-# Bathtub phases in normalized wear W (W = 1 at ttf_scale_seconds): early
-# failures decay linearly until p1, the hazard is flat until p2, then grows
-# exponentially with rate gamma.
 BATHTUB = {"p1": 0.10, "p2": 0.80, "h_early": 0.30, "h_normal": 0.08, "gamma": 8.0}
 
 
@@ -66,7 +63,7 @@ class GroundSurvival(SurvivalStrategy):
         self._sg_ttf_draws = getattr(self, "_sg_ttf_draws", 0) + 1
         if ttf < 1.0:
             self._sg_ttf_clamp = getattr(self, "_sg_ttf_clamp", 0) + 1
-        return float(np.ceil(ttf))  # integer time contract; ceil(x>0) >= 1
+        return float(np.ceil(ttf))
 
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002

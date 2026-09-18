@@ -66,7 +66,6 @@ class DeepSurvival(SurvivalStrategy):
     def initialize(self, stations: Dict[str, "StationConfig"]) -> None:
         self._ensure_loaded()
 
-        # A replication must not inherit failure history from the previous run.
         self._prev_ttf.clear()
         self._prev_n_jobs.clear()
         self._mean_ttf.clear()
@@ -94,8 +93,6 @@ class DeepSurvival(SurvivalStrategy):
                 "model not loaded. initialize() must run before the first "
                 "call."
             )
-        # Whether a station can fail is a property of the topology; whether we
-        # have station-specific observations only decides pooled vs specific.
         if station_id not in self._can_fail:
             return None
 
@@ -115,15 +112,13 @@ class DeepSurvival(SurvivalStrategy):
         self._sg_ttf_draws = getattr(self, "_sg_ttf_draws", 0) + 1
         if ttf < 1.0:
             self._sg_ttf_clamp = getattr(self, "_sg_ttf_clamp", 0) + 1
-        return float(np.ceil(float(ttf)))  # integer time contract
+        return float(np.ceil(float(ttf)))
 
     def distribution_params(
         self, station_id: str, current_time: float = 0.0,  # noqa: ARG002
     ) -> Optional[Dict[str, object]]:
         if self._survival_model is None:
             raise RuntimeError("DeepSurvival.distribution_params: model not loaded.")
-        # Whether a station can fail is a property of the topology; whether we
-        # have station-specific observations only decides pooled vs specific.
         if station_id not in self._can_fail:
             return None
         output = infer_single(self._survival_model, self._encode_input(station_id))

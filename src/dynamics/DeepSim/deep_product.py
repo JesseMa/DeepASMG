@@ -39,12 +39,10 @@ class DeepProduct(ProductStrategy):
         self._time_periods_seconds: List[float] = []
         self._none_token: str = NONE_TOKEN
 
-        # Smoothed class frequencies per feature; None until the first update,
-        # encoded as uniform until then.
         self._prev_ewma: Optional[Dict[str, np.ndarray]] = None
-        self._ewma_alpha: float = 0.3  # default; replaced by metadata.json
+        self._ewma_alpha: float = 0.3
         self._n_classes_map: Dict[str, int] = {}
-        self._teacher_forced: bool = False  # shadow inference: external EWMA source
+        self._teacher_forced: bool = False
 
         self._load_metadata()
 
@@ -85,7 +83,6 @@ class DeepProduct(ProductStrategy):
         self._time_periods_seconds = meta.get("time_periods_seconds", [])
         self._none_token = meta.get("none_token", NONE_TOKEN)
         self._ewma_alpha = meta.get("ewma_alpha", 0.3)
-        # n_classes per feature: len(encoding_map) - 1 (NONE excluded)
         self._n_classes_map = {
             feat: len(enc) - 1
             for feat, enc in self._encoding_maps.items()
@@ -216,7 +213,7 @@ class DeepProduct(ProductStrategy):
             if not name.startswith("prev_"):
                 continue
 
-            feat_name = name[5:]  # "prev_modell" → "modell"
+            feat_name = name[5:]
             offset: int = entry["offset"]
             size: int = entry["size"]
 
@@ -242,7 +239,7 @@ class DeepProduct(ProductStrategy):
             enc = self._encoding_maps.get(feat_name)
             if enc is None:
                 continue
-            val_idx = enc.get(value, 0) - 1  # NONE has index 0 → val_idx = -1 = invalid
+            val_idx = enc.get(value, 0) - 1
             if val_idx < 0:
                 continue
             freq = self._prev_ewma[feat_name]

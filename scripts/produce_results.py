@@ -98,8 +98,6 @@ def _produce_routing(shadow_dir: Path, output_dir: Path) -> dict[str, int]:
     rows = routing.compare_rows(process_config, deep_vectors, "DeepSim")
     realized = set(deep_vectors)
 
-    # The routers exactly as the runner builds them; RefSim-M and RefSim-W
-    # share the station-marginal fit, so both are scored on one router.
     fs = SimFactorySet()
     rng = np.random.default_rng(0)
     marginal_fitted = routing.ref_fitted_vectors(fs.module("stat", "tr", rng), process_config, realized)

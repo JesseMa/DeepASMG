@@ -15,13 +15,6 @@ from src.dynamics.foundation_dynamics import END_TOKEN
 from src.config.routing_keys import full_variant_key, product_type_key
 
 
-# Every duration estimator below accounts for the log's declared whole-second
-# quantization (integer time contract): an observation k means the duration
-# fell in (k-1, k]. Each family uses the exact form where one exists and a
-# numerical interval likelihood where it does not, so no family is fitted as
-# if the observations were continuous.
-
-
 def _dequantized_normal(xs) -> tuple[float, float]:
     mean = float(np.mean(xs)) - 0.5
     var = float(np.var(xs)) - 1.0 / 12.0
@@ -168,9 +161,6 @@ class RefSimAnalyzer:
                 features[oid] = {k: v for k, v in r.items() if k not in meta_cols}
                 tc = r.get("timestamp_completion", "")
                 t_complete = float(tc) if tc and tc != "None" else None
-                # A completion after the train cut is post-cut knowledge: within
-                # the training window the order is still in flight, so no END
-                # transition may be counted for it.
                 if (t_complete is not None and cut_ts != float("inf")
                         and t_complete > cut_ts):
                     t_complete = None
@@ -189,9 +179,6 @@ class RefSimAnalyzer:
                 continue
             feats = orders_features.get(e["order_id"])
             if feats is None:
-                # Warmup-boundary edge case: event for an order created during
-                # warmup but not persisted to orders.csv. _extract_transitions
-                # skips these events as well.
                 n_orphan += 1
                 continue
             times[e["station"]].append(e["net_process_time"])
@@ -234,7 +221,7 @@ class RefSimAnalyzer:
             out[s] = {t: c / total for t, c in v.items()}
         return out
 
-    _MIN_CELL_OBS = 2  # cells with <2 observations: variance undefined, fall back
+    _MIN_CELL_OBS = 2
 
     def _extract_process_times_conditioned(
         self,
@@ -248,7 +235,7 @@ class RefSimAnalyzer:
                 continue
             feats = orders_features.get(e["order_id"])
             if feats is None:
-                continue  # orphan tolerance, as in _extract_process_times
+                continue
             vals_v[e["station"]][full_variant_key(feats)].append(e["net_process_time"])
             vals_p[e["station"]][product_type_key(feats)].append(e["net_process_time"])
 
@@ -401,9 +388,6 @@ class RefSimAnalyzer:
         unc = np.asarray(uncensored, dtype=float)
         cen = np.asarray(censored, dtype=float) if censored else np.empty(0)
 
-        # Interval likelihood of the whole-second observations: a completed
-        # spell logged as k contributes S(k-1) - S(k), a right-censored one
-        # still contributes S(k). Starting point is scipy's continuous fit.
         if censored:
             start_data: Any = CensoredData(uncensored=unc, right=cen)
         else:
@@ -417,8 +401,6 @@ class RefSimAnalyzer:
             def hazard(x):
                 return np.power(np.maximum(x, 0.0) / lam, k)
             u_lo, u_hi = hazard(unc - 1.0), hazard(unc)
-            # log(S(k-1) - S(k)) = -u_lo + log(1 - exp(-(u_hi - u_lo))), which
-            # stays exact for early failures where both S values round to 1.
             total = float(np.sum(-u_lo + np.log(-np.expm1(-(u_hi - u_lo)))))
             if cen.size:
                 total += float(np.sum(-hazard(cen)))
@@ -445,7 +427,6 @@ class RefSimAnalyzer:
                 bd_count[s] += 1
                 repairs[s].append(e["repair_time"])
             elif e["order_id"] != "BREAKDOWN":
-                # Sum actual processing time for the MTTF.
                 operating_time[s] += e["net_process_time"]
 
         mttf_dict = {s: operating_time[s] / n for s, n in bd_count.items() if n > 0}

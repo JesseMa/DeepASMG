@@ -57,8 +57,6 @@ def generate(
         SIM_START_TIMESTAMP - (days + WARMUP_DAYS) * SECONDS_PER_DAY
     )
 
-    # Independent per-module RNG streams, same stream plan as SimFactorySet
-    # on the eval path.
     rng_pt, rng_tr, rng_sv, rng_rt, rng_pr = (
         np.random.default_rng(c) for c in np.random.SeedSequence(seed).spawn(5)
     )
@@ -81,11 +79,6 @@ def generate(
 
     completed = sum(1 for o in order_log if o["timestamp_completion"] is not None)
 
-    # Absolute generation anchor for downstream feature preparation: the
-    # generator modulates calendar cycles on start_timestamp + t, so surrogate
-    # features with week/month periods must be built on the same absolute
-    # clock (a purely sim-relative timestamp is phase-shifted by
-    # start_timestamp mod period).
     run_metadata = {
         "seed": seed,
         "days": days,
