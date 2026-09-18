@@ -35,8 +35,10 @@ customer, or operational company data.
 A reviewer checking the reported results can follow one path:
 
 1. `scripts/run_closed_loop.py` names the six evaluated systems.
-2. `src/experiments/sim_runner.py` builds each of them: `SimFactorySet` wires five
-   mechanisms plus five independent RNG streams into one `SimulationConfig`.
+2. `src/experiments/sim_runner.py` builds each of them: `SimFactorySet.compose`
+   wires one module of a given kind (`ground`, `deep`, `stat`) per mechanism
+   plus five independent RNG streams into one `SimulationConfig`; the named
+   systems and the substitution grid are all compositions.
 3. `src/config/simulation_config.py` holds that config and the run constants.
 4. `src/simulation/engine.py` executes it. Process time, routing and released-order
    attributes are sampled there; time-to-failure and repair duration are driven by
@@ -53,7 +55,7 @@ A reviewer checking the reported results can follow one path:
 | released order | `ground_product.py` | `deep_product.py` | `ref_product.py` |
 
 Each mechanism appears under three names: the module prefix above, the two-letter
-registry key (`pt`, `tr`, `sv`, `rt`, `pr`) used by the runners and the model
+slot key (`pt`, `tr`, `sv`, `rt`, `pr`) used by the runners and the model
 files, and the `component` value in the result CSVs (`processing`, `transition`,
 `survival`, `repair`, `arrival`).
 
@@ -63,7 +65,9 @@ The reported system-level distances are **means over the ten evaluation seeds**,
 not single values. For the throughput-time Wasserstein-1 distance of *DeepSim*:
 
 1. `results/verification/system_distances.csv` holds one row per system and seed;
-   the ten `w1` values for `DeepSim` average to the reported figure.
+   `w1_summary.csv` averages the ten `w1` values per system and reports their
+   standard deviation, `w1_wilcoxon.csv` the paired difference of DeepSim
+   against the decorrelated generator with its t-based confidence interval.
 2. `scripts/produce_results.py` writes that table.
 3. `src/evaluation/system_evaluation.py` computes the per-seed distances, pairing
    each candidate run with the GroundSim run of the same seed.
@@ -119,9 +123,10 @@ result is reported as PASS or FAIL on the console and as the field
 needs `run_closed_loop` to have run first.
 
 These are full research runs: the default closed-loop and shadow evaluations
-each use ten fixed seeds and a 31-day evaluation horizon plus the documented
-warm-up where applicable. Raw bundles are ignored; the compact derived CSVs are
-written to `results/verification/`.
+each use ten fixed seeds and a 31-day evaluation horizon after a 24 h warm-up;
+the shadow run scores only the decisions made inside that window, as the
+closed loop records only the orders released inside it. Raw bundles are
+ignored; the compact derived CSVs are written to `results/verification/`.
 
 Processing is scored on total duration, station setup time included, in
 `results/verification/scores_continuous.csv` like every other component. All
@@ -173,10 +178,12 @@ inspecting individual preparation steps; `train_models` runs them implicitly.
 
 Hyperparameters come from one place: `train_models` reads the best parameters
 written by `scripts.optimize_hyperparameters` into `--hpo-dir` (default
-`models/hpo/`) and fails if they are absent. The released `*_best_params.json`
-files are part of the repository, so reproducing the released models needs no
-search. To explore a different search, point both scripts at the same separate
-directory:
+`models/hpo/`) and fails if they are absent. The `*_best_params.json` files
+behind the released models are tracked under `models/hpo/` and listed in
+`checksums.sha256`; reproducing the released models from them needs no search.
+A study is named after the model and a fingerprint of the training log, so a
+search resumes on the same log and never continues on a different one. To
+explore a different search, point both scripts at the same separate directory:
 
 ```bash
 python -m scripts.optimize_hyperparameters --data-dir "$TRAINING_DATA_DIR" --hpo-dir models/hpo_explore

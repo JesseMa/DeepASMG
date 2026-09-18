@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import ast
 import importlib
+import hashlib
 import json
 import logging
 import sys
@@ -46,9 +47,6 @@ def _make_objective(train_module: str, suggest_fn, *, train_kwargs: Dict[str, An
         if train_kwargs_override:
             effective_kwargs.update(train_kwargs_override)
 
-        # Forward only extra params the respective train() signature accepts.
-        extra = {k: v for k, v in params.items() if k not in
-                 ("hidden_dims", "learning_rate", "dropout_rate", "batch_size")}
         results = train(
             data_dir      = data_dir,
             model_dir     = trial_dir,
@@ -57,7 +55,6 @@ def _make_objective(train_module: str, suggest_fn, *, train_kwargs: Dict[str, An
             dropout_rate  = params["dropout_rate"],
             batch_size    = params["batch_size"],
             _prep_dir     = shared_prep_dir,
-            **extra,
             **effective_kwargs,
         )
         return results["best_val_loss"]
@@ -125,18 +122,16 @@ def _suggest_product(trial) -> dict:
     )
 
 
-# Per-model study version (default "v1"); bump on search-space drift so Optuna
-# does not reuse an incompatible sampler prior.
-# Study identity is bound to the training-data generation: bumping the
-# version here starts a FRESH Optuna study, so load_if_exists can never let a
-# trial scored on pre-integer-contract data win against new trials.
-STUDY_VERSIONS: Dict[str, str] = {
-    "process_time": "v2_int",
-    "transition": "v3_int_history10",
-    "survival": "v2_int",
-    "repair_time": "v2_int",
-    "product": "v2_int",
-}
+def _data_identity(data_dir: Path) -> str:
+    """Short fingerprint of the training log the study is scored on.
+
+    It is part of the study name, so a study can be resumed on the same log
+    but never continued on a different one: with a shared database the best
+    trial would otherwise be chosen across logs.
+    """
+    meta = (Path(data_dir) / "run_metadata.json").read_bytes()
+    return hashlib.sha256(meta).hexdigest()[:10]
+
 
 # Same chronological split as production training so the train-only vocabulary
 # fit stays consistent.
@@ -183,7 +178,7 @@ def run_hpo(
     n_trials:   int,
     data_dir:   Union[str, Path],
     hpo_dir:    Union[str, Path] = REPO / "models/hpo",
-    db_path:    Optional[Union[str, Path]] = REPO / "models/hpo/hpo_studies.db",
+    db_path:    Union[str, Path] = REPO / "models/hpo/hpo_studies.db",
     n_jobs:     int = 1,
     max_epochs_override: Optional[int] = None,
 ) -> Dict[str, Any]:
@@ -191,7 +186,7 @@ def run_hpo(
 
     Parameters
     ----------
-    db_path   : SQLite path for study persistence (None = in-memory)
+    db_path   : SQLite path for study persistence
     n_jobs    : parallel trials (1 = sequential, safe default)
     """
     import optuna
@@ -204,13 +199,11 @@ def run_hpo(
     model_dir = hpo_dir / model
     model_dir.mkdir(parents=True, exist_ok=True)
 
-    storage = None
-    if db_path is not None:
-        db_path = Path(db_path)
-        db_path.parent.mkdir(parents=True, exist_ok=True)
-        storage = f"sqlite:///{db_path}"
+    db_path = Path(db_path)
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    storage = f"sqlite:///{db_path}"
 
-    study_name = f"deepsim_{model}_{STUDY_VERSIONS.get(model, 'v1')}"
+    study_name = f"deepsim_{model}_{_data_identity(data_dir)}"
     study = optuna.create_study(
         study_name     = study_name,
         direction      = "minimize",
@@ -277,7 +270,7 @@ def run_hpo_all(
     n_trials:  Optional[int],
     data_dir:  Union[str, Path],
     hpo_dir:   Union[str, Path] = REPO / "models/hpo",
-    db_path:   Optional[Union[str, Path]] = REPO / "models/hpo/hpo_studies.db",
+    db_path:   Union[str, Path] = REPO / "models/hpo/hpo_studies.db",
     max_epochs_override: Optional[int] = None,
 ) -> Dict[str, Any]:
     """Run HPO for all five models sequentially.

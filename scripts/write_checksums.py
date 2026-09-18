@@ -24,27 +24,28 @@ HEADER = [
     "#   shasum -a 256 -c checksums.sha256",
 ]
 
+# The released artifact set, named by where the pipeline writes it. Nothing
+# below a scanned directory is picked up by accident: training intermediates
+# (checkpoints, HPO trials, caches) and raw bundles (shadow CSVs, pickles) are
+# not release artifacts and would make the manifest machine-specific.
 PATTERNS = (
-    "models/**/*.json",
-    "models/**/*.pkl",
-    "models/**/*.pt",
-    "results/verification/**/*.csv",
-    "results/verification/**/*.json",
-    "results/execution_audit/**/*.csv",
-    "results/execution_audit/**/*.json",
+    "models/*.json",
+    "models/*.pkl",
+    "models/*.pt",
+    "models/*_data/metadata.json",
+    "models/hpo/*_best_params.json",
+    "results/verification/*.csv",
+    "results/verification/*.json",
+    "results/execution_audit/*.csv",
+    "results/execution_audit/*.json",
 )
-
-# Regenerable inputs that live under the scanned trees but are not released
-# artifacts; matching them would make the manifest machine-specific.
-EXCLUDE_PARTS = ("hpo", "__pycache__")
 
 
 def collect() -> list[Path]:
     seen: set[Path] = set()
     for pattern in PATTERNS:
         seen.update(
-            p for p in REPO.glob(pattern)
-            if p.is_file() and not any(part in EXCLUDE_PARTS for part in p.parts)
+            p for p in REPO.glob(pattern) if p.is_file()
         )
     return sorted(seen, key=lambda p: str(p.relative_to(REPO)))
 

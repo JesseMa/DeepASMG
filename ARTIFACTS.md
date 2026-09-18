@@ -6,8 +6,9 @@ customer, or operational company data.
 
 ## Included
 
-- `models/`: the exact trained TorchScript models, inference metadata, model
-  registries, and fitted reference-distribution parameters used for the paper.
+- `models/`: the exact trained TorchScript models, their inference metadata,
+  the hyperparameter search results and training manifest behind them, and
+  the fitted reference-distribution parameters used for the paper.
 - `results/verification/`: compact derived CSV tables supporting the reported
   component, routing, system, sensitivity, and hazard results.
 - `results/execution_audit/`: derived evidence for the runtime safeguard audit,
@@ -24,9 +25,9 @@ workspace and are not part of this release:
 - Event-level simulation logs and run directories (`data/`, `runs/`, `logs/`).
 - Raw verification bundles: `results/verification/closed_loop_runs*.pkl`,
   `results/verification/shadow/`, `results/verification/sensitivity_sweeps.pkl`.
-- Model-training intermediates: `models/checkpoints/`, `models/evaluations/`,
-  `models/hpo*/` except the `*_best_params.json` files, `models/tensorboard/`, and the
-  per-component `models/*_data/data.npz` training caches.
+- Model-training intermediates: `models/checkpoints/`, `models/hpo*/` except
+  the `*_best_params.json` files, and the per-component `models/*_data/data.npz`
+  training caches.
 - Regenerable audit work products (`results/execution_audit/_m2_work/`).
 - Paper figure sources, input tables, and rendered artwork; the manuscript
   distributes the final figures.
