@@ -516,6 +516,21 @@ class GaussianNLLModule(BaseTrainingModule):
     integer distribution without the +0.5 s double-discretization bias.
     """
 
+    @staticmethod
+    def _interval_prob(zl, zu):
+        """P(zl < Z <= zu) for standard normal Z, stable in both tails.
+
+        Built from erfc rather than log_ndtr: the latter has no MPS kernel, and
+        the tail-aware form is needed anyway. Below the mean the lower tail is
+        differenced directly; above it the upper tail is, because Phi(zu) and
+        Phi(zl) are both 1.0 in float32 well before the probability underflows.
+        """
+        import torch
+        root_two = 1.4142135623730951
+        lower = 0.5 * (torch.erfc(-zu / root_two) - torch.erfc(-zl / root_two))
+        upper = 0.5 * (torch.erfc(zl / root_two) - torch.erfc(zu / root_two))
+        return torch.where(zu > 0.0, upper, lower)
+
     def _nll_loss(self, pred, y):
         import torch
         mean = pred[:, 0]
@@ -523,14 +538,8 @@ class GaussianNLLModule(BaseTrainingModule):
         sigma = torch.exp(0.5 * log_var)
         zu = (y - mean) / sigma          # upper edge k
         zl = (y - 1.0 - mean) / sigma    # lower edge k-1
-        log_fu = torch.special.log_ndtr(zu)
-        log_fl = torch.special.log_ndtr(zl)
-        # log(F(k) - F(k-1)) = log_fu + log1p(-exp(log_fl - log_fu)); the
-        # difference is < 0 by construction, clamped against underflow.
-        log_p = log_fu + torch.log1p(
-            -torch.exp((log_fl - log_fu).clamp(max=-1e-12))
-        )
-        return -log_p.clamp(min=-30.0).mean()
+        p = self._interval_prob(zl, zu).clamp(min=1e-12)
+        return -torch.log(p).clamp(min=-30.0).mean()
 
     def _compute_loss(self, batch, stage: str):
         import torch

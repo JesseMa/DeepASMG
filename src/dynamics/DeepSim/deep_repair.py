@@ -2,12 +2,19 @@
 DeepRepair — NN-based downtime duration, conditional Exponential.
 
 Exponential matches the GroundRepair family, so y > 0 holds structurally.
+
+A station the training log never saw fail keeps an all-zero station block, so
+its downtime is predicted from the wear features alone — the pooled behavior
+of the fleet. With one or two observations there is nothing station-specific
+to estimate, and on a real log that is the ordinary case rather than an error.
 """
 
 from __future__ import annotations
 
 from pathlib import Path
 from typing import Dict, TYPE_CHECKING
+
+import logging
 
 import numpy as np
 
@@ -17,6 +24,9 @@ from src.dynamics.foundation_dynamics import (
 
 if TYPE_CHECKING:
     from src.config.schema import StationConfig
+
+
+_logger = logging.getLogger(__name__)
 
 
 class DeepRepair(RepairStrategy):
@@ -66,13 +76,13 @@ class DeepRepair(RepairStrategy):
         self._ensure_loaded()
 
         required = {sid for sid, cfg in stations.items() if cfg.mttr > 0}
-        missing = sorted(required - set(self._reg_station_map))
-        if missing:
-            raise RuntimeError(
-                "DeepRepair: encoding map does not cover all "
-                "machine stations. "
-                f"Missing from the regressor model: {missing}. "
-                "Model training and station topology are inconsistent."
+        self._pooled = sorted(required - set(self._reg_station_map))
+        if self._pooled:
+            _logger.warning(
+                "DeepRepair: no training observations for %s; these are "
+                "predicted from the pooled model (all-zero station block). "
+                "A rare failure mode is the normal case on real logs.",
+                ", ".join(self._pooled),
             )
 
     def predict_repair_time(
@@ -82,11 +92,10 @@ class DeepRepair(RepairStrategy):
         utilization: float,
         current_time: float = 0.0,  # noqa: ARG002
     ) -> float:
-        if self._regressor_model is None or station_id not in self._reg_station_map:
+        if self._regressor_model is None:
             raise RuntimeError(
-                f"DeepRepair.predict_repair_time: station "
-                f"'{station_id}' not in the regressor encoding map, or model "
-                f"not loaded. initialize() should have caught this."
+                "DeepRepair.predict_repair_time: model not loaded. "
+                "initialize() must run before the first call."
             )
 
         x = self._encode_input(

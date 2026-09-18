@@ -9,6 +9,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 
+import logging
+
 import numpy as np
 
 from src.dynamics.foundation_dynamics import (
@@ -19,8 +21,13 @@ if TYPE_CHECKING:
     from src.config.schema import StationConfig
 
 
+_logger = logging.getLogger(__name__)
+
+
 class DeepSurvival(SurvivalStrategy):
     """Weibull time-to-failure by inversion sampling, in operating seconds."""
+
+    _can_fail: set = frozenset()
 
     def __init__(
         self,
@@ -69,14 +76,14 @@ class DeepSurvival(SurvivalStrategy):
         self._n_cycles.clear()
         self._prev_repair_time.clear()
 
-        required = {sid for sid, cfg in stations.items() if cfg.mttr > 0}
-        missing = sorted(required - set(self._surv_station_map))
-        if missing:
-            raise RuntimeError(
-                "DeepSurvival: encoding map does not cover all "
-                "machine stations. "
-                f"Missing from the survival model: {missing}. "
-                "Model training and station topology are inconsistent."
+        self._can_fail = {sid for sid, cfg in stations.items() if cfg.mttr > 0}
+        pooled = sorted(self._can_fail - set(self._surv_station_map))
+        if pooled:
+            _logger.warning(
+                "DeepSurvival: no training observations for %s; these are "
+                "predicted from the pooled model (all-zero station block). "
+                "A rare failure mode is the ordinary case on a real log.",
+                ", ".join(pooled),
             )
 
     def sample_time_to_failure(
@@ -90,7 +97,9 @@ class DeepSurvival(SurvivalStrategy):
                 "model not loaded. initialize() must run before the first "
                 "call."
             )
-        if station_id not in self._surv_station_map:
+        # Whether a station can fail is a property of the topology; whether we
+        # have station-specific observations only decides pooled vs specific.
+        if station_id not in self._can_fail:
             return None
 
         x = self._encode_input(station_id)
@@ -124,7 +133,9 @@ class DeepSurvival(SurvivalStrategy):
         duration_scale); no state update. None = failure-free station."""
         if self._survival_model is None:
             raise RuntimeError("DeepSurvival.distribution_params: model not loaded.")
-        if station_id not in self._surv_station_map:
+        # Whether a station can fail is a property of the topology; whether we
+        # have station-specific observations only decides pooled vs specific.
+        if station_id not in self._can_fail:
             return None
         output = infer_single(self._survival_model, self._encode_input(station_id))
         shape = float(np.exp(np.clip(output[0].item(), -5.0, 5.0)))
