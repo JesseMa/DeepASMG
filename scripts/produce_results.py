@@ -342,6 +342,7 @@ def _horizon_sensitivity_rows(sweeps: dict) -> list[dict]:
         "days_0091": 91,
         "days_0183": 183,
         "days_0365": 365,
+        "days_0730": 730,
     }
     rows = []
     for config, runs in sweeps.get("horizon", {}).items():

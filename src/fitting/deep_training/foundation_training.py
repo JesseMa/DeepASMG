@@ -146,7 +146,6 @@ def three_way_split(
         raise ValueError("Empty dataset.")
 
     n = X.shape[0]
-    indices = np.arange(n)
 
     n_test = max(1, int(n * test_size))
     remaining = n - n_test
@@ -156,14 +155,13 @@ def three_way_split(
     if n_train < 1:
         raise ValueError(f"test_size={test_size} too large.")
 
-    train_idx = indices[:n_train]
-    val_idx = indices[n_train:n_train + n_val]
-    test_idx = indices[n_train + n_val:]
-
+    # chronological blocks: slices are views, so the split does not double the
+    # footprint of a matrix that already fills a third of the machine
+    a, b = n_train, n_train + n_val
     return {
-        "train": (X[train_idx], y[train_idx]),
-        "val": (X[val_idx], y[val_idx]),
-        "test": (X[test_idx], y[test_idx]),
+        "train": (X[:a], y[:a]),
+        "val": (X[a:b], y[a:b]),
+        "test": (X[b:], y[b:]),
     }
 
 
