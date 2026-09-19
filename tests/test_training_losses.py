@@ -125,6 +125,34 @@ def test_weibull_interval_loss_matches_float64_reference_and_keeps_gradient():
     assert ls.grad[0].item() != 0.0, "an early failure must move the shape"
 
 
+def test_weibull_loss_stays_finite_with_gradient_when_the_law_calls_the_row_impossible():
+    # shape 194 with t/lambda = 1.6: (t/lambda)^k is 1e40, past float32. The old
+    # form returned nan and -inf gradients, which poisoned every weight.
+    ls = torch.tensor([np.log(194.0)], requires_grad=True)
+    lc = torch.tensor([0.0], requires_grad=True)
+    loss = weibull_nll_loss(ls, lc, torch.tensor([1.6]), torch.tensor([1.0]), 1e-5)
+    loss.backward()
+    assert torch.isfinite(loss) and loss.item() > 1e6
+    assert torch.isfinite(ls.grad).all() and torch.isfinite(lc.grad).all()
+    assert ls.grad.item() > 0.0, "the impossible row must push the shape down"
+
+
+def test_survival_repair_feature_is_log_compressed_on_both_sides():
+    # An exponential repair tail puts a 20x outlier into the feature; log1p keeps
+    # it within a few units, and inference must encode it the same way.
+    from src.dynamics.DeepSim.deep_survival import DeepSurvival
+    sv = DeepSurvival.__new__(DeepSurvival)
+    sv._surv_station_map = {"M1": 0}
+    sv._surv_feature_dim = 5
+    sv._surv_duration_scale = sv._surv_n_jobs_scale = 1.0
+    sv._surv_repair_time_scale = 1884.8
+    sv._prev_ttf, sv._prev_n_jobs, sv._mean_ttf = {}, {}, {}
+    sv._prev_repair_time = {"M1": 37972.0}
+    x = sv._encode_input("M1")
+    assert x[4] == pytest.approx(np.log1p(37972.0 / 1884.8), rel=1e-6)
+    assert x[4] < 3.1
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-q"]))
 

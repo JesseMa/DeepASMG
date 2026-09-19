@@ -156,6 +156,6 @@ class DeepSurvival(SurvivalStrategy):
         x[n_stations]     = self._prev_ttf.get(station_id, 0.0) / dur_scale
         x[n_stations + 1] = self._prev_n_jobs.get(station_id, 0.0) / n_jobs_scale
         x[n_stations + 2] = self._mean_ttf.get(station_id, 0.0) / dur_scale
-        x[n_stations + 3] = self._prev_repair_time.get(station_id, 0.0) / repair_scale
+        x[n_stations + 3] = math.log1p(self._prev_repair_time.get(station_id, 0.0) / repair_scale)
 
         return x

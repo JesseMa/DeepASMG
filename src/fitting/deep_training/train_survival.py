@@ -25,21 +25,28 @@ def weibull_nll_loss(
     bin_width: float,
 ) -> torch.Tensor:
     k = torch.exp(log_shape)
-    lam = torch.exp(log_scale)
 
     t_hi = torch.clamp(duration, min=1e-6)
     t_lo = torch.clamp(duration - bin_width, min=1e-6)
-    log_u_hi = k * torch.log(t_hi / lam)
-    u_lo = torch.exp(k * torch.log(t_lo / lam))
-
-    log_d = log_u_hi + torch.log(-torch.expm1(k * torch.log(t_lo / t_hi)))
-    d = torch.exp(log_d).clamp(min=1e-38)
+    # log of the cumulative hazard at both bin edges, soft-capped so that a law
+    # calling the observation impossible yields a huge finite loss with a
+    # gradient instead of inf and NaN weights
+    log_u_hi = _softcap(k * (torch.log(t_hi) - log_scale))
+    log_u_lo = _softcap(k * (torch.log(t_lo) - log_scale))
+    log_d = _softcap(log_u_hi + torch.log(-torch.expm1(k * torch.log(t_lo / t_hi))))
 
     log_s_hi = -torch.exp(log_u_hi)
-    log_p_event = -u_lo + torch.log(-torch.expm1(-d))
+    log_p_event = -torch.exp(log_u_lo) + torch.log(-torch.expm1(-torch.exp(log_d)))
 
     nll = -(event * log_p_event + (1.0 - event) * log_s_hi)
     return nll.mean()
+
+
+_LOG_U_CAP = 60.0
+
+
+def _softcap(x: torch.Tensor, cap: float = _LOG_U_CAP) -> torch.Tensor:
+    return torch.where(x < cap, x, cap + torch.log1p(torch.clamp(x - cap, min=0.0)))
 
 
 class WeibullSurvivalModule(BaseTrainingModule, pl.LightningModule):
@@ -152,7 +159,8 @@ def train(
         X_s[:, n_stations]     /= duration_scale
         X_s[:, n_stations + 1] /= n_jobs_scale
         X_s[:, n_stations + 2] /= duration_scale
-        X_s[:, n_stations + 3] /= repair_time_scale
+        # exponential tail: log1p keeps a 20x outlier within the range the head can absorb
+        X_s[:, n_stations + 3] = np.log1p(X_s[:, n_stations + 3] / repair_time_scale)
         y_s[:, 0]              /= duration_scale
         return X_s, y_s
 
