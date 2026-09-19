@@ -1,0 +1,13 @@
+{
+  "model": "product",
+  "best_value": 2.5229694843292236,
+  "best_trial": 17,
+  "params": {
+    "hidden_dims": "(1024, 512, 256, 128)",
+    "learning_rate": 0.0001463886236445528,
+    "dropout_rate": 0.039497422836321724,
+    "batch_size": 256
+  },
+  "n_trials": 20,
+  "data_dir": "data/training/data_4-stage-crossover-rework_2026-09-18-21-17-32"
+}

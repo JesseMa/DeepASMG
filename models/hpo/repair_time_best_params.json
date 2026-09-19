@@ -1,0 +1,13 @@
+{
+  "model": "repair_time",
+  "best_value": 8.348651885986328,
+  "best_trial": 26,
+  "params": {
+    "hidden_dims": "(256, 256)",
+    "learning_rate": 0.003041807722968983,
+    "dropout_rate": 0.4476342376628033,
+    "batch_size": 64
+  },
+  "n_trials": 30,
+  "data_dir": "data/training/data_4-stage-crossover-rework_2026-09-18-21-17-32"
+}

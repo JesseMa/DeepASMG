@@ -1,0 +1,13 @@
+{
+  "model": "survival",
+  "best_value": 11.964366912841797,
+  "best_trial": 28,
+  "params": {
+    "hidden_dims": "(128, 128)",
+    "learning_rate": 0.0029791580670869397,
+    "dropout_rate": 0.09202556389742307,
+    "batch_size": 128
+  },
+  "n_trials": 30,
+  "data_dir": "data/training/data_4-stage-crossover-rework_2026-09-18-21-17-32"
+}
