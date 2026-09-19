@@ -9,18 +9,18 @@
   },
   "training_data": {
     "generator": "GroundSim",
-    "directory": "data_4-stage-crossover-rework_2026-09-18-12-29-13",
+    "directory": "data_4-stage-crossover-rework_2026-09-18-21-17-32",
     "seed": 101,
     "days": 365,
     "warmup_days": 1,
     "start_timestamp": 1743379200,
     "sim_start_anchor": 1775001600,
     "event_log": {
-      "excluded_release_path": "data/training/data_4-stage-crossover-rework_2026-09-18-12-29-13/run1_events_2026-09-18-12-29-13.csv",
+      "excluded_release_path": "data/training/data_4-stage-crossover-rework_2026-09-18-21-17-32/run1_events_2026-09-18-21-17-32.csv",
       "sha256": "dde79dbd5e41f21121c656ea618cb7bc036dd42da396c419a0941ae2882b922f"
     },
     "order_log": {
-      "excluded_release_path": "data/training/data_4-stage-crossover-rework_2026-09-18-12-29-13/run1_orders_2026-09-18-12-29-13.csv",
+      "excluded_release_path": "data/training/data_4-stage-crossover-rework_2026-09-18-21-17-32/run1_orders_2026-09-18-21-17-32.csv",
       "sha256": "fd23bb00285653d342f664abfe364af17c43927873b2fb5db2faf216242db11e"
     }
   },
@@ -45,40 +45,40 @@
       "process_time": {
         "hidden_dims": [
           1024,
-          1024,
           512
         ],
-        "learning_rate": 0.0001084782286877693,
-        "dropout_rate": 0.004640213590955944,
-        "batch_size": 1024
+        "learning_rate": 0.0005356404963494021,
+        "dropout_rate": 0.00022629951618989216,
+        "batch_size": 256
       },
       "transition": {
         "hidden_dims": [
+          1024,
           512,
           256,
           128
         ],
-        "learning_rate": 0.00010620765648916562,
-        "dropout_rate": 0.12307727164929926,
-        "batch_size": 256
+        "learning_rate": 8.926687191193565e-05,
+        "dropout_rate": 0.4042976957842719,
+        "batch_size": 2048
       },
       "survival": {
         "hidden_dims": [
           128,
           128
         ],
-        "learning_rate": 0.008071960269037535,
-        "dropout_rate": 0.05465109491219455,
-        "batch_size": 64
+        "learning_rate": 0.0029791580670869397,
+        "dropout_rate": 0.09202556389742307,
+        "batch_size": 128
       },
       "repair_time": {
         "hidden_dims": [
-          128,
-          128
+          256,
+          256
         ],
-        "learning_rate": 0.011441684445140416,
-        "dropout_rate": 0.31802137171195,
-        "batch_size": 4
+        "learning_rate": 0.003041807722968983,
+        "dropout_rate": 0.4476342376628033,
+        "batch_size": 64
       },
       "product": {
         "hidden_dims": [
@@ -87,42 +87,42 @@
           256,
           128
         ],
-        "learning_rate": 0.000405175436160263,
-        "dropout_rate": 0.02340110428054276,
-        "batch_size": 128
+        "learning_rate": 0.0001463886236445528,
+        "dropout_rate": 0.039497422836321724,
+        "batch_size": 256
       }
     }
   },
   "artifacts": {
     "process_time": {
       "model": "models/process_time_model.pt",
-      "sha256": "e360fa3129401fb08cfc652ca7f23f2f371e33715ff4e7aafc0c43743524f2c4",
-      "best_val_loss": 2.1014726161956787,
+      "sha256": "2de6dc67bb9cac37272d3708c8ffed93c4ea0cc2cfd62046a19ca032796ced27",
+      "best_val_loss": 2.1002357006073,
       "epochs_trained": 100
     },
     "transition": {
       "model": "models/transition_model.pt",
-      "sha256": "a677ad3832840386e77fe24dde795e331675c0adbf296cdcb0c91a67924c8fb3",
-      "best_val_loss": 0.08776556700468063,
-      "epochs_trained": 66
+      "sha256": "07233cd069113ccb24e09671807714e4c2329a577b4925c1c220a0bb6c33d2ca",
+      "best_val_loss": 0.08742821961641312,
+      "epochs_trained": 84
     },
     "survival": {
       "model": "models/survival_weibull_model.pt",
-      "sha256": "2b81e9e1773bdd99dc39b8256fa68616e4978bfcd9d820a90225c795781941cf",
-      "best_val_loss": 11.979055404663086,
-      "epochs_trained": 31
+      "sha256": "ef3c6c1deb5a33ec0b7bc1f8b697965dcbd32d38ba2864a0b099547d60c7a95d",
+      "best_val_loss": 11.964366912841797,
+      "epochs_trained": 30
     },
     "repair_time": {
       "model": "models/repair_time_model.pt",
-      "sha256": "1eb049c6262d8747acf0a8f2e99b30d210e9a45d5ccce4ac13b8f90cadffa540",
-      "best_val_loss": 8.346723556518555,
-      "epochs_trained": 20
+      "sha256": "8f420545163578f872e583abc16e818a9f6187d9a22784b3f57023a6afe971cb",
+      "best_val_loss": 8.348651885986328,
+      "epochs_trained": 21
     },
     "product": {
       "model": "models/product_model.pt",
-      "sha256": "0a96ec165503cad194f134fc04843a788b96eb7f99266ca55a18084a2560cae6",
-      "best_val_loss": 2.5099754333496094,
-      "epochs_trained": 100
+      "sha256": "f4317a0bdd8b0be1cbb0e433c94a37e1550b288d8a3381541340e2a9903fe8de",
+      "best_val_loss": 2.5158541202545166,
+      "epochs_trained": 83
     }
   }
 }

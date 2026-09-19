@@ -65,10 +65,10 @@
       "ratio": 0.0
     }
   },
-  "operating_time_mean": 160425.578125,
-  "operating_time_std": 62702.796875,
-  "utilization_mean": 0.6549089550971985,
-  "utilization_std": 0.11687474697828293,
-  "wear_ratio_mean": 0.9414273500442505,
-  "wear_ratio_std": 0.22939246892929077
+  "operating_time_mean": 160420.90625,
+  "operating_time_std": 62695.5703125,
+  "utilization_mean": 0.6548992991447449,
+  "utilization_std": 0.11688538640737534,
+  "wear_ratio_mean": 0.9414098262786865,
+  "wear_ratio_std": 0.2293902188539505
 }

@@ -1,2 +1,2 @@
-a,b,n,statistic,p_exact
-DeepSim,GroundSim-DEC,10,0.0,0.001953125
+a,b,n,d_mean,d_sd,ci95_lo,ci95_hi,statistic,p_value
+DeepSim,GroundSim-DEC,10,2.366088678201959,2.563857796933605,0.5320152972387706,4.200162059165147,4.0,0.013671875

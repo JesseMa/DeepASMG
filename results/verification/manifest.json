@@ -88,41 +88,22 @@
     "kpi_bh.csv": 80,
     "kpi_panel.csv": 80,
     "observation_counts.csv": 80,
-    "processing_rescored/processing_setup_values.csv": 21,
-    "processing_rescored/scores_continuous_processing.csv": 50,
-    "routing_compare.csv": 376,
+    "routing_compare.csv": 472,
     "scores_categorical.csv": 130,
     "scores_continuous.csv": 150,
     "sweep_draw31.csv": 50,
     "sweep_draw365.csv": 50,
     "sweep_horizon.csv": 60,
     "system_distances.csv": 50,
+    "w1_summary.csv": 5,
     "w1_wilcoxon.csv": 1
-  },
-  "processing_score_semantics": {
-    "canonical": {
-      "path": "processing_rescored/scores_continuous_processing.csv",
-      "semantics": "Total processing duration. The logged net realization is shifted by the configured station setup time; the GroundSim predictive mean is shifted by the same amount. This is the paper T7 source."
-    },
-    "legacy": {
-      "path": "scores_continuous.csv",
-      "selector": "component=processing",
-      "semantics": "Legacy scoring against the shadow log's net realization, with setup removed. Retained for auditability and not used as paper T7. Other components in this file are unaffected by the processing convention."
-    }
   },
   "paper_tables": {
     "T7": {
       "desc": "Continuous proper scores for processing under canonical total-duration semantics — CRPS/NLL",
       "sources": [
-        "processing_rescored/scores_continuous_processing.csv"
-      ],
-      "supporting_sources": [
-        "processing_rescored/processing_setup_values.csv"
-      ],
-      "legacy_source": {
-        "path": "scores_continuous.csv (component=processing)",
-        "semantics": "Legacy net-duration scoring retained for auditability; it is not the canonical T7 source."
-      }
+        "scores_continuous.csv (component=processing)"
+      ]
     },
     "T8": {
       "desc": "KPI panel (16 KPIs × systems): mean(r_i), sd(r_i), ratio-of-means, p, q",
@@ -144,9 +125,10 @@
       ]
     },
     "T13": {
-      "desc": "System-level throughput time — W1/KS + Wilcoxon",
+      "desc": "System-level throughput time — W1 mean/SD per system, paired difference with t-CI and Wilcoxon",
       "sources": [
         "system_distances.csv",
+        "w1_summary.csv",
         "w1_wilcoxon.csv"
       ]
     },
@@ -160,7 +142,6 @@
   },
   "paper_outputs": {
     "component_scores": [
-      "processing_rescored/scores_continuous_processing.csv",
       "scores_continuous.csv",
       "scores_categorical.csv"
     ],
@@ -169,6 +150,7 @@
     ],
     "system_comparison": [
       "system_distances.csv",
+      "w1_summary.csv",
       "w1_wilcoxon.csv",
       "kpi_panel.csv",
       "kpi_bh.csv"
@@ -190,13 +172,11 @@
       "kpi_absolute.csv": 960,
       "kpi_bh.csv": 80,
       "kpi_panel.csv": 80,
-      "routing_compare.csv": 376,
+      "routing_compare.csv": 472,
       "scores_categorical.csv": 130,
       "scores_continuous.csv": 150,
-      "sweep_draw31.csv": 50,
-      "sweep_draw365.csv": 50,
-      "sweep_horizon.csv": 60,
       "system_distances.csv": 50,
+      "w1_summary.csv": 5,
       "w1_wilcoxon.csv": 1
     }
   }

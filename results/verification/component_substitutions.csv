@@ -1,371 +1,371 @@
 direction,component,configuration,seed,reference_system,w1,ks_d
-swap_to_one,all,DeepSim (All NN),1000,Target (GroundSim),9.367772379154204,0.013917022930773681
-swap_to_perfect,all,DeepSim (All NN),1000,Target (GroundSim),9.367772379154204,0.013917022930773681
-swap_to_one,all,DeepSim (All NN),1001,Target (GroundSim),39.76134417811005,0.010347594138947536
-swap_to_perfect,all,DeepSim (All NN),1001,Target (GroundSim),39.76134417811005,0.010347594138947536
-swap_to_one,all,DeepSim (All NN),1002,Target (GroundSim),18.18651797528896,0.011009328751798386
-swap_to_perfect,all,DeepSim (All NN),1002,Target (GroundSim),18.18651797528896,0.011009328751798386
-swap_to_one,all,DeepSim (All NN),1003,Target (GroundSim),10.809931468582295,0.006785877393146844
-swap_to_perfect,all,DeepSim (All NN),1003,Target (GroundSim),10.809931468582295,0.006785877393146844
-swap_to_one,all,DeepSim (All NN),1004,Target (GroundSim),31.664278673954236,0.012010930169011391
-swap_to_perfect,all,DeepSim (All NN),1004,Target (GroundSim),31.664278673954236,0.012010930169011391
-swap_to_one,all,DeepSim (All NN),1005,Target (GroundSim),23.76649784358165,0.008970082055624884
-swap_to_perfect,all,DeepSim (All NN),1005,Target (GroundSim),23.76649784358165,0.008970082055624884
-swap_to_one,all,DeepSim (All NN),1006,Target (GroundSim),10.97139411608409,0.004988504190653997
-swap_to_perfect,all,DeepSim (All NN),1006,Target (GroundSim),10.97139411608409,0.004988504190653997
-swap_to_one,all,DeepSim (All NN),1007,Target (GroundSim),14.88566893413611,0.009436654460209942
-swap_to_perfect,all,DeepSim (All NN),1007,Target (GroundSim),14.88566893413611,0.009436654460209942
-swap_to_one,all,DeepSim (All NN),1008,Target (GroundSim),7.493103848933245,0.010726947142822768
-swap_to_perfect,all,DeepSim (All NN),1008,Target (GroundSim),7.493103848933245,0.010726947142822768
-swap_to_one,all,DeepSim (All NN),1009,Target (GroundSim),11.072114865510176,0.024133698023644568
-swap_to_perfect,all,DeepSim (All NN),1009,Target (GroundSim),11.072114865510176,0.024133698023644568
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1000,Target (GroundSim),5.539702200010539,0.008292290966299659
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1001,Target (GroundSim),18.253758034572705,0.00963298900671461
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1002,Target (GroundSim),20.77025450673856,0.017151832246169563
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1003,Target (GroundSim),12.800882258185286,0.01018000435951305
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1004,Target (GroundSim),8.882717601888814,0.0053531571184859406
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1005,Target (GroundSim),6.9349322530766075,0.014463436482113068
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1006,Target (GroundSim),8.515526953039616,0.008850189873634284
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1007,Target (GroundSim),10.622941028090423,0.008366486595955291
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1008,Target (GroundSim),9.359530539267679,0.011391649615770438
-swap_to_perfect,arrival,Hybrid (Perfect Orders),1009,Target (GroundSim),10.023094810108596,0.014688328829417174
-swap_to_perfect,routing,Hybrid (Perfect Routing),1000,Target (GroundSim),10.875862260452916,0.015229194015324299
-swap_to_perfect,routing,Hybrid (Perfect Routing),1001,Target (GroundSim),20.40951411271223,0.0074542060677096345
-swap_to_perfect,routing,Hybrid (Perfect Routing),1002,Target (GroundSim),13.207086624361956,0.008279109619040714
-swap_to_perfect,routing,Hybrid (Perfect Routing),1003,Target (GroundSim),17.797454176599988,0.014364343025112358
-swap_to_perfect,routing,Hybrid (Perfect Routing),1004,Target (GroundSim),6.130825836820961,0.00946895074802745
-swap_to_perfect,routing,Hybrid (Perfect Routing),1005,Target (GroundSim),6.719859869225675,0.014146904423662288
-swap_to_perfect,routing,Hybrid (Perfect Routing),1006,Target (GroundSim),10.740054354089507,0.006281046418462444
-swap_to_perfect,routing,Hybrid (Perfect Routing),1007,Target (GroundSim),14.867432282765133,0.013731657231930261
-swap_to_perfect,routing,Hybrid (Perfect Routing),1008,Target (GroundSim),7.205040768353091,0.008791112429665765
-swap_to_perfect,routing,Hybrid (Perfect Routing),1009,Target (GroundSim),16.641775296717427,0.019961412468905926
-swap_to_perfect,processing,Hybrid (Perfect Process),1000,Target (GroundSim),20.992137870365404,0.011533642533943733
-swap_to_perfect,processing,Hybrid (Perfect Process),1001,Target (GroundSim),21.566552291329494,0.008663079569667803
-swap_to_perfect,processing,Hybrid (Perfect Process),1002,Target (GroundSim),14.055326862988887,0.01436946161125252
-swap_to_perfect,processing,Hybrid (Perfect Process),1003,Target (GroundSim),14.435480310586847,0.008947714550344599
-swap_to_perfect,processing,Hybrid (Perfect Process),1004,Target (GroundSim),13.759006329925281,0.017157783083442013
-swap_to_perfect,processing,Hybrid (Perfect Process),1005,Target (GroundSim),8.962897675370947,0.008482764585954358
-swap_to_perfect,processing,Hybrid (Perfect Process),1006,Target (GroundSim),20.86740178905744,0.014916499261592053
-swap_to_perfect,processing,Hybrid (Perfect Process),1007,Target (GroundSim),15.489438364760929,0.006767122521073671
-swap_to_perfect,processing,Hybrid (Perfect Process),1008,Target (GroundSim),9.06186921332434,0.01882228145530873
-swap_to_perfect,processing,Hybrid (Perfect Process),1009,Target (GroundSim),13.575889788362241,0.01129801551867099
-swap_to_perfect,survival,Hybrid (Perfect Survival),1000,Target (GroundSim),3.784827355797712,0.01015167714671067
-swap_to_perfect,survival,Hybrid (Perfect Survival),1001,Target (GroundSim),16.65136889497998,0.012649828539484875
-swap_to_perfect,survival,Hybrid (Perfect Survival),1002,Target (GroundSim),14.401345914541288,0.01086346323640619
-swap_to_perfect,survival,Hybrid (Perfect Survival),1003,Target (GroundSim),13.772205035270456,0.010932814132609714
-swap_to_perfect,survival,Hybrid (Perfect Survival),1004,Target (GroundSim),13.642258014161609,0.01807215819388075
-swap_to_perfect,survival,Hybrid (Perfect Survival),1005,Target (GroundSim),9.138063994012537,0.012735816629411145
-swap_to_perfect,survival,Hybrid (Perfect Survival),1006,Target (GroundSim),16.861809704741514,0.014480109662878882
-swap_to_perfect,survival,Hybrid (Perfect Survival),1007,Target (GroundSim),11.436629831238939,0.014638839655108593
-swap_to_perfect,survival,Hybrid (Perfect Survival),1008,Target (GroundSim),11.997423266367392,0.02060866746247747
-swap_to_perfect,survival,Hybrid (Perfect Survival),1009,Target (GroundSim),22.210528134660155,0.022612023315818963
-swap_to_perfect,repair,Hybrid (Perfect Repair),1000,Target (GroundSim),5.623656351786332,0.009852677795507164
-swap_to_perfect,repair,Hybrid (Perfect Repair),1001,Target (GroundSim),6.05098579842182,0.007260601005302347
-swap_to_perfect,repair,Hybrid (Perfect Repair),1002,Target (GroundSim),16.503406272267956,0.009982058802504024
-swap_to_perfect,repair,Hybrid (Perfect Repair),1003,Target (GroundSim),6.563387649411928,0.007908401006131771
-swap_to_perfect,repair,Hybrid (Perfect Repair),1004,Target (GroundSim),16.030732030227455,0.017482096863675967
-swap_to_perfect,repair,Hybrid (Perfect Repair),1005,Target (GroundSim),4.47805977796147,0.0084303815823345
-swap_to_perfect,repair,Hybrid (Perfect Repair),1006,Target (GroundSim),9.550661732805288,0.009824536519464494
-swap_to_perfect,repair,Hybrid (Perfect Repair),1007,Target (GroundSim),10.627842028558891,0.017964155975106644
-swap_to_perfect,repair,Hybrid (Perfect Repair),1008,Target (GroundSim),7.494226853408522,0.012137043379568696
-swap_to_perfect,repair,Hybrid (Perfect Repair),1009,Target (GroundSim),7.712381365187149,0.012452789736606462
-swap_to_one,processing,Hybrid (DeepSim Process only),1000,Target (GroundSim),3.9879391195499716,0.004783391300939632
-swap_to_one,processing,Hybrid (DeepSim Process only),1001,Target (GroundSim),8.121665446027333,0.01002159889842108
-swap_to_one,processing,Hybrid (DeepSim Process only),1002,Target (GroundSim),15.92732498851404,0.010183314282931066
-swap_to_one,processing,Hybrid (DeepSim Process only),1003,Target (GroundSim),9.718305065557384,0.007988299276753597
-swap_to_one,processing,Hybrid (DeepSim Process only),1004,Target (GroundSim),6.529039615642821,0.006424980483450221
-swap_to_one,processing,Hybrid (DeepSim Process only),1005,Target (GroundSim),6.010686553978564,0.012722594939696297
-swap_to_one,processing,Hybrid (DeepSim Process only),1006,Target (GroundSim),7.612729640232959,0.013623948419508314
-swap_to_one,processing,Hybrid (DeepSim Process only),1007,Target (GroundSim),7.432645461353399,0.012143360292562244
-swap_to_one,processing,Hybrid (DeepSim Process only),1008,Target (GroundSim),4.409332210993063,0.00699794877924953
-swap_to_one,processing,Hybrid (DeepSim Process only),1009,Target (GroundSim),8.280611032256077,0.016255366492162582
-swap_to_one,routing,Hybrid (DeepSim Routing only),1000,Target (GroundSim),9.152597485009128,0.003989703653724488
-swap_to_one,routing,Hybrid (DeepSim Routing only),1001,Target (GroundSim),8.542038244612167,0.005009544885388545
-swap_to_one,routing,Hybrid (DeepSim Routing only),1002,Target (GroundSim),6.366446678903315,0.006159989244308495
-swap_to_one,routing,Hybrid (DeepSim Routing only),1003,Target (GroundSim),4.262381414935743,0.004110307815433811
-swap_to_one,routing,Hybrid (DeepSim Routing only),1004,Target (GroundSim),12.647176377108213,0.010221110481953288
-swap_to_one,routing,Hybrid (DeepSim Routing only),1005,Target (GroundSim),7.480940822425863,0.012203549438688621
-swap_to_one,routing,Hybrid (DeepSim Routing only),1006,Target (GroundSim),5.840868631188857,0.004021530895121028
-swap_to_one,routing,Hybrid (DeepSim Routing only),1007,Target (GroundSim),6.652082298087098,0.012352394470999839
-swap_to_one,routing,Hybrid (DeepSim Routing only),1008,Target (GroundSim),10.010011469724809,0.019127533572177724
-swap_to_one,routing,Hybrid (DeepSim Routing only),1009,Target (GroundSim),9.57907426872921,0.0052158497128607095
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1000,Target (GroundSim),9.86617898865819,0.006132546515374648
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1001,Target (GroundSim),8.840153954460012,0.018494372952421956
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1002,Target (GroundSim),11.126568872213891,0.011455725474818768
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1003,Target (GroundSim),10.753571493788192,0.012665692514494009
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1004,Target (GroundSim),6.584899275264542,0.0156549328173069
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1005,Target (GroundSim),3.134634596439265,0.004277495595340505
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1006,Target (GroundSim),17.882765115874086,0.020131500863389717
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1007,Target (GroundSim),6.8394502547707585,0.007175302413668094
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1008,Target (GroundSim),5.466549675781522,0.008356438777319064
-swap_to_one,arrival,Hybrid (DeepSim Orders only),1009,Target (GroundSim),9.959630743875042,0.015408954121097718
-swap_to_one,survival,Hybrid (DeepSim Survival only),1000,Target (GroundSim),10.307569062238805,0.006586458497616188
-swap_to_one,survival,Hybrid (DeepSim Survival only),1001,Target (GroundSim),7.742980660278701,0.011176871117886705
-swap_to_one,survival,Hybrid (DeepSim Survival only),1002,Target (GroundSim),9.031429708179633,0.004579414230858614
-swap_to_one,survival,Hybrid (DeepSim Survival only),1003,Target (GroundSim),7.371298735909617,0.00834500222627732
-swap_to_one,survival,Hybrid (DeepSim Survival only),1004,Target (GroundSim),11.858369423377685,0.009964253917304156
-swap_to_one,survival,Hybrid (DeepSim Survival only),1005,Target (GroundSim),3.7779481727252966,0.005900152847638895
-swap_to_one,survival,Hybrid (DeepSim Survival only),1006,Target (GroundSim),11.988502550709615,0.008882131968861728
-swap_to_one,survival,Hybrid (DeepSim Survival only),1007,Target (GroundSim),4.4456006929719365,0.005582414957837012
-swap_to_one,survival,Hybrid (DeepSim Survival only),1008,Target (GroundSim),9.672112542842381,0.015382258422406814
-swap_to_one,survival,Hybrid (DeepSim Survival only),1009,Target (GroundSim),10.179975554017782,0.014873630902371537
-swap_to_one,repair,Hybrid (DeepSim Repair only),1000,Target (GroundSim),7.733938729792548,0.00495890159580914
-swap_to_one,repair,Hybrid (DeepSim Repair only),1001,Target (GroundSim),15.43151688291218,0.009193182566209185
-swap_to_one,repair,Hybrid (DeepSim Repair only),1002,Target (GroundSim),16.20581753750692,0.005205933925783279
-swap_to_one,repair,Hybrid (DeepSim Repair only),1003,Target (GroundSim),12.281948383751601,0.003627668248172067
-swap_to_one,repair,Hybrid (DeepSim Repair only),1004,Target (GroundSim),7.306433476781302,0.003841813564505747
-swap_to_one,repair,Hybrid (DeepSim Repair only),1005,Target (GroundSim),8.546455989562626,0.014370240855328453
-swap_to_one,repair,Hybrid (DeepSim Repair only),1006,Target (GroundSim),8.90029420395777,0.011925101127789495
-swap_to_one,repair,Hybrid (DeepSim Repair only),1007,Target (GroundSim),8.550781509827829,0.007493308257630726
-swap_to_one,repair,Hybrid (DeepSim Repair only),1008,Target (GroundSim),8.973679231334122,0.012488431184015436
-swap_to_one,repair,Hybrid (DeepSim Repair only),1009,Target (GroundSim),19.738115626694572,0.014047886839965829
-swap_to_one,all,Floor (Full),1000,Target (GroundSim),9.334098511685909,0.010686174936829884
-swap_to_perfect,all,Floor (Full),1000,Target (GroundSim),9.334098511685909,0.010686174936829884
-swap_to_one,all,Floor (Full),1001,Target (GroundSim),17.18676727314236,0.022683327186917013
-swap_to_perfect,all,Floor (Full),1001,Target (GroundSim),17.18676727314236,0.022683327186917013
-swap_to_one,all,Floor (Full),1002,Target (GroundSim),12.695476114543562,0.009057868767654187
-swap_to_perfect,all,Floor (Full),1002,Target (GroundSim),12.695476114543562,0.009057868767654187
-swap_to_one,all,Floor (Full),1003,Target (GroundSim),9.283225426231132,0.010754427271284117
-swap_to_perfect,all,Floor (Full),1003,Target (GroundSim),9.283225426231132,0.010754427271284117
-swap_to_one,all,Floor (Full),1004,Target (GroundSim),8.78622186760168,0.012604269425081138
-swap_to_perfect,all,Floor (Full),1004,Target (GroundSim),8.78622186760168,0.012604269425081138
-swap_to_one,all,Floor (Full),1005,Target (GroundSim),8.170790442232871,0.013487450015769953
-swap_to_perfect,all,Floor (Full),1005,Target (GroundSim),8.170790442232871,0.013487450015769953
-swap_to_one,all,Floor (Full),1006,Target (GroundSim),9.649394064946687,0.009868591736870824
-swap_to_perfect,all,Floor (Full),1006,Target (GroundSim),9.649394064946687,0.009868591736870824
-swap_to_one,all,Floor (Full),1007,Target (GroundSim),13.840685517697636,0.01642983553257127
-swap_to_perfect,all,Floor (Full),1007,Target (GroundSim),13.840685517697636,0.01642983553257127
-swap_to_one,all,Floor (Full),1008,Target (GroundSim),5.342410973162657,0.009360695767703153
-swap_to_perfect,all,Floor (Full),1008,Target (GroundSim),5.342410973162657,0.009360695767703153
-swap_to_one,all,Floor (Full),1009,Target (GroundSim),7.8816251397486035,0.006878435737021682
-swap_to_perfect,all,Floor (Full),1009,Target (GroundSim),7.8816251397486035,0.006878435737021682
-swap_to_perfect,arrival,Floor (Perfect Orders),1000,Target (GroundSim),11.372902481454105,0.00644079380714202
-swap_to_perfect,arrival,Floor (Perfect Orders),1001,Target (GroundSim),10.515056082378827,0.0116478570775147
-swap_to_perfect,arrival,Floor (Perfect Orders),1002,Target (GroundSim),15.340899801960497,0.007801132980847891
-swap_to_perfect,arrival,Floor (Perfect Orders),1003,Target (GroundSim),9.501670428505708,0.006714261132420352
-swap_to_perfect,arrival,Floor (Perfect Orders),1004,Target (GroundSim),7.363733141997743,0.0041859519044576965
-swap_to_perfect,arrival,Floor (Perfect Orders),1005,Target (GroundSim),3.350619998366359,0.004735576460536517
-swap_to_perfect,arrival,Floor (Perfect Orders),1006,Target (GroundSim),8.509119345256593,0.009265575633659873
-swap_to_perfect,arrival,Floor (Perfect Orders),1007,Target (GroundSim),8.172540257053084,0.008864694218684521
-swap_to_perfect,arrival,Floor (Perfect Orders),1008,Target (GroundSim),5.660044895506493,0.008655755919633079
-swap_to_perfect,arrival,Floor (Perfect Orders),1009,Target (GroundSim),10.435793342561485,0.011265260222709461
-swap_to_perfect,routing,Floor (Perfect Routing),1000,Target (GroundSim),7.508727833525169,0.009730348190258531
-swap_to_perfect,routing,Floor (Perfect Routing),1001,Target (GroundSim),11.487850851264106,0.017600506936443494
-swap_to_perfect,routing,Floor (Perfect Routing),1002,Target (GroundSim),11.6089602551708,0.009675594159553547
-swap_to_perfect,routing,Floor (Perfect Routing),1003,Target (GroundSim),10.312698012207965,0.005521281256266497
-swap_to_perfect,routing,Floor (Perfect Routing),1004,Target (GroundSim),7.916184652639854,0.005090585571634609
-swap_to_perfect,routing,Floor (Perfect Routing),1005,Target (GroundSim),10.505675693972854,0.017976631433149648
-swap_to_perfect,routing,Floor (Perfect Routing),1006,Target (GroundSim),11.47118064298656,0.022269500055531133
-swap_to_perfect,routing,Floor (Perfect Routing),1007,Target (GroundSim),8.816896224596078,0.015882067309464953
-swap_to_perfect,routing,Floor (Perfect Routing),1008,Target (GroundSim),8.86593111144081,0.007524342103835124
-swap_to_perfect,routing,Floor (Perfect Routing),1009,Target (GroundSim),12.138006991615931,0.013862415348335377
-swap_to_perfect,processing,Floor (Perfect Process),1000,Target (GroundSim),11.065976663895768,0.007445265242256194
-swap_to_perfect,processing,Floor (Perfect Process),1001,Target (GroundSim),18.152137395053572,0.024360538621329808
-swap_to_perfect,processing,Floor (Perfect Process),1002,Target (GroundSim),9.621268373417756,0.005570153314834292
-swap_to_perfect,processing,Floor (Perfect Process),1003,Target (GroundSim),7.3105192575538425,0.0035524301342352294
-swap_to_perfect,processing,Floor (Perfect Process),1004,Target (GroundSim),10.875031399344943,0.006177012835096196
-swap_to_perfect,processing,Floor (Perfect Process),1005,Target (GroundSim),8.570717307142178,0.017087916863289476
-swap_to_perfect,processing,Floor (Perfect Process),1006,Target (GroundSim),12.885889677857055,0.016382552744965195
-swap_to_perfect,processing,Floor (Perfect Process),1007,Target (GroundSim),8.135319364943005,0.011593386113060822
-swap_to_perfect,processing,Floor (Perfect Process),1008,Target (GroundSim),5.806108140634185,0.011883873457838035
-swap_to_perfect,processing,Floor (Perfect Process),1009,Target (GroundSim),17.91266368106082,0.026427969082723213
-swap_to_perfect,survival,Floor (Perfect Survival),1000,Target (GroundSim),4.379845087104293,0.005260318456003166
-swap_to_perfect,survival,Floor (Perfect Survival),1001,Target (GroundSim),12.96679263201165,0.011560612335156595
-swap_to_perfect,survival,Floor (Perfect Survival),1002,Target (GroundSim),11.650720827774858,0.009000442195900848
-swap_to_perfect,survival,Floor (Perfect Survival),1003,Target (GroundSim),9.201855373456183,0.008375676552583172
-swap_to_perfect,survival,Floor (Perfect Survival),1004,Target (GroundSim),9.670343517673622,0.010292352330782184
-swap_to_perfect,survival,Floor (Perfect Survival),1005,Target (GroundSim),9.738559652592837,0.017814195848637582
-swap_to_perfect,survival,Floor (Perfect Survival),1006,Target (GroundSim),10.830735700586033,0.01195919269501633
-swap_to_perfect,survival,Floor (Perfect Survival),1007,Target (GroundSim),7.281339207295461,0.011040477127854387
-swap_to_perfect,survival,Floor (Perfect Survival),1008,Target (GroundSim),11.810835003139113,0.01575693243674514
-swap_to_perfect,survival,Floor (Perfect Survival),1009,Target (GroundSim),11.783456269003784,0.01618006805523492
-swap_to_perfect,repair,Floor (Perfect Repair),1000,Target (GroundSim),6.919422325008949,0.005090210063619802
-swap_to_perfect,repair,Floor (Perfect Repair),1001,Target (GroundSim),9.889685898302506,0.018329479186470765
-swap_to_perfect,repair,Floor (Perfect Repair),1002,Target (GroundSim),13.843350907608686,0.016124810820429214
-swap_to_perfect,repair,Floor (Perfect Repair),1003,Target (GroundSim),4.448641220380264,0.005701722899948525
-swap_to_perfect,repair,Floor (Perfect Repair),1004,Target (GroundSim),7.348015052157017,0.005247695963995158
-swap_to_perfect,repair,Floor (Perfect Repair),1005,Target (GroundSim),9.370591266278202,0.013978201443336113
-swap_to_perfect,repair,Floor (Perfect Repair),1006,Target (GroundSim),12.652280701476972,0.006287785876771257
-swap_to_perfect,repair,Floor (Perfect Repair),1007,Target (GroundSim),10.030278893080268,0.009908712138677611
-swap_to_perfect,repair,Floor (Perfect Repair),1008,Target (GroundSim),8.691380978866594,0.01736264302863927
-swap_to_perfect,repair,Floor (Perfect Repair),1009,Target (GroundSim),12.357937847329758,0.021222258058633647
-swap_to_one,processing,Floor (Process decorrelated),1000,Target (GroundSim),4.86947322424129,0.006682211976942187
-swap_to_one,processing,Floor (Process decorrelated),1001,Target (GroundSim),4.163425843847807,0.007174724569934121
-swap_to_one,processing,Floor (Process decorrelated),1002,Target (GroundSim),10.287875868559645,0.009894907991921387
-swap_to_one,processing,Floor (Process decorrelated),1003,Target (GroundSim),9.18676651211596,0.005422518913388075
-swap_to_one,processing,Floor (Process decorrelated),1004,Target (GroundSim),11.470902184537154,0.008440639801953975
-swap_to_one,processing,Floor (Process decorrelated),1005,Target (GroundSim),1.82062881588649,0.0034148218417909826
-swap_to_one,processing,Floor (Process decorrelated),1006,Target (GroundSim),9.682684547900235,0.010981516622339094
-swap_to_one,processing,Floor (Process decorrelated),1007,Target (GroundSim),7.985681942866421,0.00995583184805554
-swap_to_one,processing,Floor (Process decorrelated),1008,Target (GroundSim),3.835477699974648,0.00862791343415581
-swap_to_one,processing,Floor (Process decorrelated),1009,Target (GroundSim),10.26404742841289,0.017167092156502084
-swap_to_one,routing,Floor (Routing decorrelated),1000,Target (GroundSim),9.85805350085568,0.016878099867191132
-swap_to_one,routing,Floor (Routing decorrelated),1001,Target (GroundSim),6.351891102818334,0.013398315476465084
-swap_to_one,routing,Floor (Routing decorrelated),1002,Target (GroundSim),7.232601501120252,0.007360013391170761
-swap_to_one,routing,Floor (Routing decorrelated),1003,Target (GroundSim),6.476862180632436,0.006528052286806529
-swap_to_one,routing,Floor (Routing decorrelated),1004,Target (GroundSim),4.199946228814046,0.003940063446271624
-swap_to_one,routing,Floor (Routing decorrelated),1005,Target (GroundSim),5.603318230416787,0.010013273642944909
-swap_to_one,routing,Floor (Routing decorrelated),1006,Target (GroundSim),10.632613245327935,0.0072964691767472
-swap_to_one,routing,Floor (Routing decorrelated),1007,Target (GroundSim),6.836800959061771,0.006473753053818698
-swap_to_one,routing,Floor (Routing decorrelated),1008,Target (GroundSim),9.251127858214284,0.015920980606007107
-swap_to_one,routing,Floor (Routing decorrelated),1009,Target (GroundSim),16.137204910823947,0.005926283728387466
-swap_to_one,survival,Floor (Survival decorrelated),1000,Target (GroundSim),9.368116742814824,0.004525248763345369
-swap_to_one,survival,Floor (Survival decorrelated),1001,Target (GroundSim),8.675374754858925,0.004580302756427845
-swap_to_one,survival,Floor (Survival decorrelated),1002,Target (GroundSim),13.92553293496104,0.009983153827334557
-swap_to_one,survival,Floor (Survival decorrelated),1003,Target (GroundSim),3.930755490232066,0.00528410349540942
-swap_to_one,survival,Floor (Survival decorrelated),1004,Target (GroundSim),9.939953521443186,0.010877400086162448
-swap_to_one,survival,Floor (Survival decorrelated),1005,Target (GroundSim),3.7010270137240706,0.009297597302763805
-swap_to_one,survival,Floor (Survival decorrelated),1006,Target (GroundSim),16.55143319072414,0.006912269980773544
-swap_to_one,survival,Floor (Survival decorrelated),1007,Target (GroundSim),9.931912687341239,0.014674525719071074
-swap_to_one,survival,Floor (Survival decorrelated),1008,Target (GroundSim),5.838582065501728,0.0065741475173456965
-swap_to_one,survival,Floor (Survival decorrelated),1009,Target (GroundSim),10.567465033215846,0.008816856649830729
-swap_to_one,repair,Floor (Repair decorrelated),1000,Target (GroundSim),10.934512760171868,0.009938065246053784
-swap_to_one,repair,Floor (Repair decorrelated),1001,Target (GroundSim),16.83219233062216,0.013693489582859486
-swap_to_one,repair,Floor (Repair decorrelated),1002,Target (GroundSim),7.471630940870696,0.0052744106825215464
-swap_to_one,repair,Floor (Repair decorrelated),1003,Target (GroundSim),9.033091235832837,0.004614167132093894
-swap_to_one,repair,Floor (Repair decorrelated),1004,Target (GroundSim),4.991999939412517,0.0037189460661130047
-swap_to_one,repair,Floor (Repair decorrelated),1005,Target (GroundSim),7.987861938805803,0.01571464577021986
-swap_to_one,repair,Floor (Repair decorrelated),1006,Target (GroundSim),10.208881607772465,0.00824014343699575
-swap_to_one,repair,Floor (Repair decorrelated),1007,Target (GroundSim),10.266499279595696,0.016045430059094035
-swap_to_one,repair,Floor (Repair decorrelated),1008,Target (GroundSim),7.134018846655792,0.010052732721249236
-swap_to_one,repair,Floor (Repair decorrelated),1009,Target (GroundSim),13.135476673058697,0.01988993018491525
-swap_to_one,arrival,Floor (Orders decorrelated),1000,Target (GroundSim),5.580785008804618,0.006348739254378524
-swap_to_one,arrival,Floor (Orders decorrelated),1001,Target (GroundSim),8.511235041248415,0.020351157222665617
-swap_to_one,arrival,Floor (Orders decorrelated),1002,Target (GroundSim),15.819395715473677,0.007390138122164769
-swap_to_one,arrival,Floor (Orders decorrelated),1003,Target (GroundSim),6.61832313196806,0.005955326152879747
-swap_to_one,arrival,Floor (Orders decorrelated),1004,Target (GroundSim),10.141651477637485,0.009340144661816763
-swap_to_one,arrival,Floor (Orders decorrelated),1005,Target (GroundSim),7.492293658058861,0.010632301185366066
-swap_to_one,arrival,Floor (Orders decorrelated),1006,Target (GroundSim),12.630387495151766,0.0193260255402129
-swap_to_one,arrival,Floor (Orders decorrelated),1007,Target (GroundSim),10.688585677608373,0.013826614716074714
-swap_to_one,arrival,Floor (Orders decorrelated),1008,Target (GroundSim),8.77251215734804,0.008852049435532416
-swap_to_one,arrival,Floor (Orders decorrelated),1009,Target (GroundSim),12.11326448076038,0.00827740015194467
-swap_to_one,all,RefSim (All Statistical),1000,Target (GroundSim),25.52787154795496,0.06880136534749443
-swap_to_perfect,all,RefSim (All Statistical),1000,Target (GroundSim),25.52787154795496,0.06880136534749443
-swap_to_one,all,RefSim (All Statistical),1001,Target (GroundSim),29.59370915058004,0.0812039575788649
-swap_to_perfect,all,RefSim (All Statistical),1001,Target (GroundSim),29.59370915058004,0.0812039575788649
-swap_to_one,all,RefSim (All Statistical),1002,Target (GroundSim),35.2471190282112,0.07583004125165232
-swap_to_perfect,all,RefSim (All Statistical),1002,Target (GroundSim),35.2471190282112,0.07583004125165232
-swap_to_one,all,RefSim (All Statistical),1003,Target (GroundSim),30.408453840539185,0.08409033233038737
-swap_to_perfect,all,RefSim (All Statistical),1003,Target (GroundSim),30.408453840539185,0.08409033233038737
-swap_to_one,all,RefSim (All Statistical),1004,Target (GroundSim),30.93215204746561,0.08134227487841417
-swap_to_perfect,all,RefSim (All Statistical),1004,Target (GroundSim),30.93215204746561,0.08134227487841417
-swap_to_one,all,RefSim (All Statistical),1005,Target (GroundSim),38.24446101556471,0.10860369718067414
-swap_to_perfect,all,RefSim (All Statistical),1005,Target (GroundSim),38.24446101556471,0.10860369718067414
-swap_to_one,all,RefSim (All Statistical),1006,Target (GroundSim),37.77946774937561,0.07696045494906378
-swap_to_perfect,all,RefSim (All Statistical),1006,Target (GroundSim),37.77946774937561,0.07696045494906378
-swap_to_one,all,RefSim (All Statistical),1007,Target (GroundSim),45.187004376931384,0.10673359949741956
-swap_to_perfect,all,RefSim (All Statistical),1007,Target (GroundSim),45.187004376931384,0.10673359949741956
-swap_to_one,all,RefSim (All Statistical),1008,Target (GroundSim),28.050335238210636,0.0797709981919158
-swap_to_perfect,all,RefSim (All Statistical),1008,Target (GroundSim),28.050335238210636,0.0797709981919158
-swap_to_one,all,RefSim (All Statistical),1009,Target (GroundSim),37.489453566110484,0.09755158765250149
-swap_to_perfect,all,RefSim (All Statistical),1009,Target (GroundSim),37.489453566110484,0.09755158765250149
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1000,Target (GroundSim),25.52787154795496,0.06880136534749443
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1001,Target (GroundSim),29.59370915058004,0.0812039575788649
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1002,Target (GroundSim),35.2471190282112,0.07583004125165232
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1003,Target (GroundSim),30.408453840539185,0.08409033233038737
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1004,Target (GroundSim),30.93215204746561,0.08134227487841417
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1005,Target (GroundSim),38.24446101556471,0.10860369718067414
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1006,Target (GroundSim),37.77946774937561,0.07696045494906378
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1007,Target (GroundSim),45.187004376931384,0.10673359949741956
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1008,Target (GroundSim),28.050335238210636,0.0797709981919158
-swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1009,Target (GroundSim),37.489453566110484,0.09755158765250149
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1000,Target (GroundSim),27.83349723463891,0.0891787327998933
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1001,Target (GroundSim),29.04875273852633,0.06588679181272084
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1002,Target (GroundSim),31.50652408216869,0.08694166090802213
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1003,Target (GroundSim),30.24798489900737,0.09001964917659988
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1004,Target (GroundSim),26.435244359078762,0.06873972563623082
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1005,Target (GroundSim),29.777519780865397,0.10309011462476236
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1006,Target (GroundSim),38.40128545508114,0.0846821616404802
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1007,Target (GroundSim),28.83237330278188,0.09001501049440724
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1008,Target (GroundSim),27.582590774455866,0.08562164318972351
-swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1009,Target (GroundSim),34.37855799573227,0.09475326203715445
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1000,Target (GroundSim),18.76031949067742,0.034427574970242236
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1001,Target (GroundSim),17.584712749816248,0.032435590739899656
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1002,Target (GroundSim),22.535908015590877,0.03122708709565314
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1003,Target (GroundSim),20.85583599549585,0.042813897924728894
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1004,Target (GroundSim),17.213280209248254,0.04108776243593221
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1005,Target (GroundSim),19.132165857212286,0.05271364243369264
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1006,Target (GroundSim),23.412780253323177,0.02486351003494658
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1007,Target (GroundSim),21.02345381660257,0.05251945453197954
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1008,Target (GroundSim),17.995397441412603,0.041155783310786814
-swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1009,Target (GroundSim),19.202632500856296,0.06041449673586047
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1000,Target (GroundSim),36.083693587523285,0.0863198141920305
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1001,Target (GroundSim),26.436307388033125,0.060929096778663705
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1002,Target (GroundSim),26.591889175271803,0.06969293079944716
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1003,Target (GroundSim),29.584502343904763,0.08331722973335137
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1004,Target (GroundSim),35.722073228458854,0.08215051763620723
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1005,Target (GroundSim),37.24477476027121,0.10729591104453995
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1006,Target (GroundSim),34.240605940671244,0.07928579970086558
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1007,Target (GroundSim),36.293151142121225,0.09607783704204653
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1008,Target (GroundSim),28.45723807935071,0.08254680873258374
-swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1009,Target (GroundSim),38.99640814603792,0.10684066942735959
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1000,Target (GroundSim),45.01099418683644,0.09900762911667799
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1001,Target (GroundSim),35.16686363873082,0.0838668395081561
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1002,Target (GroundSim),26.95231526566688,0.06690830829725641
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1003,Target (GroundSim),31.175243004570987,0.07611581181453403
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1004,Target (GroundSim),37.374279337911105,0.08667702058330301
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1005,Target (GroundSim),38.69848079279866,0.10857827828131944
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1006,Target (GroundSim),37.87961785431212,0.09246828932489032
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1007,Target (GroundSim),40.44816305558704,0.09238692395188192
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1008,Target (GroundSim),26.741654867763295,0.07452842340859289
-swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1009,Target (GroundSim),37.45380355557111,0.09747774743128174
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1000,Target (GroundSim),14.122247846231012,0.031987425450223136
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1001,Target (GroundSim),17.1850401094855,0.0272898053386496
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1002,Target (GroundSim),20.39253357475434,0.03013817620550796
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1003,Target (GroundSim),17.598612723298622,0.027530501101506327
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1004,Target (GroundSim),19.300104934056527,0.02702227558115111
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1005,Target (GroundSim),14.398548728613818,0.031970891707144844
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1006,Target (GroundSim),9.836914226377923,0.025983702169200117
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1007,Target (GroundSim),14.143549572988249,0.03383027717430481
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1008,Target (GroundSim),9.727601698716128,0.028998385604550217
-swap_to_one,processing,RefSim Hybrid (Stat Process only),1009,Target (GroundSim),16.405047542804876,0.04428808381867588
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1000,Target (GroundSim),22.176188973844905,0.060233031384518354
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1001,Target (GroundSim),18.657048220920068,0.039577148203645385
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1002,Target (GroundSim),22.165124474339947,0.05173854974385955
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1003,Target (GroundSim),17.723029204466325,0.042364836507461257
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1004,Target (GroundSim),15.997821880804135,0.04536478955871004
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1005,Target (GroundSim),18.299543169768526,0.05731924112759823
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1006,Target (GroundSim),17.635408415856062,0.04508266497454266
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1007,Target (GroundSim),23.802662183840578,0.06406266440852276
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1008,Target (GroundSim),16.02912939281893,0.047242577510145656
-swap_to_one,routing,RefSim Hybrid (Stat Routing only),1009,Target (GroundSim),31.571111902080446,0.07570344118847788
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1000,Target (GroundSim),20.849527557404503,0.057741247881689495
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1001,Target (GroundSim),19.668651215765557,0.04915611406035525
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1002,Target (GroundSim),21.518301673450125,0.05987832488079009
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1003,Target (GroundSim),23.180604671537154,0.0681559033983532
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1004,Target (GroundSim),20.685236599953704,0.05485630830096455
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1005,Target (GroundSim),24.920235695021148,0.06294947127789619
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1006,Target (GroundSim),25.550576289342246,0.05545348020039831
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1007,Target (GroundSim),19.099403418009246,0.057305491090671345
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1008,Target (GroundSim),20.442969875131617,0.05479196661707625
-swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1009,Target (GroundSim),25.280710507739386,0.07268486119608802
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1000,Target (GroundSim),3.7062715318443695,0.005926151122098544
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1001,Target (GroundSim),10.508220956880878,0.004082399035200357
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1002,Target (GroundSim),9.252944959638391,0.012554438895676368
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1003,Target (GroundSim),9.58028404130118,0.009205683214616012
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1004,Target (GroundSim),10.0622141873402,0.006489842213617036
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1005,Target (GroundSim),6.447030930895277,0.009358017308684685
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1006,Target (GroundSim),13.721689100391094,0.0068616113504595955
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1007,Target (GroundSim),10.1079086363294,0.01077441381678823
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1008,Target (GroundSim),7.521228055665512,0.008890252880881355
-swap_to_one,survival,RefSim Hybrid (Stat Survival only),1009,Target (GroundSim),8.322142912859817,0.016778259539379337
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1000,Target (GroundSim),5.881275379332353,0.011403947778441309
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1001,Target (GroundSim),9.593898491706796,0.009940417786625022
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1002,Target (GroundSim),13.681971739691456,0.004865515962183764
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1003,Target (GroundSim),9.530893637035234,0.011781678494066528
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1004,Target (GroundSim),6.2976645811351775,0.006309960645406565
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1005,Target (GroundSim),4.037111161466807,0.006646577321069047
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1006,Target (GroundSim),13.422705464851592,0.009103157893716796
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1007,Target (GroundSim),7.4446854637692255,0.00999024620110811
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1008,Target (GroundSim),8.062939437753329,0.015534013661790524
-swap_to_one,repair,RefSim Hybrid (Stat Repair only),1009,Target (GroundSim),6.233098928912398,0.01219916438361579
-module_selection,repair,Hybrid (Stat Repair),1000,Target (GroundSim),5.357141497397894,0.006335382640098142
-module_selection,repair,Hybrid (Stat Repair),1001,Target (GroundSim),8.000997438151419,0.011970827442528753
-module_selection,repair,Hybrid (Stat Repair),1002,Target (GroundSim),20.504733957010167,0.01570560025590706
-module_selection,repair,Hybrid (Stat Repair),1003,Target (GroundSim),8.487361176001897,0.007923266601071344
-module_selection,repair,Hybrid (Stat Repair),1004,Target (GroundSim),14.127570228020476,0.009321379118885309
-module_selection,repair,Hybrid (Stat Repair),1005,Target (GroundSim),5.019882841911542,0.00739123824403376
-module_selection,repair,Hybrid (Stat Repair),1006,Target (GroundSim),12.069978143045784,0.009427958736416997
-module_selection,repair,Hybrid (Stat Repair),1007,Target (GroundSim),11.07824916262351,0.010096499600358716
-module_selection,repair,Hybrid (Stat Repair),1008,Target (GroundSim),7.2499587654788336,0.011560076187711155
-module_selection,repair,Hybrid (Stat Repair),1009,Target (GroundSim),18.219108318175884,0.024041482031791517
+swap_to_one,all,DeepSim (All NN),1000,Target (GroundSim),11.16259248710877,0.017510647508059807
+swap_to_perfect,all,DeepSim (All NN),1000,Target (GroundSim),11.16259248710877,0.017510647508059807
+swap_to_one,all,DeepSim (All NN),1001,Target (GroundSim),35.41052090565542,0.019551521296408247
+swap_to_perfect,all,DeepSim (All NN),1001,Target (GroundSim),35.41052090565542,0.019551521296408247
+swap_to_one,all,DeepSim (All NN),1002,Target (GroundSim),8.852014237285287,0.004966902886527791
+swap_to_perfect,all,DeepSim (All NN),1002,Target (GroundSim),8.852014237285287,0.004966902886527791
+swap_to_one,all,DeepSim (All NN),1003,Target (GroundSim),10.806681076639883,0.009360708513743626
+swap_to_perfect,all,DeepSim (All NN),1003,Target (GroundSim),10.806681076639883,0.009360708513743626
+swap_to_one,all,DeepSim (All NN),1004,Target (GroundSim),12.118438784856973,0.025839816514779512
+swap_to_perfect,all,DeepSim (All NN),1004,Target (GroundSim),12.118438784856973,0.025839816514779512
+swap_to_one,all,DeepSim (All NN),1005,Target (GroundSim),10.813564993572449,0.013266255586130482
+swap_to_perfect,all,DeepSim (All NN),1005,Target (GroundSim),10.813564993572449,0.013266255586130482
+swap_to_one,all,DeepSim (All NN),1006,Target (GroundSim),13.922403725374915,0.018351612998498634
+swap_to_perfect,all,DeepSim (All NN),1006,Target (GroundSim),13.922403725374915,0.018351612998498634
+swap_to_one,all,DeepSim (All NN),1007,Target (GroundSim),9.78830686519958,0.005792018944130062
+swap_to_perfect,all,DeepSim (All NN),1007,Target (GroundSim),9.78830686519958,0.005792018944130062
+swap_to_one,all,DeepSim (All NN),1008,Target (GroundSim),6.060421137974792,0.011359787298138219
+swap_to_perfect,all,DeepSim (All NN),1008,Target (GroundSim),6.060421137974792,0.011359787298138219
+swap_to_one,all,DeepSim (All NN),1009,Target (GroundSim),10.975572325358467,0.007953337183479237
+swap_to_perfect,all,DeepSim (All NN),1009,Target (GroundSim),10.975572325358467,0.007953337183479237
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1000,Target (GroundSim),8.117142375590316,0.01052196379303627
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1001,Target (GroundSim),31.677155618158196,0.01923855744958447
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1002,Target (GroundSim),12.680667898502799,0.013653962191544855
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1003,Target (GroundSim),13.366029490421226,0.01409719081241334
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1004,Target (GroundSim),10.297560426157716,0.018106942250094127
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1005,Target (GroundSim),5.178037808280919,0.008544953203300232
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1006,Target (GroundSim),7.990850781864006,0.009596662873352924
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1007,Target (GroundSim),10.115465669306058,0.007589152714132297
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1008,Target (GroundSim),7.003273149591413,0.013731449036190724
+swap_to_perfect,arrival,Hybrid (Perfect Orders),1009,Target (GroundSim),9.434250858411414,0.01338576488644816
+swap_to_perfect,routing,Hybrid (Perfect Routing),1000,Target (GroundSim),6.305177010915521,0.00985465800495472
+swap_to_perfect,routing,Hybrid (Perfect Routing),1001,Target (GroundSim),28.98358640393406,0.011685137735843898
+swap_to_perfect,routing,Hybrid (Perfect Routing),1002,Target (GroundSim),13.328229391127397,0.009833627479214568
+swap_to_perfect,routing,Hybrid (Perfect Routing),1003,Target (GroundSim),11.5364830270993,0.0068600980313585636
+swap_to_perfect,routing,Hybrid (Perfect Routing),1004,Target (GroundSim),9.802199714644503,0.016013494115854177
+swap_to_perfect,routing,Hybrid (Perfect Routing),1005,Target (GroundSim),9.49268751293356,0.015417469365844538
+swap_to_perfect,routing,Hybrid (Perfect Routing),1006,Target (GroundSim),10.668046926015105,0.020375134967285047
+swap_to_perfect,routing,Hybrid (Perfect Routing),1007,Target (GroundSim),8.973592694154592,0.006053326718823804
+swap_to_perfect,routing,Hybrid (Perfect Routing),1008,Target (GroundSim),6.365773628088507,0.010057705222360824
+swap_to_perfect,routing,Hybrid (Perfect Routing),1009,Target (GroundSim),13.546765165794891,0.014886464173954672
+swap_to_perfect,processing,Hybrid (Perfect Process),1000,Target (GroundSim),5.678140456490572,0.009563712834637195
+swap_to_perfect,processing,Hybrid (Perfect Process),1001,Target (GroundSim),33.86157472483154,0.015491728658975301
+swap_to_perfect,processing,Hybrid (Perfect Process),1002,Target (GroundSim),10.928805649971784,0.006875839907243053
+swap_to_perfect,processing,Hybrid (Perfect Process),1003,Target (GroundSim),13.794514885567704,0.010914463152022547
+swap_to_perfect,processing,Hybrid (Perfect Process),1004,Target (GroundSim),13.872614961255087,0.022693108733126743
+swap_to_perfect,processing,Hybrid (Perfect Process),1005,Target (GroundSim),10.729093756351663,0.008537972365829427
+swap_to_perfect,processing,Hybrid (Perfect Process),1006,Target (GroundSim),10.295881833766089,0.020079369278556247
+swap_to_perfect,processing,Hybrid (Perfect Process),1007,Target (GroundSim),8.29956496312347,0.00986359876895665
+swap_to_perfect,processing,Hybrid (Perfect Process),1008,Target (GroundSim),6.768548019952376,0.011951291191599323
+swap_to_perfect,processing,Hybrid (Perfect Process),1009,Target (GroundSim),13.50960485671528,0.007901507149159381
+swap_to_perfect,survival,Hybrid (Perfect Survival),1000,Target (GroundSim),7.756793618504539,0.011838238727370776
+swap_to_perfect,survival,Hybrid (Perfect Survival),1001,Target (GroundSim),27.04595420955382,0.019257470856883896
+swap_to_perfect,survival,Hybrid (Perfect Survival),1002,Target (GroundSim),9.313904436670093,0.012261406659303309
+swap_to_perfect,survival,Hybrid (Perfect Survival),1003,Target (GroundSim),9.81989615401113,0.0072169454700420355
+swap_to_perfect,survival,Hybrid (Perfect Survival),1004,Target (GroundSim),11.181454754622115,0.023459057678250295
+swap_to_perfect,survival,Hybrid (Perfect Survival),1005,Target (GroundSim),8.54220227910348,0.01713737483457345
+swap_to_perfect,survival,Hybrid (Perfect Survival),1006,Target (GroundSim),13.373701358990175,0.019704276041060953
+swap_to_perfect,survival,Hybrid (Perfect Survival),1007,Target (GroundSim),6.8192806985450645,0.007988307202936973
+swap_to_perfect,survival,Hybrid (Perfect Survival),1008,Target (GroundSim),7.938525073227767,0.013455487338421224
+swap_to_perfect,survival,Hybrid (Perfect Survival),1009,Target (GroundSim),10.53975374826134,0.011323277091850603
+swap_to_perfect,repair,Hybrid (Perfect Repair),1000,Target (GroundSim),9.927631105847865,0.012878494584714684
+swap_to_perfect,repair,Hybrid (Perfect Repair),1001,Target (GroundSim),14.588720116531048,0.017727721444096456
+swap_to_perfect,repair,Hybrid (Perfect Repair),1002,Target (GroundSim),9.393663609526179,0.006580261502396184
+swap_to_perfect,repair,Hybrid (Perfect Repair),1003,Target (GroundSim),6.130495047782919,0.0067045492176143195
+swap_to_perfect,repair,Hybrid (Perfect Repair),1004,Target (GroundSim),11.551467497465673,0.021482644231267778
+swap_to_perfect,repair,Hybrid (Perfect Repair),1005,Target (GroundSim),8.44662944127726,0.016243897959406728
+swap_to_perfect,repair,Hybrid (Perfect Repair),1006,Target (GroundSim),10.467878259575937,0.019791923912731657
+swap_to_perfect,repair,Hybrid (Perfect Repair),1007,Target (GroundSim),3.4391381452209684,0.005670579433045803
+swap_to_perfect,repair,Hybrid (Perfect Repair),1008,Target (GroundSim),8.901859585106301,0.013170910523829682
+swap_to_perfect,repair,Hybrid (Perfect Repair),1009,Target (GroundSim),4.931881625443308,0.008723691406800405
+swap_to_one,processing,Hybrid (DeepSim Process only),1000,Target (GroundSim),6.152116049549722,0.007287704582408017
+swap_to_one,processing,Hybrid (DeepSim Process only),1001,Target (GroundSim),12.412245219095515,0.009363861579042454
+swap_to_one,processing,Hybrid (DeepSim Process only),1002,Target (GroundSim),9.73384089646952,0.0065822601571439154
+swap_to_one,processing,Hybrid (DeepSim Process only),1003,Target (GroundSim),5.56478684389875,0.0073471870595903654
+swap_to_one,processing,Hybrid (DeepSim Process only),1004,Target (GroundSim),5.138719909790832,0.005350816600604491
+swap_to_one,processing,Hybrid (DeepSim Process only),1005,Target (GroundSim),6.750483357969383,0.007389507585566224
+swap_to_one,processing,Hybrid (DeepSim Process only),1006,Target (GroundSim),3.683481104573731,0.005306397513459071
+swap_to_one,processing,Hybrid (DeepSim Process only),1007,Target (GroundSim),4.062431670936189,0.007802296285493032
+swap_to_one,processing,Hybrid (DeepSim Process only),1008,Target (GroundSim),7.1387900457034,0.006463459813237815
+swap_to_one,processing,Hybrid (DeepSim Process only),1009,Target (GroundSim),3.6505665280442248,0.007796348041922807
+swap_to_one,routing,Hybrid (DeepSim Routing only),1000,Target (GroundSim),4.30143355046207,0.008780315839894276
+swap_to_one,routing,Hybrid (DeepSim Routing only),1001,Target (GroundSim),13.51503541220736,0.01550106581759747
+swap_to_one,routing,Hybrid (DeepSim Routing only),1002,Target (GroundSim),10.252947356543089,0.010293911122574828
+swap_to_one,routing,Hybrid (DeepSim Routing only),1003,Target (GroundSim),9.988190618892622,0.013675651141752843
+swap_to_one,routing,Hybrid (DeepSim Routing only),1004,Target (GroundSim),6.153617187808896,0.011243712203486078
+swap_to_one,routing,Hybrid (DeepSim Routing only),1005,Target (GroundSim),6.081892920496598,0.011446587557911725
+swap_to_one,routing,Hybrid (DeepSim Routing only),1006,Target (GroundSim),6.732211822058577,0.009955588290904815
+swap_to_one,routing,Hybrid (DeepSim Routing only),1007,Target (GroundSim),5.179411468977481,0.006678066625100787
+swap_to_one,routing,Hybrid (DeepSim Routing only),1008,Target (GroundSim),7.684761622799517,0.00862898835027498
+swap_to_one,routing,Hybrid (DeepSim Routing only),1009,Target (GroundSim),5.523818245049921,0.011048082613996368
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1000,Target (GroundSim),5.18094663487831,0.005293647792418921
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1001,Target (GroundSim),19.36943906244897,0.01471124872016294
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1002,Target (GroundSim),10.43783168679008,0.008628961835493665
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1003,Target (GroundSim),6.297700923655379,0.01274282666799037
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1004,Target (GroundSim),14.377352352994922,0.030274373293825263
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1005,Target (GroundSim),6.863715585475472,0.00857628305813879
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1006,Target (GroundSim),10.24236289166015,0.010213025594044578
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1007,Target (GroundSim),7.925843124302102,0.008942320827344113
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1008,Target (GroundSim),6.216718402705483,0.00905109345314467
+swap_to_one,arrival,Hybrid (DeepSim Orders only),1009,Target (GroundSim),7.036782728217135,0.009435196224247155
+swap_to_one,survival,Hybrid (DeepSim Survival only),1000,Target (GroundSim),4.6795642027018545,0.0065494741798007294
+swap_to_one,survival,Hybrid (DeepSim Survival only),1001,Target (GroundSim),10.686111023301489,0.01595088428383773
+swap_to_one,survival,Hybrid (DeepSim Survival only),1002,Target (GroundSim),9.579222178951413,0.0050044872565660065
+swap_to_one,survival,Hybrid (DeepSim Survival only),1003,Target (GroundSim),10.909615898870962,0.012992506260042364
+swap_to_one,survival,Hybrid (DeepSim Survival only),1004,Target (GroundSim),8.694001920857461,0.015704974424332163
+swap_to_one,survival,Hybrid (DeepSim Survival only),1005,Target (GroundSim),8.085745365121713,0.015056199187491126
+swap_to_one,survival,Hybrid (DeepSim Survival only),1006,Target (GroundSim),6.155580151096149,0.012012861946282372
+swap_to_one,survival,Hybrid (DeepSim Survival only),1007,Target (GroundSim),5.692519924395596,0.008033297532835215
+swap_to_one,survival,Hybrid (DeepSim Survival only),1008,Target (GroundSim),9.72865295737719,0.010876081653518721
+swap_to_one,survival,Hybrid (DeepSim Survival only),1009,Target (GroundSim),6.463029037282775,0.00852596307581846
+swap_to_one,repair,Hybrid (DeepSim Repair only),1000,Target (GroundSim),6.511647416210401,0.007648282823961572
+swap_to_one,repair,Hybrid (DeepSim Repair only),1001,Target (GroundSim),26.420022089336136,0.006960208976213411
+swap_to_one,repair,Hybrid (DeepSim Repair only),1002,Target (GroundSim),11.735136645932213,0.007144121289314853
+swap_to_one,repair,Hybrid (DeepSim Repair only),1003,Target (GroundSim),11.131072820968509,0.005158472136986225
+swap_to_one,repair,Hybrid (DeepSim Repair only),1004,Target (GroundSim),12.788930412283804,0.007007907354353443
+swap_to_one,repair,Hybrid (DeepSim Repair only),1005,Target (GroundSim),7.336385637165762,0.016113504297323666
+swap_to_one,repair,Hybrid (DeepSim Repair only),1006,Target (GroundSim),8.09823654414869,0.01327461011836456
+swap_to_one,repair,Hybrid (DeepSim Repair only),1007,Target (GroundSim),4.979290942574847,0.0060065249944912524
+swap_to_one,repair,Hybrid (DeepSim Repair only),1008,Target (GroundSim),7.518738314834027,0.005032095635610745
+swap_to_one,repair,Hybrid (DeepSim Repair only),1009,Target (GroundSim),15.043714959037057,0.004715866225807885
+swap_to_one,all,Floor (Full),1000,Target (GroundSim),9.83037473980961,0.00424166201603704
+swap_to_perfect,all,Floor (Full),1000,Target (GroundSim),9.83037473980961,0.00424166201603704
+swap_to_one,all,Floor (Full),1001,Target (GroundSim),28.349005700665565,0.02412673809422705
+swap_to_perfect,all,Floor (Full),1001,Target (GroundSim),28.349005700665565,0.02412673809422705
+swap_to_one,all,Floor (Full),1002,Target (GroundSim),10.683591331080756,0.01295196148026656
+swap_to_perfect,all,Floor (Full),1002,Target (GroundSim),10.683591331080756,0.01295196148026656
+swap_to_one,all,Floor (Full),1003,Target (GroundSim),8.967436777259534,0.0075917738188467365
+swap_to_perfect,all,Floor (Full),1003,Target (GroundSim),8.967436777259534,0.0075917738188467365
+swap_to_one,all,Floor (Full),1004,Target (GroundSim),8.903595133007688,0.016027980553372623
+swap_to_perfect,all,Floor (Full),1004,Target (GroundSim),8.903595133007688,0.016027980553372623
+swap_to_one,all,Floor (Full),1005,Target (GroundSim),9.45829919702619,0.010508039775960765
+swap_to_perfect,all,Floor (Full),1005,Target (GroundSim),9.45829919702619,0.010508039775960765
+swap_to_one,all,Floor (Full),1006,Target (GroundSim),8.223529357999045,0.01130152976107801
+swap_to_perfect,all,Floor (Full),1006,Target (GroundSim),8.223529357999045,0.01130152976107801
+swap_to_one,all,Floor (Full),1007,Target (GroundSim),7.224476526093974,0.00685411923183904
+swap_to_perfect,all,Floor (Full),1007,Target (GroundSim),7.224476526093974,0.00685411923183904
+swap_to_one,all,Floor (Full),1008,Target (GroundSim),3.7069023712738085,0.01452020611598695
+swap_to_perfect,all,Floor (Full),1008,Target (GroundSim),3.7069023712738085,0.01452020611598695
+swap_to_one,all,Floor (Full),1009,Target (GroundSim),10.902418622790774,0.006576413285275584
+swap_to_perfect,all,Floor (Full),1009,Target (GroundSim),10.902418622790774,0.006576413285275584
+swap_to_perfect,arrival,Floor (Perfect Orders),1000,Target (GroundSim),4.541220953980588,0.00928296763256975
+swap_to_perfect,arrival,Floor (Perfect Orders),1001,Target (GroundSim),25.30565037813869,0.007789913897987555
+swap_to_perfect,arrival,Floor (Perfect Orders),1002,Target (GroundSim),9.50736576881474,0.006441473678624132
+swap_to_perfect,arrival,Floor (Perfect Orders),1003,Target (GroundSim),6.862049692332916,0.005171564443070098
+swap_to_perfect,arrival,Floor (Perfect Orders),1004,Target (GroundSim),7.322596058038492,0.008486719538469079
+swap_to_perfect,arrival,Floor (Perfect Orders),1005,Target (GroundSim),10.28295995109211,0.009695368655686376
+swap_to_perfect,arrival,Floor (Perfect Orders),1006,Target (GroundSim),7.180117454152025,0.00728362679847816
+swap_to_perfect,arrival,Floor (Perfect Orders),1007,Target (GroundSim),4.59951434501758,0.006293089147179465
+swap_to_perfect,arrival,Floor (Perfect Orders),1008,Target (GroundSim),6.694568673998163,0.006969078001408779
+swap_to_perfect,arrival,Floor (Perfect Orders),1009,Target (GroundSim),9.866974982478354,0.006151825257861149
+swap_to_perfect,routing,Floor (Perfect Routing),1000,Target (GroundSim),13.584126092647242,0.009506740297344773
+swap_to_perfect,routing,Floor (Perfect Routing),1001,Target (GroundSim),31.97633640308492,0.030834332542575893
+swap_to_perfect,routing,Floor (Perfect Routing),1002,Target (GroundSim),15.92923128110899,0.019915814022868294
+swap_to_perfect,routing,Floor (Perfect Routing),1003,Target (GroundSim),8.639204352210733,0.011219259540970972
+swap_to_perfect,routing,Floor (Perfect Routing),1004,Target (GroundSim),9.928794710188168,0.01666073625795972
+swap_to_perfect,routing,Floor (Perfect Routing),1005,Target (GroundSim),8.257362049897193,0.007608387156463697
+swap_to_perfect,routing,Floor (Perfect Routing),1006,Target (GroundSim),9.116543538720112,0.01103422511427432
+swap_to_perfect,routing,Floor (Perfect Routing),1007,Target (GroundSim),6.372499450728872,0.008854486356811908
+swap_to_perfect,routing,Floor (Perfect Routing),1008,Target (GroundSim),5.37799706900817,0.00971347781777343
+swap_to_perfect,routing,Floor (Perfect Routing),1009,Target (GroundSim),12.174474529664993,0.007967305614683728
+swap_to_perfect,processing,Floor (Perfect Process),1000,Target (GroundSim),8.036309099684646,0.006820283925366488
+swap_to_perfect,processing,Floor (Perfect Process),1001,Target (GroundSim),30.26191987916085,0.01709064088261847
+swap_to_perfect,processing,Floor (Perfect Process),1002,Target (GroundSim),9.45770246985837,0.012556402241345244
+swap_to_perfect,processing,Floor (Perfect Process),1003,Target (GroundSim),6.9780438125174555,0.008691269480200853
+swap_to_perfect,processing,Floor (Perfect Process),1004,Target (GroundSim),8.657682210717432,0.01648323387629247
+swap_to_perfect,processing,Floor (Perfect Process),1005,Target (GroundSim),9.76079048005677,0.017663507667585343
+swap_to_perfect,processing,Floor (Perfect Process),1006,Target (GroundSim),8.80105925154089,0.012400872716532452
+swap_to_perfect,processing,Floor (Perfect Process),1007,Target (GroundSim),4.9896634331624,0.0070193176179981775
+swap_to_perfect,processing,Floor (Perfect Process),1008,Target (GroundSim),3.7530002176875428,0.011656092064112333
+swap_to_perfect,processing,Floor (Perfect Process),1009,Target (GroundSim),5.88124303018933,0.012279181133935946
+swap_to_perfect,survival,Floor (Perfect Survival),1000,Target (GroundSim),15.742980017571455,0.014144717502147297
+swap_to_perfect,survival,Floor (Perfect Survival),1001,Target (GroundSim),30.879633012970405,0.02871142832353829
+swap_to_perfect,survival,Floor (Perfect Survival),1002,Target (GroundSim),14.1462586153372,0.015595932966070647
+swap_to_perfect,survival,Floor (Perfect Survival),1003,Target (GroundSim),9.022908499392322,0.015210351077225764
+swap_to_perfect,survival,Floor (Perfect Survival),1004,Target (GroundSim),6.688282300730339,0.010531830147824661
+swap_to_perfect,survival,Floor (Perfect Survival),1005,Target (GroundSim),10.07269126528832,0.01783215815281891
+swap_to_perfect,survival,Floor (Perfect Survival),1006,Target (GroundSim),5.371070503835922,0.006279855791857525
+swap_to_perfect,survival,Floor (Perfect Survival),1007,Target (GroundSim),4.21334834312552,0.005090842771791421
+swap_to_perfect,survival,Floor (Perfect Survival),1008,Target (GroundSim),6.774264341410508,0.012355128066415061
+swap_to_perfect,survival,Floor (Perfect Survival),1009,Target (GroundSim),11.165978409635763,0.0054973925507448285
+swap_to_perfect,repair,Floor (Perfect Repair),1000,Target (GroundSim),5.038669108400475,0.008225809864269018
+swap_to_perfect,repair,Floor (Perfect Repair),1001,Target (GroundSim),18.262739307030856,0.026283976553845956
+swap_to_perfect,repair,Floor (Perfect Repair),1002,Target (GroundSim),7.816246133181009,0.01153315347631989
+swap_to_perfect,repair,Floor (Perfect Repair),1003,Target (GroundSim),6.721037630487446,0.00854003006245696
+swap_to_perfect,repair,Floor (Perfect Repair),1004,Target (GroundSim),6.207954087897626,0.005535523276151755
+swap_to_perfect,repair,Floor (Perfect Repair),1005,Target (GroundSim),10.076034833502952,0.024156657938902648
+swap_to_perfect,repair,Floor (Perfect Repair),1006,Target (GroundSim),8.373840730351622,0.005144473473788436
+swap_to_perfect,repair,Floor (Perfect Repair),1007,Target (GroundSim),5.869364753963673,0.013419208122557424
+swap_to_perfect,repair,Floor (Perfect Repair),1008,Target (GroundSim),3.247608511783695,0.007178809344765336
+swap_to_perfect,repair,Floor (Perfect Repair),1009,Target (GroundSim),5.411470662968162,0.0051755627837710705
+swap_to_one,processing,Floor (Process decorrelated),1000,Target (GroundSim),4.374845134543383,0.004657086196335702
+swap_to_one,processing,Floor (Process decorrelated),1001,Target (GroundSim),13.319987861484206,0.013542477496002903
+swap_to_one,processing,Floor (Process decorrelated),1002,Target (GroundSim),7.938989512655242,0.009153460997150753
+swap_to_one,processing,Floor (Process decorrelated),1003,Target (GroundSim),8.431122573529962,0.010562127089235623
+swap_to_one,processing,Floor (Process decorrelated),1004,Target (GroundSim),7.16920294003657,0.008423182179028044
+swap_to_one,processing,Floor (Process decorrelated),1005,Target (GroundSim),8.500736708862505,0.014762127352572985
+swap_to_one,processing,Floor (Process decorrelated),1006,Target (GroundSim),6.6078831849270685,0.01150428946789639
+swap_to_one,processing,Floor (Process decorrelated),1007,Target (GroundSim),4.889314085066324,0.005492925165204443
+swap_to_one,processing,Floor (Process decorrelated),1008,Target (GroundSim),7.569027137097595,0.007185023679586955
+swap_to_one,processing,Floor (Process decorrelated),1009,Target (GroundSim),5.626625669721023,0.007624962625027876
+swap_to_one,routing,Floor (Routing decorrelated),1000,Target (GroundSim),4.8898171676595155,0.005023734932732782
+swap_to_one,routing,Floor (Routing decorrelated),1001,Target (GroundSim),19.15036936880596,0.015323106294256927
+swap_to_one,routing,Floor (Routing decorrelated),1002,Target (GroundSim),9.95940478551732,0.006437457261729729
+swap_to_one,routing,Floor (Routing decorrelated),1003,Target (GroundSim),8.84778412898381,0.005609766710101716
+swap_to_one,routing,Floor (Routing decorrelated),1004,Target (GroundSim),5.3812915429436545,0.011046226681298621
+swap_to_one,routing,Floor (Routing decorrelated),1005,Target (GroundSim),10.21789745747422,0.016955496191654595
+swap_to_one,routing,Floor (Routing decorrelated),1006,Target (GroundSim),10.479741600091653,0.009332916994702622
+swap_to_one,routing,Floor (Routing decorrelated),1007,Target (GroundSim),4.87679027056817,0.008139584261362631
+swap_to_one,routing,Floor (Routing decorrelated),1008,Target (GroundSim),4.576639273235276,0.0064536004223942345
+swap_to_one,routing,Floor (Routing decorrelated),1009,Target (GroundSim),7.855177673230466,0.015326203296121998
+swap_to_one,survival,Floor (Survival decorrelated),1000,Target (GroundSim),3.8126742263500732,0.007670592022284373
+swap_to_one,survival,Floor (Survival decorrelated),1001,Target (GroundSim),10.965390956449841,0.012651027791795832
+swap_to_one,survival,Floor (Survival decorrelated),1002,Target (GroundSim),5.718037473158759,0.004068973876576898
+swap_to_one,survival,Floor (Survival decorrelated),1003,Target (GroundSim),6.195868353369971,0.009743814354528757
+swap_to_one,survival,Floor (Survival decorrelated),1004,Target (GroundSim),9.100621702661567,0.018224539742567214
+swap_to_one,survival,Floor (Survival decorrelated),1005,Target (GroundSim),6.897473469320849,0.012852536164959266
+swap_to_one,survival,Floor (Survival decorrelated),1006,Target (GroundSim),10.80690138711763,0.013461210822819925
+swap_to_one,survival,Floor (Survival decorrelated),1007,Target (GroundSim),4.982205437017644,0.004526601925314955
+swap_to_one,survival,Floor (Survival decorrelated),1008,Target (GroundSim),3.718223921036711,0.007794937066290614
+swap_to_one,survival,Floor (Survival decorrelated),1009,Target (GroundSim),9.088137530095029,0.006555741050109032
+swap_to_one,repair,Floor (Repair decorrelated),1000,Target (GroundSim),9.874824365211794,0.012125365728665849
+swap_to_one,repair,Floor (Repair decorrelated),1001,Target (GroundSim),25.88667788652303,0.014929617518746663
+swap_to_one,repair,Floor (Repair decorrelated),1002,Target (GroundSim),9.957150698644186,0.01259056402496872
+swap_to_one,repair,Floor (Repair decorrelated),1003,Target (GroundSim),6.511609437862101,0.009370088516787778
+swap_to_one,repair,Floor (Repair decorrelated),1004,Target (GroundSim),7.084074759728464,0.010304099132275923
+swap_to_one,repair,Floor (Repair decorrelated),1005,Target (GroundSim),7.697054273374723,0.0059322296967122545
+swap_to_one,repair,Floor (Repair decorrelated),1006,Target (GroundSim),9.22682584382061,0.009479314281433782
+swap_to_one,repair,Floor (Repair decorrelated),1007,Target (GroundSim),7.809584385414208,0.007593768704039716
+swap_to_one,repair,Floor (Repair decorrelated),1008,Target (GroundSim),6.964085445816336,0.013204178971620517
+swap_to_one,repair,Floor (Repair decorrelated),1009,Target (GroundSim),8.738846815447705,0.010163194045991364
+swap_to_one,arrival,Floor (Orders decorrelated),1000,Target (GroundSim),5.134376502395802,0.01080624681575959
+swap_to_one,arrival,Floor (Orders decorrelated),1001,Target (GroundSim),16.820662428253826,0.016894336697081402
+swap_to_one,arrival,Floor (Orders decorrelated),1002,Target (GroundSim),13.68432103179391,0.017766324911549558
+swap_to_one,arrival,Floor (Orders decorrelated),1003,Target (GroundSim),5.067252362432677,0.00635710585463975
+swap_to_one,arrival,Floor (Orders decorrelated),1004,Target (GroundSim),8.14649102514838,0.020504564365686317
+swap_to_one,arrival,Floor (Orders decorrelated),1005,Target (GroundSim),9.166074724739717,0.01738202857134541
+swap_to_one,arrival,Floor (Orders decorrelated),1006,Target (GroundSim),9.404717979397022,0.012174428501265933
+swap_to_one,arrival,Floor (Orders decorrelated),1007,Target (GroundSim),6.451614345160019,0.00497390212653348
+swap_to_one,arrival,Floor (Orders decorrelated),1008,Target (GroundSim),3.2950851973232806,0.008090259469537536
+swap_to_one,arrival,Floor (Orders decorrelated),1009,Target (GroundSim),5.105477540847577,0.005714902794003218
+swap_to_one,all,RefSim (All Statistical),1000,Target (GroundSim),28.09289545870506,0.07024514133726883
+swap_to_perfect,all,RefSim (All Statistical),1000,Target (GroundSim),28.09289545870506,0.07024514133726883
+swap_to_one,all,RefSim (All Statistical),1001,Target (GroundSim),27.632012841706917,0.058056171373915555
+swap_to_perfect,all,RefSim (All Statistical),1001,Target (GroundSim),27.632012841706917,0.058056171373915555
+swap_to_one,all,RefSim (All Statistical),1002,Target (GroundSim),30.602715570478697,0.07725572397024061
+swap_to_perfect,all,RefSim (All Statistical),1002,Target (GroundSim),30.602715570478697,0.07725572397024061
+swap_to_one,all,RefSim (All Statistical),1003,Target (GroundSim),29.97797783006053,0.08126690146413695
+swap_to_perfect,all,RefSim (All Statistical),1003,Target (GroundSim),29.97797783006053,0.08126690146413695
+swap_to_one,all,RefSim (All Statistical),1004,Target (GroundSim),22.42139926802511,0.06626261117936183
+swap_to_perfect,all,RefSim (All Statistical),1004,Target (GroundSim),22.42139926802511,0.06626261117936183
+swap_to_one,all,RefSim (All Statistical),1005,Target (GroundSim),32.067292211614614,0.08451354999697325
+swap_to_perfect,all,RefSim (All Statistical),1005,Target (GroundSim),32.067292211614614,0.08451354999697325
+swap_to_one,all,RefSim (All Statistical),1006,Target (GroundSim),28.27308719536322,0.07377640373106165
+swap_to_perfect,all,RefSim (All Statistical),1006,Target (GroundSim),28.27308719536322,0.07377640373106165
+swap_to_one,all,RefSim (All Statistical),1007,Target (GroundSim),28.009152983894893,0.07562471775482588
+swap_to_perfect,all,RefSim (All Statistical),1007,Target (GroundSim),28.009152983894893,0.07562471775482588
+swap_to_one,all,RefSim (All Statistical),1008,Target (GroundSim),24.470514500829573,0.06987518881517385
+swap_to_perfect,all,RefSim (All Statistical),1008,Target (GroundSim),24.470514500829573,0.06987518881517385
+swap_to_one,all,RefSim (All Statistical),1009,Target (GroundSim),29.12418516277721,0.07578635195759292
+swap_to_perfect,all,RefSim (All Statistical),1009,Target (GroundSim),29.12418516277721,0.07578635195759292
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1000,Target (GroundSim),28.09289545870506,0.07024514133726883
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1001,Target (GroundSim),27.632012841706917,0.058056171373915555
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1002,Target (GroundSim),30.602715570478697,0.07725572397024061
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1003,Target (GroundSim),29.97797783006053,0.08126690146413695
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1004,Target (GroundSim),22.42139926802511,0.06626261117936183
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1005,Target (GroundSim),32.067292211614614,0.08451354999697325
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1006,Target (GroundSim),28.27308719536322,0.07377640373106165
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1007,Target (GroundSim),28.009152983894893,0.07562471775482588
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1008,Target (GroundSim),24.470514500829573,0.06987518881517385
+swap_to_perfect,arrival,RefSim Hybrid (Perfect Orders),1009,Target (GroundSim),29.12418516277721,0.07578635195759292
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1000,Target (GroundSim),25.29813045692224,0.08237450977399136
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1001,Target (GroundSim),25.81454446038651,0.06439508224377616
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1002,Target (GroundSim),27.486223347994493,0.07200015441379137
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1003,Target (GroundSim),25.98875180259614,0.07822964495630513
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1004,Target (GroundSim),20.55338554155902,0.06069378373066375
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1005,Target (GroundSim),27.897438835425593,0.08724673339745592
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1006,Target (GroundSim),26.51998554145648,0.07800889033694605
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1007,Target (GroundSim),23.806087415539317,0.0782783910110002
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1008,Target (GroundSim),25.267186565079793,0.07399706801940475
+swap_to_perfect,routing,RefSim Hybrid (Perfect Routing),1009,Target (GroundSim),21.60745532904785,0.0669721950809668
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1000,Target (GroundSim),18.428120719956237,0.039456931678737206
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1001,Target (GroundSim),31.2288602834038,0.02278429151678038
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1002,Target (GroundSim),20.869564131851313,0.039065925332277596
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1003,Target (GroundSim),17.119455481630567,0.03916105827895644
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1004,Target (GroundSim),18.496158664654388,0.031181972618256948
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1005,Target (GroundSim),24.623215649119913,0.06137609416020828
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1006,Target (GroundSim),22.069689334301366,0.028924103881698415
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1007,Target (GroundSim),16.70280908313908,0.04932571432456451
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1008,Target (GroundSim),15.50790141148688,0.04022823257522107
+swap_to_perfect,processing,RefSim Hybrid (Perfect Process),1009,Target (GroundSim),16.471760156287278,0.045234467301945636
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1000,Target (GroundSim),25.59529327208254,0.0719672328617153
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1001,Target (GroundSim),31.165308384934576,0.0593824070649388
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1002,Target (GroundSim),26.29972450526515,0.0706206058865767
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1003,Target (GroundSim),20.348093692892686,0.05598332488412311
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1004,Target (GroundSim),26.176440522538183,0.0674111390619434
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1005,Target (GroundSim),31.753461098711757,0.09085450174203402
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1006,Target (GroundSim),24.22164106961411,0.06272341641468776
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1007,Target (GroundSim),35.12626042330194,0.07883783909236686
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1008,Target (GroundSim),30.1719443402715,0.08567981252313267
+swap_to_perfect,survival,RefSim Hybrid (Perfect Survival),1009,Target (GroundSim),38.173809684752925,0.0825170880797998
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1000,Target (GroundSim),27.561152432549108,0.07152888283869979
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1001,Target (GroundSim),33.97628773763904,0.059205796305405345
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1002,Target (GroundSim),32.554448649264124,0.07734708632762971
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1003,Target (GroundSim),39.1471426795913,0.07772405110600356
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1004,Target (GroundSim),24.35481229521629,0.06791948721239527
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1005,Target (GroundSim),38.332062208320245,0.0856731128590924
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1006,Target (GroundSim),29.923291916669463,0.0682552333146822
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1007,Target (GroundSim),25.690804236871543,0.06180367886003979
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1008,Target (GroundSim),27.542082353358023,0.07456125463185637
+swap_to_perfect,repair,RefSim Hybrid (Perfect Repair),1009,Target (GroundSim),35.05857110256909,0.07524767847532149
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1000,Target (GroundSim),11.782498004151446,0.0308320092328791
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1001,Target (GroundSim),21.86001482652763,0.02643003370031738
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1002,Target (GroundSim),15.037502064041266,0.02408984385982904
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1003,Target (GroundSim),12.100067430215535,0.024548687815448278
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1004,Target (GroundSim),8.300793417015669,0.023798788842333992
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1005,Target (GroundSim),9.607727456857056,0.027797828252981206
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1006,Target (GroundSim),11.513610741190186,0.023717835177286557
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1007,Target (GroundSim),11.975036516913278,0.026446373921808184
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1008,Target (GroundSim),10.276604482876007,0.027327056531119998
+swap_to_one,processing,RefSim Hybrid (Stat Process only),1009,Target (GroundSim),8.694920898490238,0.024778213298647666
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1000,Target (GroundSim),18.275094337598027,0.05289774473624986
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1001,Target (GroundSim),25.48766068264785,0.038967298751068136
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1002,Target (GroundSim),19.10244132591629,0.053240524945993684
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1003,Target (GroundSim),24.146493351125486,0.06204683318948678
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1004,Target (GroundSim),15.752642411750161,0.03908281295474125
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1005,Target (GroundSim),23.332633452567876,0.06290895913995964
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1006,Target (GroundSim),15.602663117006783,0.03344291321233683
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1007,Target (GroundSim),18.45220558204421,0.05297475631303622
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1008,Target (GroundSim),20.56484312412735,0.05919058397023286
+swap_to_one,routing,RefSim Hybrid (Stat Routing only),1009,Target (GroundSim),18.512728830007678,0.053619844371168957
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1000,Target (GroundSim),20.37606775456691,0.05798467770285798
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1001,Target (GroundSim),27.11667098789428,0.038152257399511336
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1002,Target (GroundSim),27.49839405242662,0.055676682354647566
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1003,Target (GroundSim),18.474535598201463,0.05009399750956839
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1004,Target (GroundSim),17.351129083217195,0.043084288860499365
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1005,Target (GroundSim),22.981796014505253,0.06530972716225464
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1006,Target (GroundSim),22.495967859173163,0.04370392941285256
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1007,Target (GroundSim),18.576982331151722,0.05460951571123304
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1008,Target (GroundSim),17.89819797948916,0.059580175847320005
+swap_to_one,arrival,RefSim Hybrid (Stat Orders only),1009,Target (GroundSim),18.551786024148015,0.05431829377193126
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1000,Target (GroundSim),4.607846824503239,0.007120813950346916
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1001,Target (GroundSim),19.58728125220312,0.01706411798421198
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1002,Target (GroundSim),12.770652413444783,0.010784833426644935
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1003,Target (GroundSim),14.706435120524677,0.007904705228540032
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1004,Target (GroundSim),10.3917288448079,0.012281372033019156
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1005,Target (GroundSim),7.103178438315771,0.01494662697649074
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1006,Target (GroundSim),10.992267939716823,0.008245337731223823
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1007,Target (GroundSim),6.970620255649224,0.010104897430977478
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1008,Target (GroundSim),6.604112148761912,0.012627135013994761
+swap_to_one,survival,RefSim Hybrid (Stat Survival only),1009,Target (GroundSim),8.6432236856528,0.006708770755185056
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1000,Target (GroundSim),3.564218777713829,0.00625783546471248
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1001,Target (GroundSim),9.96094023430909,0.005829715995150697
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1002,Target (GroundSim),7.006012113674475,0.004600658914751976
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1003,Target (GroundSim),9.86488086524934,0.015259232482622953
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1004,Target (GroundSim),11.853215733933961,0.013440791396744978
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1005,Target (GroundSim),4.602326381919703,0.008228665644621713
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1006,Target (GroundSim),4.34159612852606,0.008080559146678157
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1007,Target (GroundSim),5.540361676129077,0.008389170487922426
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1008,Target (GroundSim),5.212740810153486,0.006607068032163599
+swap_to_one,repair,RefSim Hybrid (Stat Repair only),1009,Target (GroundSim),4.048736346336343,0.006026946373634212
+module_selection,repair,Hybrid (Stat Repair),1000,Target (GroundSim),5.871314348585944,0.011787501631667197
+module_selection,repair,Hybrid (Stat Repair),1001,Target (GroundSim),18.15902466686025,0.021474754585840528
+module_selection,repair,Hybrid (Stat Repair),1002,Target (GroundSim),12.26322796619002,0.008593828845553375
+module_selection,repair,Hybrid (Stat Repair),1003,Target (GroundSim),14.22151782642273,0.01008164992066829
+module_selection,repair,Hybrid (Stat Repair),1004,Target (GroundSim),8.779883646047862,0.020871365681087217
+module_selection,repair,Hybrid (Stat Repair),1005,Target (GroundSim),7.2537922461063715,0.010110766162434559
+module_selection,repair,Hybrid (Stat Repair),1006,Target (GroundSim),13.901938035302935,0.025246930888102037
+module_selection,repair,Hybrid (Stat Repair),1007,Target (GroundSim),3.288004736542768,0.005084981420193979
+module_selection,repair,Hybrid (Stat Repair),1008,Target (GroundSim),10.880643088684103,0.014877030973176386
+module_selection,repair,Hybrid (Stat Repair),1009,Target (GroundSim),7.530076970967381,0.008452572327472374

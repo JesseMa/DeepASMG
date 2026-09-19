@@ -2,17 +2,16 @@
   "no_behavior_change_pass": true,
   "n_runs": 60,
   "n_runs_bit_identical": 60,
-  "routine_total_routing_decisions": 18159954,
-  "routine_total_renormalizations": 4307435,
-  "corrective_total_activations": 403,
+  "routine_total_routing_decisions": 18377120,
+  "routine_total_renormalizations": 4447796,
+  "corrective_total_activations": 439,
   "corrective_by_type": {
     "repair_duration_floor": 2,
-    "processing_floor": 362,
+    "processing_floor": 426,
     "ttf_floor": 0,
     "repair_log0_guard": 0,
     "ttf_log0_guard": 0,
     "zero_mass_routing_fallback": 0,
-    "deadlock_detections_recoveries": 39,
-    "overflow_total_events": 39
+    "deadlock_detections_recoveries": 11
   }
 }
