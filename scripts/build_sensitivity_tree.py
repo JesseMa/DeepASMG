@@ -10,7 +10,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[1]
 
-HORIZON_DAYS = (14, 31, 61, 91, 183, 365, 730)
+HORIZON_DAYS = (14, 31, 61, 91, 183, 365)
 DRAW365_SEEDS = (102, 103, 104, 105)
 DRAW31_SEEDS = (101, 102, 103, 104, 105)
 
