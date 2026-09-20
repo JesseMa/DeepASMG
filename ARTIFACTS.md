@@ -19,7 +19,7 @@ customer, or operational company data.
 
 ## Excluded
 
-Approximately 48 GB of intermediate artifacts remain in the development
+Approximately 13 GB of intermediate artifacts remain in the development
 workspace and are not part of this release:
 
 - Event-level simulation logs and run directories (`data/`, `runs/`, `logs/`).
@@ -28,10 +28,9 @@ workspace and are not part of this release:
 - Model-training intermediates: `models/checkpoints/`, `models/hpo*/` except
   the `*_best_params.json` files, and the per-component `models/*_data/data.npz`
   training caches.
-- Regenerable audit work products (`results/execution_audit/_m2_work/`).
 - Paper figure sources, input tables, and rendered artwork; the manuscript
   distributes the final figures.
-- The sensitivity-configuration tree (approximately 4.9 GB): per-horizon and
+- The sensitivity-configuration tree (approximately 5 GB): per-horizon and
   per-seed training data, trained models, and fitted reference parameters for
   the data-regime analysis.
 
@@ -54,7 +53,8 @@ the two module-selection variants released as the hybrid columns of
 `sweep_draw31.csv`).
 
 `results/verification/observation_counts.csv` records the per-component
-observation counts of each derivation horizon. The underlying training logs are
+observation counts of every sensitivity configuration: the six derivation
+horizons, the five 365-day draws and the five 31-day draws. The underlying training logs are
 excluded, so this table keeps the reported observation counts verifiable without
 shipping the logs. `results/verification/kpi_absolute.csv` holds the unscaled
 per-system, per-seed macro-KPI values behind the relative deviations in
@@ -65,13 +65,25 @@ per-system, per-seed macro-KPI values behind the relative deviations in
 - In `component_substitutions.csv` the three `component=all` configurations
   appear under both substitution directions with identical values by
   construction; they are one measurement each, not two.
-- The production derivation is named `seed_0101` in `sweep_draw31.csv` and
-  `production` in `sweep_draw365.csv`; both refer to derivation seed 101.
-- In the `results/execution_audit/` tables, DeepSim routing counters use the
-  `routing.mask_*` counter family while the RefSim variants use `ref_mask_*`;
-  renormalization rates are therefore not comparable across those families.
-- `hazard_true_grid.csv` and `hazard_params.csv` are inputs to the hazard
-  figure of the manuscript; no script in this release consumes them.
+- `RefSim Hybrid (Perfect Orders)` is bit-identical to `RefSim (All
+  Statistical)` in every seed: no RefSim-M module conditions on released-order
+  attributes, so restoring the true released-order mechanism changes nothing
+  downstream.
+- The release model set (365-day log, derivation seed 101) appears as
+  `production` in `sweep_draw365.csv` and as `days_0365` in `sweep_horizon.csv`;
+  both coincide with the DeepSim and RefSim-M rows of `system_distances.csv`.
+  `seed_0101` in `sweep_draw31.csv` is the separately generated 31-day log of
+  the same derivation seed, with its own model set; it coincides with
+  `days_0031` in `sweep_horizon.csv`.
+- In the `results/execution_audit/` tables every system reports the same
+  `routing.mask_*` counters, but their renormalization rates are not comparable
+  across families: DeepTransition's softmax puts positive mass on every target,
+  so each masked draw counts as a renormalization (rate 1.0), whereas the fitted
+  RefSim tables carry no mass on inadmissible targets (rate 0.0).
+- `hazard_true_grid.csv` and `hazard_params.csv` are diagnostics of the
+  GroundSim bathtub hazard against the fitted RefSim-M and RefSim-W parameters,
+  written by `produce_results`; no figure or table of the manuscript and no
+  script in this release consumes them.
 - RefSim-M and RefSim-W rows are bit-identical in every table outside the
   survival component (routing, processing, repair, arrival), because the two
   variants differ only in the survival module.
@@ -87,7 +99,7 @@ per-system, per-seed macro-KPI values behind the relative deviations in
   components have prediction heads.
 - The SHA-256 hashes of the five model files are recorded both in
   `checksums.sha256` and in `production_training_manifest.json`
-  (`released_artifacts`); keep the two in sync on any re-release.
+  (`artifacts.<component>.sha256`); keep the two in sync on any re-release.
 
 ## Repository deposit
 

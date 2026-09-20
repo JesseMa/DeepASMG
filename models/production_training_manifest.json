@@ -96,31 +96,31 @@
   "artifacts": {
     "process_time": {
       "model": "models/process_time_model.pt",
-      "sha256": "2de6dc67bb9cac37272d3708c8ffed93c4ea0cc2cfd62046a19ca032796ced27",
+      "sha256": "287107ec74fedbdbe227319c53090f30026b2f2598615b849eea88ec46765198",
       "best_val_loss": 2.1002357006073,
       "epochs_trained": 100
     },
     "transition": {
       "model": "models/transition_model.pt",
-      "sha256": "07233cd069113ccb24e09671807714e4c2329a577b4925c1c220a0bb6c33d2ca",
+      "sha256": "db2a96ff105d32247fff385c7d0820b05e523c5bf145b4cb1852c981ce0e2bb4",
       "best_val_loss": 0.08742821961641312,
       "epochs_trained": 84
     },
     "survival": {
       "model": "models/survival_weibull_model.pt",
-      "sha256": "ef3c6c1deb5a33ec0b7bc1f8b697965dcbd32d38ba2864a0b099547d60c7a95d",
+      "sha256": "b9337be44b52ba29df4fc3fffd42a41e509b559ea95d0260ade3c6b8fe3b67d3",
       "best_val_loss": 11.964366912841797,
       "epochs_trained": 30
     },
     "repair_time": {
       "model": "models/repair_time_model.pt",
-      "sha256": "8f420545163578f872e583abc16e818a9f6187d9a22784b3f57023a6afe971cb",
+      "sha256": "499d3c64b888b7d73a6d597525490a63b5385162336950cf10b1b570d3c739a4",
       "best_val_loss": 8.348651885986328,
       "epochs_trained": 21
     },
     "product": {
       "model": "models/product_model.pt",
-      "sha256": "f4317a0bdd8b0be1cbb0e433c94a37e1550b288d8a3381541340e2a9903fe8de",
+      "sha256": "35fb8dc9a25e8af19dda4d54d0c538a01a798f6b72909604847616cc5807daff",
       "best_val_loss": 2.5158541202545166,
       "epochs_trained": 83
     }

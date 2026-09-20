@@ -25,7 +25,6 @@ __pycache__/
 /results/verification/shadow/
 
 # Regenerable validation work products
-/results/execution_audit/_m2_work/
 /results/execution_audit/**/*.pt
 
 # Local raw-data / run scratch (anchored so a bare name can't sweep a nested dir).

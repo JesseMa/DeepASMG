@@ -11,7 +11,6 @@ tqdm==4.67.3
 # Deep-learning surrogates (training + inference)
 torch==2.11.0
 pytorch-lightning==2.6.1
-tensorboard==2.20.0          # via pytorch_lightning TensorBoardLogger (training)
 
 # Hyperparameter optimization (optimize_hyperparameters.py)
 optuna==4.8.0

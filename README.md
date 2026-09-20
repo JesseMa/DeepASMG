@@ -36,7 +36,7 @@ A reviewer checking the reported results can follow one path:
 
 1. `scripts/run_closed_loop.py` names the six evaluated systems.
 2. `src/experiments/sim_runner.py` builds each of them: `SimFactorySet.compose`
-   wires one module of a given kind (`ground`, `deep`, `stat`) per mechanism
+   wires one module of a given kind (`ground`, `deep`, `stat`, `statv`, `statw`) per mechanism
    plus five independent RNG streams into one `SimulationConfig`; the named
    systems and the substitution grid are all compositions.
 3. `src/config/simulation_config.py` holds that config and the run constants.
@@ -57,7 +57,10 @@ A reviewer checking the reported results can follow one path:
 Each mechanism appears under three names: the module prefix above, the two-letter
 slot key (`pt`, `tr`, `sv`, `rt`, `pr`) used by the runners and the model
 files, and the `component` value in the result CSVs (`processing`, `transition`,
-`survival`, `repair`, `arrival`).
+`survival`, `repair`, `arrival`). Two tables written by other producers spell
+the same families differently: `component_substitutions.csv` uses `routing`
+(and `all` for the unsubstituted systems), and `observation_counts.csv` uses
+`released_order` and `routing`.
 
 ### Tracing a reported number back to the data
 
@@ -89,6 +92,8 @@ python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
+The test suite runs with `python -m pip install pytest && python -m pytest -q`.
+
 PyTorch availability can vary by operating system and hardware. If the pinned
 PyTorch wheel is unavailable for a platform, follow the official PyTorch
 installation instructions for that platform while retaining the remaining
@@ -108,9 +113,10 @@ python -m scripts.produce_results        # all result tables, after every produc
 python -m scripts.write_checksums        # refresh checksums.sha256
 ```
 
-`produce_results` runs last on purpose: it reads what the four producers above
-write. `write_checksums` regenerates the manifest from declared patterns rather
-than by hand.
+`produce_results` runs last on purpose: it reads the closed-loop bundle and the
+shadow bundle (and `sensitivity_sweeps.pkl` when present); `run_substitutions`
+and `run_safeguard_audit` write their tables directly. `write_checksums`
+regenerates the manifest from declared patterns rather than by hand.
 
 `run_substitutions` runs the two-way component substitutions reported in the article,
 together with the module-selection configuration (the learned core with the
@@ -160,10 +166,17 @@ python -m scripts.run_safeguard_audit
 python -m scripts.produce_results
 python -m scripts.write_checksums
 
-# 6. optional: data-regime sweeps (hours; separate tree)
+# 6. optional: data-regime sweeps (hours; separate tree), then the tables again
 python -m scripts.build_sensitivity_tree --root /path/to/sensitivity_tree
-python -m scripts.run_sensitivity_sweeps --sensitivity-root /path/to/sensitivity_tree
+python -m scripts.run_sensitivity_sweeps --sensitivity-root /path/to/sensitivity_tree \
+    --production-data-dir "$TRAINING_DATA_DIR"
+python -m scripts.produce_results
+python -m scripts.write_checksums
 ```
+
+Without `--production-data-dir` the release model set is missing from
+`sweep_draw365.csv` and `observation_counts.csv`, which then hold four 365-day
+draws instead of the five the article reports.
 
 Step 2 is not optional: `train_models` reads the search result and fails if it
 is absent, so that the production models and the sensitivity tree cannot end up
@@ -220,7 +233,7 @@ this bundle.
 ## Data scope
 
 The repository includes the exact trained models and compact derived evidence
-underlying the article. It excludes approximately 48 GB of event-level logs,
+underlying the article. It excludes approximately 13 GB of event-level logs,
 training checkpoints, raw shadow bundles, and raw closed-loop pickles. These are
 synthetic, deterministic or regenerable intermediate artifacts rather than
 independent observational data. See `ARTIFACTS.md` and `checksums.sha256` for the
@@ -239,7 +252,7 @@ commands have already been rerun.
 
 ## Citation and archive
 
-The tagged `v1.0.0` release is archived on Zenodo via the GitHub-release
+The tagged `v1.0.0` release will be archived on Zenodo via the GitHub-release
 integration. Cite the version-specific DOI of that archived release rather than
 a development branch.
 

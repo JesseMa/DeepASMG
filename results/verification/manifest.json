@@ -99,44 +99,49 @@
     "w1_wilcoxon.csv": 1
   },
   "paper_tables": {
-    "T7": {
-      "desc": "Continuous proper scores for processing under canonical total-duration semantics — CRPS/NLL",
+    "tab:component_summary": {
+      "desc": "Pooled component-level verification scores: Brier and ECE (released-order), CRPS and NLL (processing, survival, repair), routing L1 per (decision point, variant, visit)",
       "sources": [
-        "scores_continuous.csv (component=processing)"
-      ]
-    },
-    "T8": {
-      "desc": "KPI panel (16 KPIs × systems): mean(r_i), sd(r_i), ratio-of-means, p, q",
-      "sources": [
-        "kpi_panel.csv",
-        "kpi_bh.csv"
-      ]
-    },
-    "T9": {
-      "desc": "Per-seed throughput-time distances: W1 and KS per seed per system",
-      "sources": [
-        "system_distances.csv"
-      ]
-    },
-    "T12": {
-      "desc": "Routing probability comparison — L1/KL per realized (point, variant) conditional, support-matched across systems",
-      "sources": [
+        "scores_categorical.csv",
+        "scores_continuous.csv",
         "routing_compare.csv"
       ]
     },
-    "T13": {
-      "desc": "System-level throughput time — W1 mean/SD per system, paired difference with t-CI and Wilcoxon",
+    "tab:system_summary": {
+      "desc": "System-level throughput time: W1 mean/SD and D_KS mean/SD over the ten evaluation seeds, significant-KPI counts after BH adjustment",
+      "sources": [
+        "w1_summary.csv",
+        "system_distances.csv",
+        "kpi_bh.csv"
+      ]
+    },
+    "fig:system_fidelity": {
+      "desc": "Per-seed W1 per system and the paired DeepSim minus GroundSim-DEC difference with t-based CI and Wilcoxon signed-rank test",
       "sources": [
         "system_distances.csv",
-        "w1_summary.csv",
         "w1_wilcoxon.csv"
       ]
     },
-    "T14": {
-      "desc": "System-level KPI panel — relative delta + paired Wilcoxon/BH",
+    "fig:kpi_deviation_matrix": {
+      "desc": "Relative KPI deviation per system with BH-adjusted paired Wilcoxon tests",
       "sources": [
         "kpi_panel.csv",
         "kpi_bh.csv"
+      ]
+    },
+    "fig:component_ablation": {
+      "desc": "Two-way component substitutions and module selection: per-seed W1 per configuration (written by run_substitutions)",
+      "sources": [
+        "component_substitutions.csv"
+      ]
+    },
+    "fig:data_regime": {
+      "desc": "Data-regime characterization: derivation-horizon sweep and the repeated 31-day and 365-day derivations, with observation counts",
+      "sources": [
+        "sweep_horizon.csv",
+        "sweep_draw31.csv",
+        "sweep_draw365.csv",
+        "observation_counts.csv"
       ]
     }
   },
@@ -153,12 +158,17 @@
       "w1_summary.csv",
       "w1_wilcoxon.csv",
       "kpi_panel.csv",
-      "kpi_bh.csv"
+      "kpi_bh.csv",
+      "kpi_absolute.csv"
+    ],
+    "component_substitutions": [
+      "component_substitutions.csv"
     ],
     "data_sensitivity": [
       "sweep_horizon.csv",
       "sweep_draw31.csv",
-      "sweep_draw365.csv"
+      "sweep_draw365.csv",
+      "observation_counts.csv"
     ],
     "hazard_diagnostics": [
       "hazard_true_grid.csv",

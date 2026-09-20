@@ -8,7 +8,7 @@ import pytest
 from src.dynamics.GroundSim.ground_survival import BATHTUB
 from src.evaluation.score_aggregation import continuous_scores
 
-from scipy.stats import norm  # noqa: E402
+from scipy.stats import norm
 
 
 def _expected_score(truth_mu, truth_sigma, mu, sigma, index) -> float:

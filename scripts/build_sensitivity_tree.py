@@ -74,14 +74,14 @@ def main() -> None:
     ap.add_argument("--skip-existing", action="store_true",
                     help="Skip configurations whose model registry already exists")
     ap.add_argument("--only", type=str, default=None,
-                    choices=["horizons", "draw365", "draw31"],
+                    choices=["horizon", "draw365", "draw31"],
                     help="Build only one section of the tree")
     args = ap.parse_args()
     root: Path = args.root
     log_dir = args.log_dir if args.log_dir is not None else root / "_logs"
 
     jobs: list[tuple[str, int, int, Path, Path]] = []
-    if args.only in (None, "horizons"):
+    if args.only in (None, "horizon"):
         for days in HORIZON_DAYS:
             name = f"days_{days:04d}"
             jobs.append((name, 101, days, root / "data" / name,

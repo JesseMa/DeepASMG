@@ -24,25 +24,37 @@ from src.experiments.sim_runner import SimFactorySet, get_process_config, load_s
 from src.experiments.shadow_evaluation import COMPONENTS, SYSTEMS  # noqa: E402
 
 TABLE_MANIFEST = {
-    "T7": {
-        "desc": (
-            "Continuous proper scores for processing under canonical "
-            "total-duration semantics — CRPS/NLL"
-        ),
-        "sources": [
-            "scores_continuous.csv (component=processing)",
-        ],
+    "tab:component_summary": {
+        "desc": "Pooled component-level verification scores: Brier and ECE "
+                "(released-order), CRPS and NLL (processing, survival, repair), "
+                "routing L1 per (decision point, variant, visit)",
+        "sources": ["scores_categorical.csv", "scores_continuous.csv", "routing_compare.csv"],
     },
-    "T8": {"desc": "KPI panel (16 KPIs × systems): mean(r_i), sd(r_i), ratio-of-means, p, q",
-           "sources": ["kpi_panel.csv", "kpi_bh.csv"]},
-    "T9": {"desc": "Per-seed throughput-time distances: W1 and KS per seed per system",
-           "sources": ["system_distances.csv"]},
-    "T12": {"desc": "Routing probability comparison — L1/KL per realized (point, variant) conditional, support-matched across systems",
-            "sources": ["routing_compare.csv"]},
-    "T13": {"desc": "System-level throughput time — W1 mean/SD per system, paired difference with t-CI and Wilcoxon",
-            "sources": ["system_distances.csv", "w1_summary.csv", "w1_wilcoxon.csv"]},
-    "T14": {"desc": "System-level KPI panel — relative delta + paired Wilcoxon/BH",
-            "sources": ["kpi_panel.csv", "kpi_bh.csv"]},
+    "tab:system_summary": {
+        "desc": "System-level throughput time: W1 mean/SD and D_KS mean/SD over the "
+                "ten evaluation seeds, significant-KPI counts after BH adjustment",
+        "sources": ["w1_summary.csv", "system_distances.csv", "kpi_bh.csv"],
+    },
+    "fig:system_fidelity": {
+        "desc": "Per-seed W1 per system and the paired DeepSim minus GroundSim-DEC "
+                "difference with t-based CI and Wilcoxon signed-rank test",
+        "sources": ["system_distances.csv", "w1_wilcoxon.csv"],
+    },
+    "fig:kpi_deviation_matrix": {
+        "desc": "Relative KPI deviation per system with BH-adjusted paired Wilcoxon tests",
+        "sources": ["kpi_panel.csv", "kpi_bh.csv"],
+    },
+    "fig:component_ablation": {
+        "desc": "Two-way component substitutions and module selection: per-seed W1 "
+                "per configuration (written by run_substitutions)",
+        "sources": ["component_substitutions.csv"],
+    },
+    "fig:data_regime": {
+        "desc": "Data-regime characterization: derivation-horizon sweep and the "
+                "repeated 31-day and 365-day derivations, with observation counts",
+        "sources": ["sweep_horizon.csv", "sweep_draw31.csv", "sweep_draw365.csv",
+                    "observation_counts.csv"],
+    },
 }
 
 PAPER_OUTPUTS = {
@@ -57,11 +69,14 @@ PAPER_OUTPUTS = {
         "w1_wilcoxon.csv",
         "kpi_panel.csv",
         "kpi_bh.csv",
+        "kpi_absolute.csv",
     ],
+    "component_substitutions": ["component_substitutions.csv"],
     "data_sensitivity": [
         "sweep_horizon.csv",
         "sweep_draw31.csv",
         "sweep_draw365.csv",
+        "observation_counts.csv",
     ],
     "hazard_diagnostics": ["hazard_true_grid.csv", "hazard_params.csv"],
 }
@@ -417,17 +432,18 @@ def _produce_sensitivity(output_dir: Path) -> dict[str, int]:
         return {}
     with open(sweep_file, "rb") as file:
         sweeps = pickle.load(file)
-    return {
-        "sweep_horizon.csv": _write(
-            _horizon_sensitivity_rows(sweeps), output_dir / "sweep_horizon.csv"
-        ),
-        "sweep_draw365.csv": _write(
-            _draw365_sensitivity_rows(sweeps), output_dir / "sweep_draw365.csv"
-        ),
-        "sweep_draw31.csv": _write(
-            _draw31_sensitivity_rows(sweeps), output_dir / "sweep_draw31.csv"
-        ),
+    tables = {
+        "sweep_horizon.csv": _horizon_sensitivity_rows(sweeps),
+        "sweep_draw365.csv": _draw365_sensitivity_rows(sweeps),
+        "sweep_draw31.csv": _draw31_sensitivity_rows(sweeps),
     }
+    empty = [name for name, rows in tables.items() if not rows]
+    if empty:
+        raise SystemExit(
+            f"{sweep_file.name} holds no configurations for {', '.join(empty)}; "
+            "the released sweep tables are left untouched"
+        )
+    return {name: _write(rows, output_dir / name) for name, rows in tables.items()}
 
 
 def _shadow_metadata(shadow_dir: Path) -> dict:

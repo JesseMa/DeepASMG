@@ -5,6 +5,7 @@ from __future__ import annotations
 import hashlib
 import inspect
 import json
+import zipfile
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
@@ -17,6 +18,18 @@ WARMUP_STEPS = 200
 if TYPE_CHECKING:
     import torch.nn as nn
     from torch.utils.data import DataLoader
+
+
+def strip_debug_info(model_path: Path) -> None:
+    # the .debug_pkl entries hold source ranges with absolute local paths and
+    # are not needed for inference
+    model_path = Path(model_path)
+    tmp = model_path.with_suffix(model_path.suffix + ".tmp")
+    with zipfile.ZipFile(model_path) as zin, zipfile.ZipFile(tmp, "w", compression=zipfile.ZIP_STORED) as zout:
+        for info in zin.infolist():
+            if not info.filename.endswith(".debug_pkl"):
+                zout.writestr(info, zin.read(info.filename))
+    tmp.replace(model_path)
 
 
 def build_mlp_layers(
@@ -265,6 +278,7 @@ def train_lightning_model(
     example = torch.zeros(1, input_dim)
     scripted = torch.jit.trace(cpu_module, example)
     scripted.save(str(model_path))
+    strip_debug_info(model_path)
 
     return {
         "best_val_loss":  best_val_loss,

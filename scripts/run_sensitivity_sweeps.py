@@ -175,6 +175,7 @@ def main() -> None:
                     help="Recompute only one section; other sections are kept "
                          "from an existing output pickle.")
     args = ap.parse_args()
+    _require_configurations(args)
     seeds = get_seeds(args.num_seeds)
     result: dict = {"seeds": seeds, "horizon": {}, "draw365": {}, "draw31": {}}
     if args.only is not None and args.output_file.exists():
@@ -236,6 +237,25 @@ def main() -> None:
         print(f"Observation counts → {counts_path}")
 
     print(f"\nDONE → {args.output_file}")
+
+
+def _require_configurations(args: argparse.Namespace) -> None:
+    data = args.sensitivity_root / "data"
+    if not data.is_dir():
+        raise SystemExit(f"no sensitivity tree under {args.sensitivity_root} (missing {data})")
+    d31 = data / "31d_seed_variance"
+    found = {
+        "horizon": len(list(data.glob("days_*"))),
+        "draw365": len(list(data.glob("seed_*"))) + (args.production_data_dir is not None),
+        "draw31": len([p for p in d31.iterdir() if p.is_dir()]) if d31.is_dir() else 0,
+    }
+    requested = [args.only] if args.only is not None else list(found)
+    missing = [section for section in requested if found[section] == 0]
+    if missing:
+        raise SystemExit(
+            f"no configurations for {', '.join(missing)} under {data}; "
+            "build the tree first (scripts.build_sensitivity_tree)"
+        )
 
 
 def _dump(path: Path, obj) -> None:

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Regenerate checksums.sha256 over the released model and research-data artifacts."""
 
 from __future__ import annotations

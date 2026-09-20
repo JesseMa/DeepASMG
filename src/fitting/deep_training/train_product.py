@@ -98,7 +98,6 @@ class ProductMLPModule(BaseTrainingModule, pl.LightningModule):
 
         self._head_sizes = head_sizes
         self._feature_names = feature_names
-        self._n_heads = len(head_sizes)
 
         self._head_offsets = [0]
         for size in head_sizes[:-1]:

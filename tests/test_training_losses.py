@@ -86,7 +86,7 @@ def test_exponential_interval_loss_matches_closed_form():
     from src.fitting.deep_training.foundation_training import ExponentialNLLModule
 
     class Stub(ExponentialNLLModule):
-        def __init__(self):  # noqa: D401 - no Lightning init needed
+        def __init__(self):
             pass
         def __call__(self, x):
             return x
@@ -187,3 +187,19 @@ def test_warmup_keeps_a_wide_head_finite_at_the_top_of_the_search_range():
     sigma = torch.exp(0.5 * out[:, 1])
     assert (sigma > 0.5).all() and (sigma < 50.0).all(), f"sigma collapsed or exploded: {sigma.tolist()}"
     assert (out[:, 0] > 20.0).all() and (out[:, 0] < 160.0).all(), f"means left the data range: {out[:, 0].tolist()}"
+
+
+def test_exported_archive_carries_no_debug_source_ranges(tmp_path):
+    import zipfile
+    import torch
+    from src.fitting.deep_training.foundation_training import strip_debug_info
+
+    net = torch.nn.Sequential(torch.nn.Linear(3, 2))
+    path = tmp_path / "m.pt"
+    torch.jit.trace(net, torch.zeros(1, 3)).save(str(path))
+    assert any(n.endswith(".debug_pkl") for n in zipfile.ZipFile(path).namelist())
+    strip_debug_info(path)
+    names = zipfile.ZipFile(path).namelist()
+    assert not any(n.endswith(".debug_pkl") for n in names)
+    x = torch.randn(4, 3)
+    assert torch.equal(torch.jit.load(str(path))(x), net(x))
