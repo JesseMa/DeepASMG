@@ -175,6 +175,9 @@
       "routing_compare.csv": 472,
       "scores_categorical.csv": 130,
       "scores_continuous.csv": 150,
+      "sweep_draw31.csv": 50,
+      "sweep_draw365.csv": 50,
+      "sweep_horizon.csv": 60,
       "system_distances.csv": 50,
       "w1_summary.csv": 5,
       "w1_wilcoxon.csv": 1
