@@ -10,7 +10,8 @@ customer, or operational company data.
   the hyperparameter search results and training manifest behind them, and
   the fitted reference-distribution parameters used for the paper.
 - `results/verification/`: compact derived CSV tables supporting the reported
-  component, routing, system, sensitivity, and hazard results.
+  component, routing, system, and sensitivity results, plus two hazard
+  diagnostics that the article does not report.
 - `results/execution_audit/`: derived evidence for the runtime safeguard audit,
   regenerable with `scripts/run_safeguard_audit.py`, together with the
   hand-authored `SAFEGUARD_INVENTORY.csv`.
@@ -41,7 +42,7 @@ models.
 ## Regeneration scope
 
 Every table in `results/verification/` is regenerable from this release. The data-regime tables
-(`sweep_horizon.csv`, `sweep_draw31.csv`, `sweep_draw365.csv`) additionally require the
+(`sweep_horizon.csv`, `sweep_draw31.csv`, `sweep_draw365.csv`, `observation_counts.csv`) additionally require the
 sensitivity-configuration tree — one training-data draw and one trained model
 set per derivation horizon and per derivation seed. That tree is excluded from
 the release for size, and `scripts/build_sensitivity_tree.py` rebuilds it from

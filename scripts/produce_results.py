@@ -78,7 +78,10 @@ PAPER_OUTPUTS = {
         "sweep_draw365.csv",
         "observation_counts.csv",
     ],
-    "hazard_diagnostics": ["hazard_true_grid.csv", "hazard_params.csv"],
+}
+
+DIAGNOSTICS = {
+    "hazard": ["hazard_true_grid.csv", "hazard_params.csv"],
 }
 
 
@@ -425,24 +428,37 @@ def _draw31_sensitivity_rows(sweeps: dict) -> list[dict]:
     return rows
 
 
-def _produce_sensitivity(output_dir: Path) -> dict[str, int]:
+def _sweep_tables(output_dir: Path) -> dict[str, list[dict]] | None:
     sweep_file = output_dir / "sensitivity_sweeps.pkl"
     if not sweep_file.exists():
-        print(f"[skip] sweep tables: {sweep_file} missing")
-        return {}
+        return None
     with open(sweep_file, "rb") as file:
         sweeps = pickle.load(file)
-    tables = {
+    return {
         "sweep_horizon.csv": _horizon_sensitivity_rows(sweeps),
         "sweep_draw365.csv": _draw365_sensitivity_rows(sweeps),
         "sweep_draw31.csv": _draw31_sensitivity_rows(sweeps),
     }
+
+
+def _require_sweep_configurations(output_dir: Path) -> None:
+    # checked before any table is rewritten, so an empty bundle aborts cleanly
+    tables = _sweep_tables(output_dir)
+    if tables is None:
+        return
     empty = [name for name, rows in tables.items() if not rows]
     if empty:
         raise SystemExit(
-            f"{sweep_file.name} holds no configurations for {', '.join(empty)}; "
-            "the released sweep tables are left untouched"
+            f"sensitivity_sweeps.pkl holds no configurations for {', '.join(empty)}; "
+            "no table was rewritten"
         )
+
+
+def _produce_sensitivity(output_dir: Path) -> dict[str, int]:
+    tables = _sweep_tables(output_dir)
+    if tables is None:
+        print(f"[skip] sweep tables: {output_dir / 'sensitivity_sweeps.pkl'} missing")
+        return {}
     return {name: _write(rows, output_dir / name) for name, rows in tables.items()}
 
 
@@ -566,6 +582,7 @@ def _write_manifest(
         "files": files,
         "paper_tables": TABLE_MANIFEST,
         "paper_outputs": PAPER_OUTPUTS,
+        "diagnostics": DIAGNOSTICS,
         "last_production_run": {
             "produced_csvs": {
                 name: files[name] for name in sorted(produced) if name in files
@@ -603,6 +620,7 @@ def main() -> None:
     args = parser.parse_args()
     args.output_dir.mkdir(parents=True, exist_ok=True)
     produced: dict[str, int] = {}
+    _require_sweep_configurations(args.output_dir)
     produced.update(_produce_scores(args.shadow_dir, args.output_dir))
     produced.update(_produce_routing(args.shadow_dir, args.output_dir))
     produced.update(_produce_hazard(args.output_dir))
@@ -621,7 +639,7 @@ def main() -> None:
     print("=== Result producer ===")
     for filename, row_count in produced.items():
         print(f"  {filename}: {row_count} rows")
-    print(f"  manifest.json (tables {', '.join(TABLE_MANIFEST)})")
+    print(f"  manifest.json (paper labels {', '.join(TABLE_MANIFEST)})")
 
 
 if __name__ == "__main__":

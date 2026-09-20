@@ -169,8 +169,10 @@
       "sweep_draw31.csv",
       "sweep_draw365.csv",
       "observation_counts.csv"
-    ],
-    "hazard_diagnostics": [
+    ]
+  },
+  "diagnostics": {
+    "hazard": [
       "hazard_true_grid.csv",
       "hazard_params.csv"
     ]

@@ -54,7 +54,7 @@ A reviewer checking the reported results can follow one path:
 | repair | `ground_repair.py` | `deep_repair.py` | `ref_repair.py` |
 | released order | `ground_product.py` | `deep_product.py` | `ref_product.py` |
 
-Each mechanism appears under three names: the module prefix above, the two-letter
+Each mechanism appears under three names in the code and the shadow-derived tables: the module prefix above, the two-letter
 slot key (`pt`, `tr`, `sv`, `rt`, `pr`) used by the runners and the model
 files, and the `component` value in the result CSVs (`processing`, `transition`,
 `survival`, `repair`, `arrival`). Two tables written by other producers spell
