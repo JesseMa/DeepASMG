@@ -155,17 +155,33 @@ class SimFactorySet:
 
 
     @staticmethod
-    def _module_rngs(seed: int, decorrelated: FrozenSet[str]) -> Dict[str, np.random.Generator]:
+    @staticmethod
+    def _module_rngs(seed: int, coupled: FrozenSet[str]) -> Dict[str, np.random.Generator]:
+        # the target realization owns the streams of `seed`; every other draw comes
+        # from the offset streams, which all evaluated systems share among themselves
         target = dict(zip(MODULES, np.random.SeedSequence(seed).spawn(len(MODULES)), strict=True))
         offset = dict(zip(MODULES, np.random.SeedSequence(seed + SEED_OFFSET_FLOOR).spawn(len(MODULES)), strict=True))
-        return {m: np.random.default_rng(offset[m] if m in decorrelated else target[m])
+        return {m: np.random.default_rng(target[m] if m in coupled else offset[m])
                 for m in MODULES}
+
+    @staticmethod
+    def coupled_slots(kinds: Kinds, *, true_core: bool) -> FrozenSet[str]:
+        # only a true module inside the true core may share the target's streams
+        if not true_core:
+            return frozenset()
+        return frozenset(slot for kind, slot in zip(kinds, MODULES, strict=True) if kind == "ground")
 
     def compose(
         self, seed: int, run_id: int, kinds: Kinds, *,
-        decorrelated: FrozenSet[str] = frozenset(),
+        coupled: FrozenSet[str] = frozenset(),
     ) -> SimulationConfig:
-        rngs = self._module_rngs(seed, decorrelated)
+        unknown = coupled - set(MODULES)
+        if unknown:
+            raise ValueError(f"unknown slots in coupled set: {sorted(unknown)}")
+        for kind, slot in zip(kinds, MODULES, strict=True):
+            if slot in coupled and kind != "ground":
+                raise ValueError(f"slot {slot!r} of kind {kind!r} cannot share the target's stream")
+        rngs = self._module_rngs(seed, coupled)
         pt, tr, sv, rt, pr = (self.module(kind, slot, rngs[slot])
                               for kind, slot in zip(kinds, MODULES, strict=True))
         return SimulationConfig(
@@ -177,10 +193,10 @@ class SimFactorySet:
 
 
     def base(self, seed: int, run_id: int) -> SimulationConfig:
-        return self.compose(seed, run_id, ("ground",) * 5)
+        return self.compose(seed, run_id, ("ground",) * 5, coupled=frozenset(MODULES))
 
     def floor(self, seed: int, run_id: int) -> SimulationConfig:
-        return self.compose(seed, run_id, ("ground",) * 5, decorrelated=frozenset(MODULES))
+        return self.compose(seed, run_id, ("ground",) * 5)
 
     def deep(self, seed: int, run_id: int) -> SimulationConfig:
         return self.compose(seed, run_id, ("deep",) * 5)

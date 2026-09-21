@@ -63,6 +63,12 @@ per-system, per-seed macro-KPI values behind the relative deviations in
 
 ## Reading notes
 
+- `component_substitutions.csv` carries the column `coupled_slots`: the module
+  slots (`pt`, `tr`, `sv`, `rt`, `pr`) that share the target realization's
+  random streams in that configuration. Candidate systems and every "Perfect X"
+  hybrid show `none`; the one-module substitutions and their floors show the
+  four true-core slots. All other evaluated systems draw from the second stream
+  set of the seed, which they share among themselves.
 - In `component_substitutions.csv` the three `component=all` configurations
   appear under both substitution directions with identical values by
   construction; they are one measurement each, not two.

@@ -1,4 +1,4 @@
-"""The substitution grid: every system as one module kind per slot, CRN-paired or decorrelated."""
+"""The substitution grid: every system as one module kind per slot, with the slots that share the target's streams."""
 
 from __future__ import annotations
 
@@ -6,24 +6,37 @@ from src.experiments.sim_runner import MODULES, SimFactorySet, run_replications
 
 G, D, S = "ground", "deep", "stat"
 _ALL = frozenset(MODULES)
+_TRUE = (G, G, G, G, G)
 
-def _floor(*decorrelated: str) -> tuple:
-    return ((G, G, G, G, G), frozenset(decorrelated))
+
+def _true_core(kinds: tuple) -> tuple:
+    # the true core keeps the target's streams, the inserted module draws independently
+    return (kinds, frozenset(slot for kind, slot in zip(kinds, MODULES, strict=True) if kind == G))
+
+
+def _independent(kinds: tuple) -> tuple:
+    # a candidate core, with or without a true module inside, draws independently
+    return (kinds, frozenset())
+
+
+def _floor(*independent: str) -> tuple:
+    return (_TRUE, _ALL - frozenset(independent))
+
 
 CONFIGS: dict[str, tuple] = {
-    "Target (GroundSim)":            ((G, G, G, G, G), frozenset()),
-    "DeepSim (All NN)":              ((D, D, D, D, D), frozenset()),
-    "Hybrid (Perfect Orders)":       ((D, D, D, D, G), frozenset()),
-    "Hybrid (Perfect Routing)":      ((D, G, D, D, D), frozenset()),
-    "Hybrid (Perfect Process)":      ((G, D, D, D, D), frozenset()),
-    "Hybrid (Perfect Survival)":     ((D, D, G, D, D), frozenset()),
-    "Hybrid (Perfect Repair)":       ((D, D, D, G, D), frozenset()),
-    "Hybrid (DeepSim Process only)":  ((D, G, G, G, G), frozenset()),
-    "Hybrid (DeepSim Routing only)":  ((G, D, G, G, G), frozenset()),
-    "Hybrid (DeepSim Orders only)":   ((G, G, G, G, D), frozenset()),
-    "Hybrid (DeepSim Survival only)": ((G, G, D, G, G), frozenset()),
-    "Hybrid (DeepSim Repair only)":   ((G, G, G, D, G), frozenset()),
-    "Floor (Full)":              (( G, G, G, G, G), _ALL),
+    "Target (GroundSim)":            (_TRUE, _ALL),
+    "DeepSim (All NN)":              _independent((D, D, D, D, D)),
+    "Hybrid (Perfect Orders)":       _independent((D, D, D, D, G)),
+    "Hybrid (Perfect Routing)":      _independent((D, G, D, D, D)),
+    "Hybrid (Perfect Process)":      _independent((G, D, D, D, D)),
+    "Hybrid (Perfect Survival)":     _independent((D, D, G, D, D)),
+    "Hybrid (Perfect Repair)":       _independent((D, D, D, G, D)),
+    "Hybrid (DeepSim Process only)":  _true_core((D, G, G, G, G)),
+    "Hybrid (DeepSim Routing only)":  _true_core((G, D, G, G, G)),
+    "Hybrid (DeepSim Orders only)":   _true_core((G, G, G, G, D)),
+    "Hybrid (DeepSim Survival only)": _true_core((G, G, D, G, G)),
+    "Hybrid (DeepSim Repair only)":   _true_core((G, G, G, D, G)),
+    "Floor (Full)":              (_TRUE, frozenset()),
     "Floor (Perfect Orders)":    _floor("pt", "tr", "sv", "rt"),
     "Floor (Perfect Routing)":   _floor("pt", "sv", "rt", "pr"),
     "Floor (Perfect Process)":   _floor("tr", "sv", "rt", "pr"),
@@ -34,18 +47,18 @@ CONFIGS: dict[str, tuple] = {
     "Floor (Survival decorrelated)": _floor("sv"),
     "Floor (Repair decorrelated)":   _floor("rt"),
     "Floor (Orders decorrelated)":   _floor("pr"),
-    "RefSim (All Statistical)":           ((S, S, S, S, S), frozenset()),
-    "RefSim Hybrid (Perfect Orders)":     ((S, S, S, S, G), frozenset()),
-    "RefSim Hybrid (Perfect Routing)":    ((S, G, S, S, S), frozenset()),
-    "RefSim Hybrid (Perfect Process)":    ((G, S, S, S, S), frozenset()),
-    "RefSim Hybrid (Perfect Survival)":   ((S, S, G, S, S), frozenset()),
-    "RefSim Hybrid (Perfect Repair)":     ((S, S, S, G, S), frozenset()),
-    "RefSim Hybrid (Stat Process only)":  ((S, G, G, G, G), frozenset()),
-    "RefSim Hybrid (Stat Routing only)":  ((G, S, G, G, G), frozenset()),
-    "RefSim Hybrid (Stat Orders only)":   ((G, G, G, G, S), frozenset()),
-    "RefSim Hybrid (Stat Survival only)": ((G, G, S, G, G), frozenset()),
-    "RefSim Hybrid (Stat Repair only)":   ((G, G, G, S, G), frozenset()),
-    "Hybrid (Stat Repair)":               ((D, D, D, S, D), frozenset()),
+    "RefSim (All Statistical)":           _independent((S, S, S, S, S)),
+    "RefSim Hybrid (Perfect Orders)":     _independent((S, S, S, S, G)),
+    "RefSim Hybrid (Perfect Routing)":    _independent((S, G, S, S, S)),
+    "RefSim Hybrid (Perfect Process)":    _independent((G, S, S, S, S)),
+    "RefSim Hybrid (Perfect Survival)":   _independent((S, S, G, S, S)),
+    "RefSim Hybrid (Perfect Repair)":     _independent((S, S, S, G, S)),
+    "RefSim Hybrid (Stat Process only)":  _true_core((S, G, G, G, G)),
+    "RefSim Hybrid (Stat Routing only)":  _true_core((G, S, G, G, G)),
+    "RefSim Hybrid (Stat Orders only)":   _true_core((G, G, G, G, S)),
+    "RefSim Hybrid (Stat Survival only)": _true_core((G, G, S, G, G)),
+    "RefSim Hybrid (Stat Repair only)":   _true_core((G, G, G, S, G)),
+    "Hybrid (Stat Repair)":               _independent((D, D, D, S, D)),
 }
 
 
@@ -53,7 +66,7 @@ def run_ablation_grid(seeds: list[int]) -> dict[str, list[dict]]:
     fs = SimFactorySet()
     return {
         name: run_replications(
-            name, lambda s, r, k=kinds, d=dec: fs.compose(s, r, k, decorrelated=d), seeds,
+            name, lambda s, r, k=kinds, c=coupled: fs.compose(s, r, k, coupled=c), seeds,
         )
-        for name, (kinds, dec) in CONFIGS.items()
+        for name, (kinds, coupled) in CONFIGS.items()
     }

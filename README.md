@@ -37,8 +37,19 @@ A reviewer checking the reported results can follow one path:
 1. `scripts/run_closed_loop.py` names the six evaluated systems.
 2. `src/experiments/sim_runner.py` builds each of them: `SimFactorySet.compose`
    wires one module of a given kind (`ground`, `deep`, `stat`, `statv`, `statw`) per mechanism
-   plus five independent RNG streams into one `SimulationConfig`; the named
-   systems and the substitution grid are all compositions.
+   plus five RNG streams into one `SimulationConfig`; the named
+   systems and the substitution grid are all compositions. Each evaluation seed
+   owns two sets of five streams. The target GroundSim realization draws from
+   the first set. Every evaluated system, including the decorrelated replication
+   reference `GroundSim-DEC`, draws from the second set, so no candidate can
+   reproduce the target's random draws and every distance to the target
+   contains the same replication noise. The only exception is the one-module
+   substitution: there the four true-core modules keep the target's streams and
+   the inserted module draws from the second set, so that the paired
+   difference to the matching `Floor (X decorrelated)` run isolates that module.
+   `compose(..., coupled=...)` names the slots that share the target's streams
+   and refuses a non-`ground` module in that set; `tests/test_stream_coupling.py`
+   pins the rule for every configuration of the grid.
 3. `src/config/simulation_config.py` holds that config and the run constants.
 4. `src/simulation/engine.py` executes it. Process time, routing and released-order
    attributes are sampled there; time-to-failure and repair duration are driven by

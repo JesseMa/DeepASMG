@@ -77,6 +77,7 @@ def main() -> None:
                     "configuration": configuration,
                     "seed": run["seed"],
                     "reference_system": TARGET,
+                    "coupled_slots": " ".join(sorted(CONFIGS[configuration][1])) or "none",
                     "w1": w1,
                     "ks_d": ks_d,
                 })
