@@ -117,6 +117,7 @@ required to inspect or rerun the closed-loop verification.
 
 ```bash
 python -m scripts.run_closed_loop        # 6 systems x 10 seeds -> closed_loop_runs.pkl
+python -m scripts.run_stream_replicates  # DeepSim and GroundSim-DEC under 5 stream assignments
 python -m scripts.run_shadow_evaluation  # per-decision scoring bundle
 python -m scripts.run_substitutions      # two-way component substitutions
 python -m scripts.run_safeguard_audit    # instrumented rerun + safeguard counters
@@ -129,6 +130,11 @@ shadow bundle (and `sensitivity_sweeps.pkl` when present); `run_substitutions`
 and `run_safeguard_audit` write their tables directly. `write_checksums`
 regenerates the manifest from declared patterns rather than by hand.
 
+`run_stream_replicates` reruns DeepSim and `GroundSim-DEC` under five
+independent stream assignments (the release assignment and four more) against
+the same target realizations, so that the variability of a ten-seed mean and
+the pooled paired difference can be reported; it writes
+`results/verification/stream_replicates.csv` and its summary.
 `run_substitutions` runs the two-way component substitutions reported in the article,
 together with the module-selection configuration (the learned core with the
 statistical repair module), reported under the `module_selection` direction in
@@ -169,6 +175,7 @@ python -m scripts.train_models --data-dir "$TRAINING_DATA_DIR"
 
 # 4. experiments (run_closed_loop first; the audit reruns against its bundle)
 python -m scripts.run_closed_loop
+python -m scripts.run_stream_replicates
 python -m scripts.run_shadow_evaluation
 python -m scripts.run_substitutions
 python -m scripts.run_safeguard_audit

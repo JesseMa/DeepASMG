@@ -1,7 +1,7 @@
 system,routing_mask_calls,routing_renormalizations,routing_renorm_rate,repair_stress_floor_binds,repair_stress_calls
 GroundSim,0,0,NOT_APPLICABLE,0,941
 GroundSim-DEC,0,0,NOT_APPLICABLE,0,932
-DeepSim,4447796,4447796,1.0,0,0
-RefSim-M,4600010,0,0.0,0,0
-RefSim-V,4714904,0,0.0,0,0
-RefSim-W,4614410,0,0.0,0,0
+DeepSim,4427012,4427012,1.0,0,0
+RefSim-M,4604180,0,0.0,0,0
+RefSim-V,4724328,0,0.0,0,0
+RefSim-W,4625662,0,0.0,0,0

@@ -91,6 +91,8 @@
     "routing_compare.csv": 472,
     "scores_categorical.csv": 130,
     "scores_continuous.csv": 150,
+    "stream_replicates.csv": 100,
+    "stream_replicates_summary.csv": 3,
     "sweep_draw31.csv": 50,
     "sweep_draw365.csv": 50,
     "sweep_horizon.csv": 60,
@@ -159,7 +161,9 @@
       "w1_wilcoxon.csv",
       "kpi_panel.csv",
       "kpi_bh.csv",
-      "kpi_absolute.csv"
+      "kpi_absolute.csv",
+      "stream_replicates.csv",
+      "stream_replicates_summary.csv"
     ],
     "component_substitutions": [
       "component_substitutions.csv"

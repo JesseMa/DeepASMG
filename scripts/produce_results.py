@@ -70,6 +70,8 @@ PAPER_OUTPUTS = {
         "kpi_panel.csv",
         "kpi_bh.csv",
         "kpi_absolute.csv",
+        "stream_replicates.csv",
+        "stream_replicates_summary.csv",
     ],
     "component_substitutions": ["component_substitutions.csv"],
     "data_sensitivity": [

@@ -47,3 +47,17 @@ def test_compose_rejects_a_coupled_candidate_module():
         fs.compose(1000, 1, ("deep", "ground", "ground", "ground", "ground"), coupled=frozenset(MODULES))
     with pytest.raises(ValueError):
         fs.compose(1000, 1, ("ground",) * 5, coupled=frozenset({"xx"}))
+
+
+def test_replicate_stream_sets_use_seeds_no_other_run_uses():
+    from scripts.run_stream_replicates import compose_seed, N_SETS
+    seeds = list(range(1000, 1010))
+    targets = set(seeds)
+    used = set()
+    for k in range(1, N_SETS + 1):
+        for seed in seeds:
+            stream_seed = compose_seed(seed, k) + SEED_OFFSET_FLOOR
+            assert stream_seed not in targets
+            assert stream_seed not in used
+            used.add(stream_seed)
+    assert compose_seed(1000, 1) == 1000
