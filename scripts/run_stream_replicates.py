@@ -35,7 +35,12 @@ def main() -> None:
                     default=REPO / "results/verification/closed_loop_runs.pkl")
     ap.add_argument("--output-dir", type=Path, default=REPO / "results/verification")
     ap.add_argument("--num-seeds", type=int, default=N_RUNS)
+    ap.add_argument("--summarize-only", action="store_true",
+                    help="rebuild the summary from an existing stream_replicates.csv without simulating")
     args = ap.parse_args()
+    if args.summarize_only:
+        write_summary(args.output_dir)
+        return
 
     with open(args.closed_loop_file, "rb") as file:
         bundle = pickle.load(file)
@@ -71,24 +76,44 @@ def main() -> None:
         writer = csv.DictWriter(file, fieldnames=["stream_set", "system", "seed", "w1"])
         writer.writeheader()
         writer.writerows(rows)
+    out = write_summary(args.output_dir)
+    print(f"\nDONE -> {raw} ({len(rows)} rows), {out}")
 
-    summary: list[dict] = []
+
+def write_summary(output_dir: Path) -> Path:
+    # the target realization of a seed is shared by all stream sets, so the
+    # paired differences are aggregated per stream set and per seed before any
+    # standard error or test is computed
+    raw = output_dir / "stream_replicates.csv"
+    with open(raw, newline="") as file:
+        rows = list(csv.DictReader(file))
+    sets = sorted({int(r["stream_set"]) for r in rows})
+    seeds = sorted({int(r["seed"]) for r in rows})
+    w1 = {(r["system"], int(r["stream_set"]), int(r["seed"])): float(r["w1"]) for r in rows}
+    diff = np.array([[w1[("DeepSim", k, s)] - w1[("GroundSim-DEC", k, s)] for s in seeds] for k in sets])
+
+    def row(quantity, values, p_value=""):
+        values = np.asarray(values, dtype=float)
+        return {"quantity": quantity, "n": int(values.size), "mean": float(values.mean()),
+                "sd": float(values.std(ddof=1)), "min": float(values.min()), "max": float(values.max()),
+                "se": float(values.std(ddof=1) / np.sqrt(values.size)), "p_value": p_value}
+
+    summary = []
     for name in SYSTEMS:
-        means = np.array([per_set[(name, k)].mean() for k in range(1, N_SETS + 1)])
-        summary.append({"quantity": f"{name} ten-seed mean", "n": N_SETS, "mean": float(means.mean()),
-                        "sd": float(means.std(ddof=1)), "min": float(means.min()), "max": float(means.max()),
-                        "se": float(means.std(ddof=1) / np.sqrt(N_SETS)), "p_value": ""})
-    diff = np.concatenate([per_set[("DeepSim", k)] - per_set[("GroundSim-DEC", k)] for k in range(1, N_SETS + 1)])
-    summary.append({"quantity": "DeepSim minus GroundSim-DEC, paired by seed and stream set", "n": int(diff.size),
-                    "mean": float(diff.mean()), "sd": float(diff.std(ddof=1)), "min": float(diff.min()),
-                    "max": float(diff.max()), "se": float(diff.std(ddof=1) / np.sqrt(diff.size)),
-                    "p_value": float(stats.wilcoxon(diff, zero_method="wilcox", method="auto").pvalue)})
-    out = args.output_dir / "stream_replicates_summary.csv"
+        summary.append(row(f"{name} ten-seed mean", [np.mean([w1[(name, k, s)] for s in seeds]) for k in sets]))
+    set_means = diff.mean(axis=1)
+    summary.append(row("DeepSim minus GroundSim-DEC, mean per stream set",
+                       set_means, float(stats.ttest_1samp(set_means, 0.0).pvalue)))
+    seed_means = diff.mean(axis=0)
+    summary.append(row("DeepSim minus GroundSim-DEC, mean per seed over stream sets",
+                       seed_means, float(stats.wilcoxon(seed_means, zero_method="wilcox", method="auto").pvalue)))
+    summary.append(row("DeepSim minus GroundSim-DEC, all seed-set pairs (not independent)", diff.ravel()))
+    out = output_dir / "stream_replicates_summary.csv"
     with open(out, "w", newline="") as file:
         writer = csv.DictWriter(file, fieldnames=list(summary[0]))
         writer.writeheader()
         writer.writerows(summary)
-    print(f"\nDONE -> {raw} ({len(rows)} rows), {out} ({len(summary)} rows)")
+    return out
 
 
 if __name__ == "__main__":
