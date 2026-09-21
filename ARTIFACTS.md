@@ -91,6 +91,12 @@ per-system, per-seed macro-KPI values behind the relative deviations in
   GroundSim bathtub hazard against the fitted RefSim-M and RefSim-W parameters,
   written by `produce_results`; no figure or table of the manuscript and no
   script in this release consumes them.
+- In the 14-day horizon configuration of `sweep_horizon.csv`, machine M5 has
+  no completed failure cycle in the training split. Its repair module in
+  DeepSim and RefSim-M and its exponential time-to-failure rate in RefSim-M
+  fall back to the fleet-pooled fit, with a logged warning
+  (`DeepRepair`, `RefRepair`, `RefSurvival`). No other configuration and no
+  release run uses a pooled fallback.
 - RefSim-M and RefSim-W rows are bit-identical in every table outside the
   survival component (routing, processing, repair, arrival), because the two
   variants differ only in the survival module.
